@@ -1,0 +1,26 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "type": "shell",
+            //"command": "zig build",
+            //"command": "zig build-exe -freference-trace @rsp/win/demo.rsp",
+            "command": "zig build-exe @rsp/win/demo.rsp",
+            //"command": "zig test @rsp/win/demo.rsp",
+            //"command": "zig build-exe -O ReleaseFast @rsp/win/demo.rsp",
+            "group": {
+                "kind": "build",
+                "isDefault": true,
+            },
+            "presentation": {
+                "reveal": "always",
+                "focus": true,
+                "clear": true,
+            },
+            "problemMatcher": "$msCompile"
+        }
+    ]
+}

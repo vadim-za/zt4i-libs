@@ -1,0 +1,12 @@
+{
+    "cmake.configureOnOpen": false,
+    "lldb.displayFormat": "auto",
+    "lldb.showDisassembly": "auto",
+    "lldb.dereferencePointers": true,
+    "lldb.consoleMode": "commands",
+    "terminal.integrated.defaultProfile.windows": "Command Prompt",
+    "explorer.excludeGitIgnore": true,
+    "zig.zls.checkForUpdate": false,
+    "zig.zls.enableAutofix": true,
+    "terminal.integrated.persistentSessionReviveProcess": "never",
+}

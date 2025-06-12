@@ -1,0 +1,4 @@
+--dep z2 -Mroot=demo/main.zig
+--dep paw -Mz2=z2.zig
+--dep z2 -Mpaw=paw/paw.zig
+-target native-native-msvc -femit-bin=zig-out/demo.exe --cache-dir .zig-cache
