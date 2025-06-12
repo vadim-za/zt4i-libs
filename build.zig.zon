@@ -9,6 +9,7 @@
         "build.zig.zon",
         "z2.zig",
         "README.md",
+        ".gitignore",
         "demo",
         "paw",
     },
