@@ -19,6 +19,8 @@ const platform = win32;
 // Platform reexports
 pub const allocator = platform.allocator;
 pub const message_box = platform.message_box;
+pub const showMessageBox = message_box.show;
+pub const showComptimeMessageBox = message_box.showComptime;
 
 // Conditional platform reexports
 pub const wWinMain =

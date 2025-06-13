@@ -35,6 +35,20 @@ pub const Result = enum(c_int) {
     no = 7,
 };
 
+fn toResult(os_result: c_int) !Result {
+    // Check if OS returned an error.
+    if (os_result == 0)
+        return paw.Error.OsApi;
+
+    // If OS returns unexpected code, treat this as OS API error.
+    return std.meta.intToEnum(
+        Result,
+        os_result,
+    ) catch paw.Error.OsApi;
+}
+
+// This function coverts strings to WTF16 at comptime
+// and therefore doesn't use allocator.
 pub fn showComptime(
     comptime caption: [:0]const u8,
     comptime text: [:0]const u8,
@@ -43,20 +57,42 @@ pub fn showComptime(
     const text16 = std.unicode.wtf8ToWtf16LeStringLiteral(text);
     const caption16 = std.unicode.wtf8ToWtf16LeStringLiteral(caption);
 
-    const result = MessageBoxW(
+    const os_result = MessageBoxW(
         null,
         text16.ptr,
         caption16.ptr,
         @intFromEnum(@"type"),
     );
 
-    // Check if OS returned an error.
-    if (result == 0)
-        return paw.Error.OsApi;
+    return toResult(os_result);
+}
 
-    // If OS returns unexpected code, treat this as OS API error.
-    return std.meta.intToEnum(
-        Result,
-        result,
-    ) catch paw.Error.OsApi;
+// This function uses paw.allocator() to convert strings to WTF16
+pub fn show(
+    caption: [:0]const u8,
+    text: [:0]const u8,
+    @"type": Type,
+) !Result {
+    const alloc = paw.allocator();
+
+    const text16 = try std.unicode.wtf8ToWtf16LeAllocZ(
+        alloc,
+        text,
+    );
+    defer alloc.free(text16);
+
+    const caption16 = try std.unicode.wtf8ToWtf16LeAllocZ(
+        alloc,
+        caption,
+    );
+    defer alloc.free(caption16);
+
+    const os_result = MessageBoxW(
+        null,
+        text16.ptr,
+        caption16.ptr,
+        @intFromEnum(@"type"),
+    );
+
+    return toResult(os_result);
 }

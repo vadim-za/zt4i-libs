@@ -43,7 +43,7 @@ pub fn thisInstance() os.HINSTANCE {
 
 var global_allocator: ?std.mem.Allocator = null;
 
-pub fn allocator() os.HINSTANCE {
+pub fn allocator() std.mem.Allocator {
     return global_allocator.?;
 }
 
