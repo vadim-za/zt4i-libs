@@ -1,0 +1,2 @@
+-Mz2=z2.zig
+-target native-native-msvc -femit-bin=zig-out/z2.exe --cache-dir .zig-cache

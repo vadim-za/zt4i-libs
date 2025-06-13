@@ -4,12 +4,6 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const paw = b.createModule(.{
-        .root_source_file = b.path("paw/paw.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
-
     const z2 = b.addModule(
         "z2",
         .{
@@ -18,9 +12,6 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
         },
     );
-    z2.addImport("paw", paw);
-
-    paw.addImport("z2", z2);
 
     const demo = b.addExecutable(.{
         .name = "demo",
