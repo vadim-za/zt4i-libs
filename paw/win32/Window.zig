@@ -113,12 +113,12 @@ pub fn create(
     ) == 0)
         return paw.Error.OsApi;
 
+    class.subclass(hWnd, wnd_proc.make(Impl, resps), impl);
+
     window.* = .{
         .hWnd = hWnd,
         .dpr = dpr,
     };
-
-    class.subclass(hWnd, wnd_proc.make(Impl, resps), impl);
 }
 
 pub fn destroy(window: *@This()) paw.Error!void {
