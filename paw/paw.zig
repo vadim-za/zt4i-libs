@@ -22,6 +22,9 @@ pub const allocator = platform.allocator;
 pub const message_box = platform.message_box;
 pub const showMessageBox = message_box.show;
 pub const showComptimeMessageBox = message_box.showComptime;
+pub const message_loop = platform.message_loop;
+pub const runMessageLoop = message_loop.run;
+pub const stopMessageLoop = message_loop.stop;
 pub const Window = platform.Window;
 
 // Conditional platform reexports

@@ -21,14 +21,19 @@ const Window = struct {
             height,
         );
     }
+
+    pub fn onDestroy(_: *@This()) void {
+        z2.paw.stopMessageLoop();
+    }
 };
 
 fn pawMain() void {
     var window: Window = .{};
     window.create(800, 500) catch return;
-    _ = z2.paw.showMessageBox(
-        "Caption",
-        "Text",
-        .ok,
-    ) catch {};
+    z2.paw.runMessageLoop();
+    // _ = z2.paw.showMessageBox(
+    //     "Caption",
+    //     "Text",
+    //     .ok,
+    // ) catch {};
 }

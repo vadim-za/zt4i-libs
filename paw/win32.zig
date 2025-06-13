@@ -3,6 +3,7 @@ pub const wWinMain = winmain.wWinMain;
 pub const allocator = winmain.allocator;
 
 pub const message_box = @import("win32/message_box.zig");
+pub const message_loop = @import("win32/message_loop.zig");
 pub const Window = @import("win32/Window.zig");
 
 // --------------------------------------------------------------

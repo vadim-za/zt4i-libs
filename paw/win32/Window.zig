@@ -8,6 +8,7 @@ const Responders = responders.Responders;
 const thisInstance = @import("winmain.zig").thisInstance;
 const dpi = @import("dpi.zig");
 const Wtf16Str = @import("Wtf16Str.zig");
+const wnd_proc = @import("window/wnd_proc.zig");
 
 hWnd: ?os.HWND = null,
 dpr: f32 = 1,
@@ -56,11 +57,6 @@ extern "user32" fn SetWindowPos(
 const SWP_NOSIZE: os.UINT = 1;
 const SWP_NOMOVE: os.UINT = 2;
 const SWP_NOZORDER: os.UINT = 4;
-
-extern "user32" fn GetClientRect(
-    hWnd: os.HWND,
-    lpRect: *os.RECT,
-) callconv(.winapi) os.BOOL;
 
 extern "user32" fn DestroyWindow(
     hWnd: os.HWND,
@@ -117,7 +113,12 @@ pub fn create(
     ) == 0)
         return paw.Error.OsApi;
 
-    //class.subclass(hWnd, wnd_proc.make(Impl, resps), impl);
+    window.* = .{
+        .hWnd = hWnd,
+        .dpr = dpr,
+    };
+
+    class.subclass(hWnd, wnd_proc.make(Impl, resps), impl);
 }
 
 pub fn destroy(window: *@This()) paw.Error!void {
