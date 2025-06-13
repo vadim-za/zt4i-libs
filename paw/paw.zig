@@ -17,6 +17,7 @@ pub const win32 = @import("win32.zig");
 const platform = win32;
 
 // Platform reexports
+pub const allocator = platform.allocator;
 pub const message_box = platform.message_box;
 
 // Conditional platform reexports
