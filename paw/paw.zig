@@ -6,6 +6,7 @@ const std = @import("std");
 pub const Error = error{
     OsApi, // OS API call returned an error
     Usage, // PAW incorrectly used
+    OutOfMemory,
 };
 
 // --------------------------------------------------------------

@@ -89,3 +89,18 @@ fn failStartup(
     ) catch {}; // we are already failing, ignore further errors
     return 0;
 }
+
+pub const test_startup = struct {
+    pub fn init() void {
+        std.debug.assert(global_allocator == null);
+        global_allocator = std.testing.allocator;
+    }
+    pub fn deinit() void {
+        std.debug.assert(std.mem.order(
+            u8,
+            std.mem.asBytes(&global_allocator.?),
+            std.mem.asBytes(&std.testing.allocator),
+        ) == .eq);
+        global_allocator = null;
+    }
+};

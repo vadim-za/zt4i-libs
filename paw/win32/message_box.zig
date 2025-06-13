@@ -2,6 +2,7 @@ const std = @import("std");
 const os = std.os.windows;
 
 const paw = @import("../paw.zig");
+const Wtf16Str = @import("Wtf16Str.zig");
 
 // ----------------------------------------------------------------
 
@@ -35,7 +36,7 @@ pub const Result = enum(c_int) {
     no = 7,
 };
 
-fn toResult(os_result: c_int) !Result {
+fn toResult(os_result: c_int) paw.Error!Result {
     // Check if OS returned an error.
     if (os_result == 0)
         return paw.Error.OsApi;
@@ -72,25 +73,17 @@ pub fn show(
     caption: [:0]const u8,
     text: [:0]const u8,
     @"type": Type,
-) !Result {
-    const alloc = paw.allocator();
+) paw.Error!Result {
+    const text16: Wtf16Str = try .initU8(text);
+    defer text16.deinit();
 
-    const text16 = try std.unicode.wtf8ToWtf16LeAllocZ(
-        alloc,
-        text,
-    );
-    defer alloc.free(text16);
-
-    const caption16 = try std.unicode.wtf8ToWtf16LeAllocZ(
-        alloc,
-        caption,
-    );
-    defer alloc.free(caption16);
+    const caption16: Wtf16Str = try .initU8(caption);
+    defer caption16.deinit();
 
     const os_result = MessageBoxW(
         null,
-        text16.ptr,
-        caption16.ptr,
+        text16.ptr(),
+        caption16.ptr(),
         @intFromEnum(@"type"),
     );
 

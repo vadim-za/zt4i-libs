@@ -7,6 +7,7 @@ const responders = @import("window/responders.zig");
 const Responders = responders.Responders;
 const thisInstance = @import("winmain.zig").thisInstance;
 const dpi = @import("dpi.zig");
+const Wtf16Str = @import("Wtf16Str.zig");
 
 hWnd: ?os.HWND = null,
 dpr: f32 = 1,
@@ -74,22 +75,18 @@ pub fn create(
     comptime resps: Responders(Impl),
     width: f32,
     height: f32,
-) !void {
+) paw.Error!void {
     const window = resps.getCore(impl);
     if (window.hWnd != null)
         return paw.Error.Usage; // window already exists
 
-    const alloc = paw.allocator();
-    const title16 = try std.unicode.wtf8ToWtf16LeAllocZ(
-        alloc,
-        title,
-    );
-    defer alloc.free(title16);
+    const title16: Wtf16Str = try .initU8(title);
+    defer title16.deinit();
 
     const hWnd = CreateWindowExW(
         0,
         class.getClass(),
-        title16.ptr,
+        title16.ptr(),
         WS_OVERLAPPEDWINDOW | WS_VISIBLE,
         0,
         0,

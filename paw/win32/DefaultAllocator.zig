@@ -4,7 +4,9 @@ const use_dbga = std.debug.runtime_safety;
 
 dbga: if (use_dbga) std.heap.DebugAllocator(.{}) else void,
 
-pub fn init(self: *@This()) !void {
+// init() function is supposed to return an error union.
+// Since this one cannot fail, we use an empty error set.
+pub fn init(self: *@This()) error{}!void {
     if (use_dbga)
         self.dbga = .{};
 }

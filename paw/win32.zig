@@ -10,5 +10,5 @@ pub const Window = @import("win32/Window.zig");
 const std = @import("std");
 
 comptime {
-    std.testing.refAllDecls(Window);
+    std.testing.refAllDecls(@import("win32/Wtf16Str.zig"));
 }

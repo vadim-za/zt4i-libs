@@ -11,7 +11,7 @@ pub const wWinMain = z2.paw.wWinMain(
 const Window = struct {
     core: z2.paw.Window = .{},
 
-    fn create(self: *@This(), width: f32, height: f32) !void {
+    fn create(self: *@This(), width: f32, height: f32) z2.paw.Error!void {
         try z2.paw.Window.create(
             @This(),
             self,
