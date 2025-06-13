@@ -9,7 +9,3 @@ const platform = win32;
 // Conditional platform reexports
 pub const wWinMain =
     if (platform == win32) platform.wWinMain;
-
-test "Test" {
-    return error.Fail;
-}
