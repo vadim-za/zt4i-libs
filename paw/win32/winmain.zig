@@ -3,6 +3,7 @@ const os = std.os.windows;
 
 const DefaultAllocator = @import("DefaultAllocator.zig");
 const message_box = @import("message_box.zig");
+const dpi = @import("dpi.zig");
 
 const WWinMain = fn (
     hInst: ?os.HINSTANCE,
@@ -62,6 +63,9 @@ fn wWinMainImpl(
     defer allocator_object.deinit();
 
     global_allocator = allocator_object.allocator();
+
+    dpi.setupDpiAwareness() catch
+        return failStartup(app_title, "Could not set DPI awareness");
 
     mainFunc();
 

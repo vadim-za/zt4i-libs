@@ -50,8 +50,8 @@ fn toResult(os_result: c_int) !Result {
 // This function coverts strings to WTF16 at comptime
 // and therefore doesn't use allocator.
 pub fn showComptime(
-    comptime caption: [:0]const u8,
-    comptime text: [:0]const u8,
+    comptime caption: []const u8,
+    comptime text: []const u8,
     @"type": Type,
 ) paw.Error!Result {
     const text16 = std.unicode.wtf8ToWtf16LeStringLiteral(text);
