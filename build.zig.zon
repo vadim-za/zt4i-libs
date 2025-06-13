@@ -10,6 +10,7 @@
         "z2.zig",
         "README.md",
         ".gitignore",
+        "rsp",
         "demo",
         "paw",
     },
