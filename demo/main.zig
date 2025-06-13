@@ -7,5 +7,9 @@ pub const wWinMain = z2.paw.wWinMain(
 );
 
 fn pawMain() void {
-    @breakpoint();
+    _ = z2.paw.message_box.showComptime(
+        "Caption",
+        "Text",
+        .ok,
+    ) catch {};
 }
