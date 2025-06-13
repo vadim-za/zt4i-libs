@@ -8,7 +8,24 @@ pub const wWinMain = z2.paw.wWinMain(
     null,
 );
 
+const Window = struct {
+    core: z2.paw.Window = .{},
+
+    fn create(self: *@This(), width: f32, height: f32) !void {
+        try z2.paw.Window.create(
+            @This(),
+            self,
+            app_title,
+            .default,
+            width,
+            height,
+        );
+    }
+};
+
 fn pawMain() void {
+    var window: Window = .{};
+    window.create(800, 500) catch return;
     _ = z2.paw.showMessageBox(
         "Caption",
         "Text",

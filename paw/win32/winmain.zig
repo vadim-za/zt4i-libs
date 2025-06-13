@@ -4,6 +4,7 @@ const os = std.os.windows;
 const DefaultAllocator = @import("DefaultAllocator.zig");
 const message_box = @import("message_box.zig");
 const dpi = @import("dpi.zig");
+const window_class = @import("window/class.zig");
 
 const WWinMain = fn (
     hInst: ?os.HINSTANCE,
@@ -12,6 +13,7 @@ const WWinMain = fn (
     _: os.INT,
 ) os.INT;
 
+// See DefaultAllocator for the expectations to the Allocator type
 pub fn wWinMain(
     comptime app_title: []const u8,
     comptime mainFunc: fn () void,
@@ -66,6 +68,10 @@ fn wWinMainImpl(
 
     dpi.setupDpiAwareness() catch
         return failStartup(app_title, "Could not set DPI awareness");
+
+    window_class.registerClass() catch
+        return failStartup(app_title, "Could not register window class");
+    defer (window_class.unregisterClass() catch {});
 
     mainFunc();
 

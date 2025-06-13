@@ -21,7 +21,14 @@ pub const allocator = platform.allocator;
 pub const message_box = platform.message_box;
 pub const showMessageBox = message_box.show;
 pub const showComptimeMessageBox = message_box.showComptime;
+pub const Window = platform.Window;
 
 // Conditional platform reexports
 pub const wWinMain =
     if (platform == win32) platform.wWinMain;
+
+// --------------------------------------------------------------
+
+comptime {
+    std.testing.refAllDecls(platform);
+}

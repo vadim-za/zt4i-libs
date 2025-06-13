@@ -9,7 +9,7 @@
             //"command": "zig build",
             //"command": "zig build-exe -freference-trace @rsp/win/demo.rsp",
             "command": "zig build-exe @rsp/win/demo.rsp",
-            //"command": "zig test @rsp/win/demo.rsp",
+            //"command": "zig test @rsp/win/z2.rsp",
             //"command": "zig build-exe -O ReleaseFast @rsp/win/demo.rsp",
             "group": {
                 "kind": "build",
