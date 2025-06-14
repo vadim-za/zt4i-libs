@@ -106,7 +106,7 @@ pub fn create(
         0,
         class.getClass(),
         title16.ptr(),
-        WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+        WS_OVERLAPPEDWINDOW,
         0,
         0,
         0,
