@@ -10,12 +10,14 @@ const dpi = @import("dpi.zig");
 const Wtf16Str = @import("Wtf16Str.zig");
 const wndproc = @import("window/wndproc.zig");
 const d2d1 = @import("d2d1.zig");
+const graphics = @import("graphics.zig");
 
 const os = std.os.windows;
 
 hWnd: ?os.HWND = null,
 dpr: f32 = 1,
 render_target: ?*d2d1.IHwndRenderTarget = null,
+ddrs: graphics.Ddr.Collection = .{},
 
 // ----------------------------------------------------------------
 

@@ -1,11 +1,13 @@
 const std = @import("std");
-const os = std.os.windows;
+const builtin = @import("builtin");
 
 const paw = @import("../../paw.zig");
 const Window = @import("../Window.zig");
 const class = @import("class.zig");
 const Responders = @import("responders.zig").Responders;
 const util = @import("util.zig");
+
+const os = std.os.windows;
 
 // ----------------------------------------------------------------
 
@@ -73,6 +75,7 @@ fn Container(
 
             resps.onDestroy(impl);
             class.subclass(hWnd, null, null);
+            core.ddrs.ensureAllReleased();
             util.releaseRenderTarget(core);
             core.hWnd = null;
             return 0;
@@ -86,9 +89,15 @@ fn Container(
             defer _ = EndPaint(hWnd, &ps);
 
             const target = util.provideRenderTarget(core) catch {
-                if (std.debug.runtime_safety)
+                if (builtin.mode == .Debug)
                     @panic("Failed to acquire render target");
-                return 0;
+                return 0; // having no render target is fatal
+            };
+
+            core.ddrs.ensureAllCreated(target) catch {
+                if (builtin.mode == .Debug)
+                    @panic("Failed to create device-dependent resources");
+                // failing to create some ddrs might be okay to proceed
             };
 
             target.beginDraw();
