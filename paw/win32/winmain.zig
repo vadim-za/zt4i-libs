@@ -5,6 +5,7 @@ const DefaultAllocator = @import("DefaultAllocator.zig");
 const message_box = @import("message_box.zig");
 const dpi = @import("dpi.zig");
 const window_class = @import("window/class.zig");
+const dx = @import("dx.zig");
 
 const WWinMain = fn (
     hInst: ?os.HINSTANCE,
@@ -61,16 +62,20 @@ fn wWinMainImpl(
     const AllocatorObject = Allocator orelse DefaultAllocator;
     var allocator_object: AllocatorObject = undefined;
     allocator_object.init() catch
-        return failStartup(app_title, "Could not init allocator");
+        return failStartup(app_title, "initialize allocator");
     defer allocator_object.deinit();
 
     global_allocator = allocator_object.allocator();
 
     dpi.setupDpiAwareness() catch
-        return failStartup(app_title, "Could not set DPI awareness");
+        return failStartup(app_title, "set DPI awareness");
+
+    dx.init() catch
+        return failStartup(app_title, "initialize DirectX");
+    defer dx.deinit();
 
     window_class.registerClass() catch
-        return failStartup(app_title, "Could not register window class");
+        return failStartup(app_title, "register window class");
     defer (window_class.unregisterClass() catch {});
 
     mainFunc();
@@ -80,15 +85,17 @@ fn wWinMainImpl(
 
 fn failStartup(
     comptime app_title: []const u8,
-    comptime message: []const u8,
+    comptime what: []const u8,
 ) os.INT {
     _ = message_box.showComptime(
         app_title,
-        message,
+        "Could not " ++ what,
         .ok,
     ) catch {}; // we are already failing, ignore further errors
     return 0;
 }
+
+// --------------------------------------------------------------------------
 
 pub const test_startup = struct {
     pub fn init() void {
