@@ -11,6 +11,7 @@ const Responders = @import("responders.zig").Responders;
 const WM_DESTROY: os.UINT = 0x2;
 const WM_PAINT: os.UINT = 0xF;
 const WM_CLOSE: os.UINT = 0x10;
+const WM_DISPLAYCHANGE: os.UINT = 0x7E;
 const WM_KEYDOWN: os.UINT = 0x100;
 
 extern "user32" fn BeginPaint(hWnd: os.HWND, lpPaint: *PAINTSTRUCT) callconv(.winapi) ?os.HDC;
@@ -58,29 +59,36 @@ fn Container(
             _: os.WPARAM,
             _: os.LPARAM,
         ) ?os.LRESULT {
+            return switch (uMsg) {
+                WM_DESTROY => onDestroy(impl, hWnd),
+                WM_PAINT, WM_DISPLAYCHANGE => onPaint(impl, hWnd),
+                WM_CLOSE => onClose(impl),
+                else => null,
+            };
+        }
+
+        fn onDestroy(impl: *Impl, hWnd: os.HWND) ?os.LRESULT {
+            resps.onDestroy(impl);
+            class.subclass(hWnd, null, null);
+            return 0;
+        }
+
+        fn onPaint(impl: *Impl, hWnd: os.HWND) ?os.LRESULT {
+            _ = impl; // autofix
+            var ps: PAINTSTRUCT = undefined;
+            _ = BeginPaint(hWnd, &ps);
+            defer _ = EndPaint(hWnd, &ps);
+            return 0;
+        }
+
+        fn onClose(impl: *Impl) ?os.LRESULT {
             const core = resps.getCore(impl);
-            switch (uMsg) {
-                WM_DESTROY => {
-                    resps.onDestroy(impl);
-                    class.subclass(hWnd, null, null);
-                    return 0;
-                },
-                WM_PAINT => {
-                    var ps: PAINTSTRUCT = undefined;
-                    _ = BeginPaint(hWnd, &ps);
-                    defer _ = EndPaint(hWnd, &ps);
-                    return 0;
-                },
-                WM_CLOSE => {
-                    if (resps.onClose(impl))
-                        core.destroy() catch {
-                            if (std.debug.runtime_safety)
-                                @panic("Error destroying window");
-                        };
-                    return 0;
-                },
-                else => return null,
-            }
+            if (resps.onClose(impl))
+                core.destroy() catch {
+                    if (std.debug.runtime_safety)
+                        @panic("Error destroying window");
+                };
+            return 0;
         }
     };
 }
