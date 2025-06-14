@@ -1,7 +1,7 @@
 const std = @import("std");
 const paw = @import("../../paw.zig");
 const com = @import("../com.zig");
-const dx = @import("../dx.zig");
+const directx = @import("../directx.zig");
 const d2d1 = @import("../d2d1.zig");
 const dpi = @import("../dpi.zig");
 
@@ -39,7 +39,7 @@ pub fn provideRenderTarget(window: *Window) paw.Error!*d2d1.IRenderTarget {
         .width = @intCast(rc.right - rc.left),
         .height = @intCast(rc.bottom - rc.top),
     };
-    const render_target = try dx.getD2d1Factory().createHwndRenderTarget(
+    const render_target = try directx.getD2d1Factory().createHwndRenderTarget(
         &.{},
         &.{ .hwnd = hWnd, .pixelSize = size },
     );

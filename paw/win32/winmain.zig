@@ -5,7 +5,7 @@ const DefaultAllocator = @import("DefaultAllocator.zig");
 const message_box = @import("message_box.zig");
 const dpi = @import("dpi.zig");
 const window_class = @import("window/class.zig");
-const dx = @import("dx.zig");
+const directx = @import("directx.zig");
 
 const WWinMain = fn (
     hInst: ?os.HINSTANCE,
@@ -70,9 +70,9 @@ fn wWinMainImpl(
     dpi.setupDpiAwareness() catch
         return failStartup(app_title, "set DPI awareness");
 
-    dx.init() catch
+    directx.init() catch
         return failStartup(app_title, "initialize DirectX");
-    defer dx.deinit();
+    defer directx.deinit();
 
     window_class.registerClass() catch
         return failStartup(app_title, "register window class");
