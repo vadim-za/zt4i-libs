@@ -10,7 +10,6 @@ const dpi = @import("dpi.zig");
 const Wtf16Str = @import("Wtf16Str.zig");
 const wnd_proc = @import("window/wnd_proc.zig");
 const d2d1 = @import("d2d1.zig");
-const wnd_util = @import("window/util.zig");
 
 const os = std.os.windows;
 
