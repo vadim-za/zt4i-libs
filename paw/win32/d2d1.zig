@@ -18,6 +18,7 @@ pub const DEBUG_LEVEL = factory.DEBUG_LEVEL;
 pub const createFactory = factory.createFactory;
 
 const render_target = @import("d2d1/render_target.zig");
+pub const TAG = render_target.TAG;
 pub const RENDER_TARGET_TYPE = render_target.RENDER_TARGET_TYPE;
 pub const RENDER_TARGET_USAGE = render_target.RENDER_TARGET_USAGE;
 pub const FEATURE_LEVEL = render_target.FEATURE_LEVEL;

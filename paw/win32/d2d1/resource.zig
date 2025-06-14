@@ -11,6 +11,7 @@ pub const IResource = extern struct { // ID2D1Resource
 
     vtbl: *const Vtbl,
     pub const Vtbl = extern struct {
+        @".base": @".Base".Vtbl,
         GetFactory__: *const fn () callconv(.winapi) void,
     };
 };

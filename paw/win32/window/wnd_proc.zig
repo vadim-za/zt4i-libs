@@ -5,6 +5,7 @@ const paw = @import("../../paw.zig");
 const Window = @import("../Window.zig");
 const class = @import("class.zig");
 const Responders = @import("responders.zig").Responders;
+const util = @import("util.zig");
 
 // ----------------------------------------------------------------
 
@@ -68,26 +69,41 @@ fn Container(
         }
 
         fn onDestroy(impl: *Impl, hWnd: os.HWND) ?os.LRESULT {
+            const core = resps.getCore(impl);
+
             resps.onDestroy(impl);
             class.subclass(hWnd, null, null);
+            util.releaseRenderTarget(core);
+            core.hWnd = null;
             return 0;
         }
 
         fn onPaint(impl: *Impl, hWnd: os.HWND) ?os.LRESULT {
-            _ = impl; // autofix
+            const core = resps.getCore(impl);
+
             var ps: PAINTSTRUCT = undefined;
             _ = BeginPaint(hWnd, &ps);
             defer _ = EndPaint(hWnd, &ps);
+
+            const target = util.provideRenderTarget(core) catch {
+                if (std.debug.runtime_safety)
+                    @panic("Failed to acquire render target");
+                return 0;
+            };
+
+            target.beginDraw();
+            defer target.endDraw() catch |err| switch (err) {
+                error.RecreateTarget => util.releaseRenderTarget(core),
+                else => {},
+            };
             return 0;
         }
 
         fn onClose(impl: *Impl) ?os.LRESULT {
             const core = resps.getCore(impl);
+
             if (resps.onClose(impl))
-                core.destroy() catch {
-                    if (std.debug.runtime_safety)
-                        @panic("Error destroying window");
-                };
+                core.destroy();
             return 0;
         }
     };

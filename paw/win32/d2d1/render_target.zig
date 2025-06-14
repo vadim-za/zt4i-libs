@@ -4,6 +4,8 @@ const d2d1 = @import("../d2d1.zig");
 
 const os = std.os.windows;
 
+pub const TAG = u64;
+
 pub const RENDER_TARGET_TYPE = enum(u32) {
     DEFAULT = 0,
     SOFTWARE = 1,
@@ -100,8 +102,14 @@ pub const IRenderTarget = extern struct { // ID2D1RenderTarget
         PushAxisAlignedClip__: *const fn () callconv(.winapi) void,
         PopAxisAlignedClip__: *const fn () callconv(.winapi) void,
         Clear__: *const fn () callconv(.winapi) void,
-        BeginDraw__: *const fn () callconv(.winapi) void,
-        EndDraw__: *const fn () callconv(.winapi) void,
+        BeginDraw: *const fn (
+            self: *Self,
+        ) callconv(.winapi) void,
+        EndDraw: *const fn (
+            self: *Self,
+            tag1: ?*TAG,
+            tag2: ?*TAG,
+        ) callconv(.winapi) os.HRESULT,
         GetPixelFormat__: *const fn () callconv(.winapi) void,
         SetDpi__: *const fn () callconv(.winapi) void,
         GetDpi__: *const fn () callconv(.winapi) void,
@@ -112,6 +120,21 @@ pub const IRenderTarget = extern struct { // ID2D1RenderTarget
     };
 
     pub const as = com.cast;
+
+    pub fn beginDraw(self: *@This()) void {
+        self.vtbl.BeginDraw(self);
+    }
+
+    pub fn endDraw(self: *@This()) (com.Error || error{RecreateTarget})!void {
+        const hr = self.vtbl.EndDraw(self, null, null);
+        if (com.FAILED(hr)) return switch (hr) {
+            @as(
+                os.HRESULT,
+                @bitCast(@as(u32, 0x8899000C)),
+            ) => error.RecreateTarget,
+            else => com.Error.OsApi,
+        };
+    }
 };
 
 pub const IHwndRenderTarget = extern struct { // ID2D1HwndRenderTarget

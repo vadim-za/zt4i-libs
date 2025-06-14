@@ -20,15 +20,18 @@ pub fn build(b: *std.Build) void {
     });
     const run_z2_tests = b.addRunArtifact(z2_tests);
 
-    const demo = b.addExecutable(.{
-        .name = "demo",
-        .root_source_file = b.path("demo/main.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
-    demo.rc_includes = .none;
-    demo.root_module.addImport("z2", z2);
-    b.installArtifact(demo);
+    if (target.result.os.tag == .windows) {
+        const demo = b.addExecutable(.{
+            .name = "demo",
+            .root_source_file = b.path("demo/main.zig"),
+            .target = target,
+            .optimize = optimize,
+        });
+        demo.rc_includes = .none;
+        demo.root_module.addImport("z2", z2);
+        demo.subsystem = .Windows;
+        b.installArtifact(demo);
+    }
 
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_z2_tests.step);

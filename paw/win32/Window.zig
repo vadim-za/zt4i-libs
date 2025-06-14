@@ -1,5 +1,5 @@
 const std = @import("std");
-const os = std.os.windows;
+const builtin = @import("builtin");
 
 const paw = @import("../paw.zig");
 const class = @import("window/class.zig");
@@ -9,9 +9,14 @@ const thisInstance = @import("winmain.zig").thisInstance;
 const dpi = @import("dpi.zig");
 const Wtf16Str = @import("Wtf16Str.zig");
 const wnd_proc = @import("window/wnd_proc.zig");
+const d2d1 = @import("d2d1.zig");
+const wnd_util = @import("window/util.zig");
+
+const os = std.os.windows;
 
 hWnd: ?os.HWND = null,
 dpr: f32 = 1,
+render_target: ?*d2d1.IHwndRenderTarget = null,
 
 // ----------------------------------------------------------------
 
@@ -58,9 +63,27 @@ const SWP_NOSIZE: os.UINT = 1;
 const SWP_NOMOVE: os.UINT = 2;
 const SWP_NOZORDER: os.UINT = 4;
 
-extern "user32" fn DestroyWindow(
-    hWnd: os.HWND,
-) callconv(.winapi) os.BOOL;
+extern "user32" fn DestroyWindow(hWnd: os.HWND) callconv(.winapi) os.BOOL;
+extern "user32" fn UpdateWindow(os.HWND) callconv(.winapi) os.BOOL;
+extern "user32" fn ShowWindow(os.HWND, CmdShow) callconv(.winapi) os.BOOL;
+
+const CmdShow = enum(c_int) {
+    hide = 0,
+    normal = 1,
+    minimized = 2,
+    maximized = 3,
+    no_activate = 4,
+    show = 5,
+    minimize = 6,
+    show_min_no_activate = 7,
+    show_na = 8,
+    restore = 9,
+    show_default = 10,
+    force_minimize = 11,
+
+    const show_normal = .normal;
+    const maximize = .maximized;
+};
 
 // ----------------------------------------------------------------
 
@@ -94,9 +117,11 @@ pub fn create(
         null,
     ) orelse
         return paw.Error.OsApi;
+    window.hWnd = hWnd;
     errdefer _ = DestroyWindow(hWnd);
 
     const dpr = dpi.getDprFor(hWnd);
+    window.dpr = dpr;
 
     const physical_width: i32 =
         @intFromFloat(dpi.physicalFromLogical(dpr, width));
@@ -115,18 +140,17 @@ pub fn create(
 
     class.subclass(hWnd, wnd_proc.make(Impl, resps), impl);
 
-    window.* = .{
-        .hWnd = hWnd,
-        .dpr = dpr,
-    };
+    _ = ShowWindow(hWnd, .show);
+    _ = UpdateWindow(hWnd);
 }
 
-pub fn destroy(window: *@This()) paw.Error!void {
-    const h = window.hWnd orelse
-        return paw.Error.Usage; // window is null
+pub fn destroy(window: *@This()) void {
+    const hWnd = window.hWnd orelse return;
 
-    if (DestroyWindow(h) == 0)
-        return paw.Error.OsApi;
+    if (DestroyWindow(hWnd) == 0) {
+        if (builtin.mode == .Debug)
+            @panic("Window destruction error");
+    }
 }
 
 // --------------------------------------------------------------
