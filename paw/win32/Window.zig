@@ -8,7 +8,7 @@ const Responders = responders.Responders;
 const thisInstance = @import("winmain.zig").thisInstance;
 const dpi = @import("dpi.zig");
 const Wtf16Str = @import("Wtf16Str.zig");
-const wnd_proc = @import("window/wnd_proc.zig");
+const wndproc = @import("window/wndproc.zig");
 const d2d1 = @import("d2d1.zig");
 
 const os = std.os.windows;
@@ -137,7 +137,7 @@ pub fn create(
     ) == 0)
         return paw.Error.OsApi;
 
-    class.subclass(hWnd, wnd_proc.make(Impl, resps), impl);
+    class.subclass(hWnd, wndproc.make(Impl, resps), impl);
 
     _ = ShowWindow(hWnd, .show);
     _ = UpdateWindow(hWnd);
