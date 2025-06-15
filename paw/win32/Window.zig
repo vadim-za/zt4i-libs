@@ -5,19 +5,18 @@ const paw = @import("../paw.zig");
 const class = @import("window/class.zig");
 const responders = @import("window/responders.zig");
 const Responders = responders.Responders;
-const thisInstance = @import("winmain.zig").thisInstance;
+const winmain = @import("winmain.zig");
 const dpi = @import("dpi.zig");
 const Wtf16Str = @import("Wtf16Str.zig");
 const wndproc = @import("window/wndproc.zig");
 const d2d1 = @import("d2d1.zig");
-const graphics = @import("graphics.zig");
+const DeviceResources = @import("graphics/DeviceResources.zig");
 
 const os = std.os.windows;
 
 hWnd: ?os.HWND = null,
 dpr: f32 = 1,
-render_target: ?*d2d1.IHwndRenderTarget = null,
-ddrs: graphics.Ddr.Collection = .{},
+device_resources: DeviceResources = .{},
 
 // ----------------------------------------------------------------
 
@@ -88,6 +87,10 @@ const CmdShow = enum(c_int) {
 
 // ----------------------------------------------------------------
 
+pub fn deinit(self: *@This()) void {
+    self.device_resources.deinit();
+}
+
 pub fn create(
     Impl: type,
     impl: *Impl,
@@ -100,29 +103,10 @@ pub fn create(
     if (window.hWnd != null)
         return paw.Error.Usage; // window already exists
 
-    const title16: Wtf16Str = try .initU8(title);
-    defer title16.deinit();
-
-    const hWnd = CreateWindowExW(
-        0,
-        class.getClass(),
-        title16.ptr(),
-        WS_OVERLAPPEDWINDOW,
-        0,
-        0,
-        0,
-        0,
-        null,
-        null,
-        thisInstance(),
-        null,
-    ) orelse
-        return paw.Error.OsApi;
-    window.hWnd = hWnd;
+    const hWnd = try createWindowRaw(title);
     errdefer _ = DestroyWindow(hWnd);
 
     const dpr = dpi.getDprFor(hWnd);
-    window.dpr = dpr;
 
     const physical_width: i32 =
         @intFromFloat(dpi.physicalFromLogical(dpr, width));
@@ -140,18 +124,45 @@ pub fn create(
         return paw.Error.OsApi;
 
     class.subclass(hWnd, wndproc.make(Impl, resps), impl);
+    window.hWnd = hWnd;
+    window.dpr = dpr;
 
-    _ = ShowWindow(hWnd, .show);
-    _ = UpdateWindow(hWnd);
+    _ = ShowWindow(hWnd, .show); // return value does not matter
+    _ = UpdateWindow(hWnd); // ignore return value
 }
 
-pub fn destroy(window: *@This()) void {
-    const hWnd = window.hWnd orelse return;
+fn createWindowRaw(title: []const u8) paw.Error!os.HWND {
+    const title16: Wtf16Str = try .initU8(title);
+    defer title16.deinit();
 
-    if (DestroyWindow(hWnd) == 0) {
+    return CreateWindowExW(
+        0,
+        class.getClass(),
+        title16.ptr(),
+        WS_OVERLAPPEDWINDOW,
+        0,
+        0,
+        0,
+        0,
+        null,
+        null,
+        winmain.thisInstance(),
+        null,
+    ) orelse
+        paw.Error.OsApi;
+}
+
+pub fn destroy(self: *@This()) void {
+    const hWnd = self.hWnd orelse return;
+
+    if (DestroyWindow(hWnd) == os.FALSE) {
         if (builtin.mode == .Debug)
             @panic("Window destruction error");
     }
+}
+
+pub fn deviceResources(self: *@This()) *DeviceResources {
+    return &self.device_resources;
 }
 
 // --------------------------------------------------------------

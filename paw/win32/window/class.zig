@@ -2,7 +2,7 @@ const std = @import("std");
 const os = std.os.windows;
 
 const paw = @import("../../paw.zig");
-const thisInstance = @import("../winmain.zig").thisInstance;
+const winmain = @import("../winmain.zig");
 
 // ----------------------------------------------------------------
 
@@ -85,7 +85,7 @@ pub fn registerClass() paw.Error!void {
     const wndClass = WndClassW{
         .style = CS_DBLCKLS, // | CS_HREDRAW | CS_VREDRAW,
         .lpfnWndProc = defaultWindowProc,
-        .hInstance = thisInstance(),
+        .hInstance = winmain.thisInstance(),
         .hIcon = LoadIconW(
             null,
             @ptrFromInt(32512), // IDI_APPLICATION
@@ -110,7 +110,7 @@ pub fn unregisterClass() paw.Error!void {
 
     if (UnregisterClassW(
         @ptrFromInt(classAtom),
-        thisInstance(),
+        winmain.thisInstance(),
     ) == 0)
         return paw.Error.OsApi;
 

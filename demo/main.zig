@@ -11,6 +11,10 @@ pub const wWinMain = z2.paw.wWinMain(
 const Window = struct {
     core: z2.paw.Window = .{},
 
+    fn deinit(self: *@This()) void {
+        self.core.deinit();
+    }
+
     fn create(self: *@This(), width: f32, height: f32) z2.paw.Error!void {
         try z2.paw.Window.create(
             @This(),
@@ -29,6 +33,7 @@ const Window = struct {
 
 fn pawMain() void {
     var window: Window = .{};
+    defer window.deinit();
     window.create(800, 500) catch return;
     z2.paw.runMessageLoop();
     // _ = z2.paw.showMessageBox(

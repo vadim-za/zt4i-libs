@@ -62,7 +62,12 @@ pub const IRenderTarget = extern struct { // ID2D1RenderTarget
         CreateBitmapFromWicBitmap__: *const fn () callconv(.winapi) void,
         CreateSharedBitmap__: *const fn () callconv(.winapi) void,
         CreateBitmapBrush__: *const fn () callconv(.winapi) void,
-        CreateSolidColorBrush__: *const fn () callconv(.winapi) void,
+        CreateSolidColorBrush: *const fn (
+            self: *Self,
+            color: *const d2d1.COLOR_F,
+            brushProperties: *const d2d1.BRUSH_PROPERTIES,
+            solidColorBrush: *?*d2d1.ISolidColorBrush,
+        ) callconv(.winapi) os.HRESULT,
         CreateGradientStopCollection__: *const fn () callconv(.winapi) void,
         CreateLinearGradientBrush__: *const fn () callconv(.winapi) void,
         CreateRadialGradientBrush__: *const fn () callconv(.winapi) void,
@@ -134,6 +139,24 @@ pub const IRenderTarget = extern struct { // ID2D1RenderTarget
             ) => error.RecreateTarget,
             else => com.Error.OsApi,
         };
+    }
+
+    pub fn createSolidBrush(
+        self: *Self,
+        color: *const d2d1.COLOR_F,
+        brushProperties: *const d2d1.BRUSH_PROPERTIES,
+    ) !*d2d1.ISolidColorBrush {
+        var result: ?*d2d1.ISolidColorBrush = null;
+
+        if (com.FAILED(self.vtbl.CreateSolidColorBrush(
+            self,
+            color,
+            brushProperties,
+            &result,
+        )))
+            return com.Error.OsApi;
+
+        return result orelse com.Error.OsApi;
     }
 };
 

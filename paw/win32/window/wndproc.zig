@@ -5,7 +5,6 @@ const paw = @import("../../paw.zig");
 const Window = @import("../Window.zig");
 const class = @import("class.zig");
 const Responders = @import("responders.zig").Responders;
-const util = @import("util.zig");
 
 const os = std.os.windows;
 
@@ -51,6 +50,9 @@ fn Container(
         ) callconv(.winapi) os.LRESULT {
             const impl = class.getUserPtr(?*Impl, hWnd).?;
 
+            if (std.debug.runtime_safety)
+                std.debug.assert(resps.getCore(impl).hWnd == hWnd);
+
             return handleMsg(impl, hWnd, uMsg, wParam, lParam) orelse
                 class.defaultWindowProc(hWnd, uMsg, wParam, lParam);
         }
@@ -75,8 +77,7 @@ fn Container(
 
             resps.onDestroy(impl);
             class.subclass(hWnd, null, null);
-            core.ddrs.ensureAllReleased();
-            util.releaseRenderTarget(core);
+            core.device_resources.releaseRenderTarget();
             core.hWnd = null;
             return 0;
         }
@@ -88,21 +89,17 @@ fn Container(
             _ = BeginPaint(hWnd, &ps);
             defer _ = EndPaint(hWnd, &ps);
 
-            const target = util.provideRenderTarget(core) catch {
-                if (builtin.mode == .Debug)
-                    @panic("Failed to acquire render target");
-                return 0; // having no render target is fatal
-            };
-
-            core.ddrs.ensureAllCreated(target) catch {
-                if (builtin.mode == .Debug)
-                    @panic("Failed to create device-dependent resources");
-                // failing to create some ddrs might be okay to proceed
-            };
+            const target =
+                core.device_resources.provideRenderTargetFor(hWnd) catch {
+                    if (builtin.mode == .Debug)
+                        @panic("Failed to acquire render target");
+                    return 0; // having no render target is fatal
+                };
 
             target.beginDraw();
             defer target.endDraw() catch |err| switch (err) {
-                error.RecreateTarget => util.releaseRenderTarget(core),
+                error.RecreateTarget => core
+                    .device_resources.releaseRenderTarget(),
                 else => {},
             };
             return 0;

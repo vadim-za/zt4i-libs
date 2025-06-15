@@ -1,5 +1,10 @@
 const std = @import("std");
 
+const brush = @import("d2d1/brush.zig");
+pub const BRUSH_PROPERTIES = brush.BRUSH_PROPERTIES;
+pub const IBrush = brush.IBrush;
+pub const ISolidColorBrush = brush.ISolidColorBrush;
+
 const common = @import("d2d1/common.zig");
 pub const SIZE_U = common.SIZE_U;
 pub const POINT_2F = common.POINT_2F;
