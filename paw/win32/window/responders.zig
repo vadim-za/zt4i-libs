@@ -1,5 +1,6 @@
 const std = @import("std");
 const Window = @import("../Window.zig");
+const graphics = @import("../graphics.zig");
 
 pub fn Responders(Impl: type) type {
     const ImplDefaults = Defaults(Impl);
@@ -7,6 +8,10 @@ pub fn Responders(Impl: type) type {
         getCore: *const fn (impl: *Impl) *Window,
         onClose: *const fn (impl: *Impl) bool = override("onClose"),
         onDestroy: *const fn (impl: *Impl) void = override("onDestroy"),
+        onPaint: *const fn (
+            impl: *Impl,
+            dc: *graphics.DrawContext,
+        ) void = override("onPaint"),
 
         pub const default = @This(){
             .getCore = if (@hasDecl(Impl, "getCore"))
@@ -42,6 +47,10 @@ fn Defaults(Impl: type) type {
         }
         fn onDestroy(impl: *Impl) void {
             _ = impl;
+        }
+        fn onPaint(impl: *Impl, dc: *graphics.DrawContext) void {
+            _ = impl;
+            _ = dc;
         }
     };
 }

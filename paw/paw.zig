@@ -32,7 +32,10 @@ pub const Window = platform.Window;
 
 pub const graphics = platform.graphics;
 pub const DeviceResources = graphics.DeviceResources;
+pub const DrawContext = graphics.DrawContext;
 pub const Color = graphics.Color;
+pub const Point = graphics.Point;
+pub const Rectangle = graphics.Rectangle;
 pub const BrushRef = graphics.BrushRef;
 pub const SolidBrush = graphics.SolidBrush;
 

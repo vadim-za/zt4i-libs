@@ -5,6 +5,7 @@ const paw = @import("../../paw.zig");
 const Window = @import("../Window.zig");
 const class = @import("class.zig");
 const Responders = @import("responders.zig").Responders;
+const graphics = @import("../graphics.zig");
 
 const os = std.os.windows;
 
@@ -102,6 +103,12 @@ fn Container(
                     .device_resources.releaseRenderTarget(),
                 else => {},
             };
+
+            var dc = graphics.DrawContext{
+                .target = target,
+                .origin = .zero,
+            };
+            resps.onPaint(impl, &dc);
             return 0;
         }
 

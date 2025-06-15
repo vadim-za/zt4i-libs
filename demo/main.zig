@@ -42,6 +42,10 @@ const Window = struct {
     pub fn onDestroy(_: *@This()) void {
         z2.paw.stopMessageLoop();
     }
+
+    pub fn onPaint(_: *@This(), dc: *z2.paw.DrawContext) void {
+        dc.clear(.initRgb(0, 0, 1));
+    }
 };
 
 fn pawMain() void {

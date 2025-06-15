@@ -106,7 +106,10 @@ pub const IRenderTarget = extern struct { // ID2D1RenderTarget
         RestoreDrawingState__: *const fn () callconv(.winapi) void,
         PushAxisAlignedClip__: *const fn () callconv(.winapi) void,
         PopAxisAlignedClip__: *const fn () callconv(.winapi) void,
-        Clear__: *const fn () callconv(.winapi) void,
+        Clear: *const fn (
+            self: *Self,
+            clearColor: ?*const d2d1.COLOR_F,
+        ) callconv(.winapi) void,
         BeginDraw: *const fn (
             self: *Self,
         ) callconv(.winapi) void,
@@ -156,6 +159,10 @@ pub const IRenderTarget = extern struct { // ID2D1RenderTarget
             return com.Error.OsApi;
 
         return result orelse com.Error.OsApi;
+    }
+
+    pub fn clear(self: *Self, color: *const d2d1.COLOR_F) void {
+        self.vtbl.Clear(self, color);
     }
 };
 

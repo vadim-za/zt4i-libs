@@ -3,5 +3,9 @@ pub const SolidBrush = @import("graphics/SolidBrush.zig");
 
 pub const DeviceResources = @import("graphics/DeviceResources.zig");
 
+pub const DrawContext = @import("graphics/DrawContext.zig");
+
 const types = @import("graphics/types.zig");
 pub const Color = types.Color;
+pub const Point = types.Point;
+pub const Rectangle = types.Rectangle;
