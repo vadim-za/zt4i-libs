@@ -21,6 +21,17 @@ pub fn addResource(self: *@This(), ptr_to_derived_resource: anytype) void {
     const resource: *DeviceResource =
         &ptr_to_derived_resource.*.device_resource;
 
+    self.addDeviceResource(resource);
+}
+
+pub fn removeResource(self: *@This(), ptr_to_derived_resource: anytype) void {
+    const resource: *DeviceResource =
+        &ptr_to_derived_resource.*.device_resource;
+
+    self.removeDeviceResource(resource);
+}
+
+fn addDeviceResource(self: *@This(), resource: *DeviceResource) void {
     if (resource.owner != null) {
         std.debug.assert(false);
         return;
@@ -28,32 +39,46 @@ pub fn addResource(self: *@This(), ptr_to_derived_resource: anytype) void {
 
     std.debug.assert(!resource.is_created);
 
-    self.uncreated.append(resource.node);
+    self.uncreated.append(&resource.node);
     resource.owner = self;
     resource.is_created = false;
 
     if (self.render_target) |target|
-        self.createResource(resource, target);
+        self.createDeviceResource(
+            resource,
+            target.as(d2d1.IRenderTarget),
+        );
 }
 
-pub fn removeResource(self: *@This(), ptr_to_derived_resource: anytype) void {
-    const resource: *DeviceResource =
-        &ptr_to_derived_resource.*.device_resource;
-
+fn removeDeviceResource(
+    self: *@This(),
+    resource: *DeviceResource,
+) void {
     if (resource.owner != self) {
         std.debug.assert(false);
         return;
     }
 
     if (resource.is_created)
-        self.releaseResource(resource);
+        self.releaseDeviceResource(resource);
 
     std.debug.assert(!resource.is_created);
-    self.uncreated.remove(resource);
+    self.uncreated.remove(&resource.node);
     resource.owner = null;
 }
 
-fn createResource(
+pub fn removeAllResources(self: *@This()) void {
+    while (self.created.last) |node| {
+        const resource: *DeviceResource = .fromListNode(node);
+        self.removeDeviceResource(resource);
+    }
+    while (self.uncreated.last) |node| {
+        const resource: *DeviceResource = .fromListNode(node);
+        self.removeDeviceResource(resource);
+    }
+}
+
+fn createDeviceResource(
     self: *@This(),
     resource: *DeviceResource,
     render_target: *d2d1.IRenderTarget,
@@ -71,7 +96,7 @@ fn createResource(
     resource.is_created = true;
 }
 
-fn releaseResource(
+fn releaseDeviceResource(
     self: *@This(),
     resource: *DeviceResource,
 ) void {
@@ -113,7 +138,7 @@ pub fn provideRenderTargetFor(
     var node = self.uncreated.first;
     while (node) |n| : (node = n.next) {
         const resource: *DeviceResource = .fromListNode(n);
-        self.createResource(resource, render_target);
+        self.createDeviceResource(resource, render_target);
     }
     std.debug.assert(self.uncreated.first == null);
 
@@ -131,7 +156,7 @@ pub fn releaseRenderTarget(
     var node = self.created.first;
     while (node) |n| : (node = n.next) {
         const resource: *DeviceResource = .fromListNode(n);
-        self.releaseResource(resource);
+        self.releaseDeviceResource(resource);
     }
     std.debug.assert(self.created.first == null);
 }

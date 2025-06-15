@@ -65,7 +65,7 @@ pub const IRenderTarget = extern struct { // ID2D1RenderTarget
         CreateSolidColorBrush: *const fn (
             self: *Self,
             color: *const d2d1.COLOR_F,
-            brushProperties: *const d2d1.BRUSH_PROPERTIES,
+            brushProperties: ?*const d2d1.BRUSH_PROPERTIES,
             solidColorBrush: *?*d2d1.ISolidColorBrush,
         ) callconv(.winapi) os.HRESULT,
         CreateGradientStopCollection__: *const fn () callconv(.winapi) void,
@@ -141,17 +141,16 @@ pub const IRenderTarget = extern struct { // ID2D1RenderTarget
         };
     }
 
-    pub fn createSolidBrush(
+    pub fn createSolidColorBrush(
         self: *Self,
         color: *const d2d1.COLOR_F,
-        brushProperties: *const d2d1.BRUSH_PROPERTIES,
     ) !*d2d1.ISolidColorBrush {
         var result: ?*d2d1.ISolidColorBrush = null;
 
         if (com.FAILED(self.vtbl.CreateSolidColorBrush(
             self,
             color,
-            brushProperties,
+            null,
             &result,
         )))
             return com.Error.OsApi;

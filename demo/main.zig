@@ -10,8 +10,21 @@ pub const wWinMain = z2.paw.wWinMain(
 
 const Window = struct {
     core: z2.paw.Window = .{},
+    dr: struct {
+        gray_brush: z2.paw.SolidBrush = .init(.initGray(0.5)),
+    } = .{},
+
+    pub fn init(self: *@This()) void {
+        self.* = .{};
+
+        const dr = self.core.deviceResources();
+        dr.addResource(&self.dr.gray_brush);
+    }
 
     fn deinit(self: *@This()) void {
+        const dr = self.core.deviceResources();
+        dr.removeAllResources();
+
         self.core.deinit();
     }
 
@@ -32,7 +45,8 @@ const Window = struct {
 };
 
 fn pawMain() void {
-    var window: Window = .{};
+    var window: Window = undefined;
+    window.init();
     defer window.deinit();
     window.create(800, 500) catch return;
     z2.paw.runMessageLoop();

@@ -31,8 +31,9 @@ pub const virtuals = struct {
         ));
 
         if (self.ibrush == null) {
-            self.ibrush = target.createSolidColorBrush(self.color.toD2d()) catch
-                return DeviceResource.CreationError.Failed;
+            self.ibrush =
+                target.createSolidColorBrush(&self.color.toD2d()) catch
+                    return DeviceResource.CreationError.Failed;
         } else std.debug.assert(false);
     }
 
