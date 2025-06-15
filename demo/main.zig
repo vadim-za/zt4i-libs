@@ -11,14 +11,14 @@ pub const wWinMain = z2.paw.wWinMain(
 const Window = struct {
     core: z2.paw.Window = .{},
     dr: struct {
-        gray_brush: z2.paw.SolidBrush = .init(.initGray(0.5)),
+        red_brush: z2.paw.SolidBrush = .init(.initRgb(1, 0, 0)),
     } = .{},
 
     pub fn init(self: *@This()) void {
         self.* = .{};
 
         const dr = self.core.deviceResources();
-        dr.addResource(&self.dr.gray_brush);
+        dr.addResource(&self.dr.red_brush);
     }
 
     fn deinit(self: *@This()) void {
@@ -43,8 +43,18 @@ const Window = struct {
         z2.paw.stopMessageLoop();
     }
 
-    pub fn onPaint(_: *@This(), dc: *z2.paw.DrawContext) void {
+    pub fn onPaint(self: *@This(), dc: *z2.paw.DrawContext) void {
         dc.clear(.initRgb(0, 0, 1));
+        dc.fillRectangle(
+            &.{ .left = 100, .right = 200, .top = 100, .bottom = 150 },
+            self.dr.red_brush.ref(),
+        );
+        dc.drawLine(
+            &.{ .x = 200, .y = 200 },
+            &.{ .x = 300, .y = 300 },
+            self.dr.red_brush.ref(),
+            2,
+        );
     }
 };
 

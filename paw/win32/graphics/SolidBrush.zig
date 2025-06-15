@@ -17,7 +17,7 @@ pub fn init(color: Color) @This() {
 }
 
 pub fn ref(self: *const @This()) BrushRef {
-    return .init(self.ibrush.as(d2d1.IBrush));
+    return .init(self.ibrush.?.as(d2d1.IBrush));
 }
 
 pub const virtuals = struct {

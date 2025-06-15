@@ -10,6 +10,29 @@ const Rectangle = types.Rectangle;
 target: *d2d1.IRenderTarget,
 origin: Point,
 
+pub fn drawLine(
+    self: *const @This(),
+    pt1: *const Point,
+    pt2: *const Point,
+    brush: BrushRef,
+    width: f32,
+) void {
+    self.target.drawLine(
+        &pt1.toD2d(),
+        &pt2.toD2d(),
+        brush.ibrush,
+        width,
+    );
+}
+
+pub fn fillRectangle(
+    self: *const @This(),
+    rect: *const Rectangle,
+    brush: BrushRef,
+) void {
+    self.target.fillRectangle(&rect.toD2d(), brush.ibrush);
+}
+
 pub fn clear(self: *const @This(), color: Color) void {
     self.target.clear(&color.toD2d());
 }

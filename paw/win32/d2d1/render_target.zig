@@ -74,9 +74,20 @@ pub const IRenderTarget = extern struct { // ID2D1RenderTarget
         CreateCompatibleRenderTarget__: *const fn () callconv(.winapi) void,
         CreateLayer__: *const fn () callconv(.winapi) void,
         CreateMesh__: *const fn () callconv(.winapi) void,
-        DrawLine__: *const fn () callconv(.winapi) void,
+        DrawLine: *const fn (
+            self: *Self,
+            point0: d2d1.POINT_2F,
+            point1: d2d1.POINT_2F,
+            brush: *d2d1.IBrush,
+            strokeWidth: os.FLOAT,
+            strokeStyle: ?*anyopaque, // don't bother with exact type for now
+        ) callconv(.winapi) void,
         DrawRectangle__: *const fn () callconv(.winapi) void,
-        FillRectangle__: *const fn () callconv(.winapi) void,
+        FillRectangle: *const fn (
+            self: *Self,
+            rect: *const d2d1.RECT_F,
+            brush: *d2d1.IBrush,
+        ) callconv(.winapi) void,
         DrawRoundedRectangle__: *const fn () callconv(.winapi) void,
         FillRoundedRectangle__: *const fn () callconv(.winapi) void,
         DrawEllipse__: *const fn () callconv(.winapi) void,
@@ -163,6 +174,24 @@ pub const IRenderTarget = extern struct { // ID2D1RenderTarget
 
     pub fn clear(self: *Self, color: *const d2d1.COLOR_F) void {
         self.vtbl.Clear(self, color);
+    }
+
+    pub fn drawLine(
+        self: *Self,
+        point0: *const d2d1.POINT_2F,
+        point1: *const d2d1.POINT_2F,
+        brush: *d2d1.IBrush,
+        strokeWidth: os.FLOAT,
+    ) void {
+        self.vtbl.DrawLine(self, point0.*, point1.*, brush, strokeWidth, null);
+    }
+
+    pub fn fillRectangle(
+        self: *Self,
+        rect: *const d2d1.RECT_F,
+        brush: *d2d1.IBrush,
+    ) void {
+        self.vtbl.FillRectangle(self, rect, brush);
     }
 };
 
