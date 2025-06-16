@@ -17,13 +17,11 @@ const Window = struct {
     pub fn init(self: *@This()) void {
         self.* = .{};
 
-        const dr = self.core.deviceResources();
-        dr.addResource(&self.dr.red_brush);
+        self.core.addDeviceResource(&self.dr.red_brush);
     }
 
     fn deinit(self: *@This()) void {
-        const dr = self.core.deviceResources();
-        dr.removeAllResources();
+        self.core.removeAllDeviceResources();
 
         self.core.deinit();
     }

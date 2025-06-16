@@ -161,9 +161,10 @@ pub fn destroy(self: *@This()) void {
     }
 }
 
-pub fn deviceResources(self: *@This()) *DeviceResources {
-    return &self.device_resources;
-}
+const dr_methods = @import("window//device_resource_methods.zig");
+pub const addDeviceResource = dr_methods.addDeviceResource;
+pub const removeDeviceResource = dr_methods.removeDeviceResource;
+pub const removeAllDeviceResources = dr_methods.removeAllDeviceResources;
 
 // --------------------------------------------------------------
 

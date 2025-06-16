@@ -111,7 +111,7 @@ fn releaseDeviceResource(
 
 extern "user32" fn GetClientRect(os.HWND, *os.RECT) callconv(.winapi) os.BOOL;
 
-pub fn provideRenderTargetFor(
+pub fn provideResourcesFor(
     self: *@This(),
     hWnd: os.HWND,
 ) paw.Error!*d2d1.IRenderTarget {
@@ -145,7 +145,7 @@ pub fn provideRenderTargetFor(
     return render_target;
 }
 
-pub fn releaseRenderTarget(
+pub fn releaseResources(
     self: *@This(),
 ) void {
     const render_target = self.render_target orelse return;

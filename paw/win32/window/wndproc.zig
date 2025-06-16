@@ -78,7 +78,7 @@ fn Container(
 
             resps.onDestroy(impl);
             class.subclass(hWnd, null, null);
-            core.device_resources.releaseRenderTarget();
+            core.device_resources.releaseResources();
             core.hWnd = null;
             return 0;
         }
@@ -91,16 +91,16 @@ fn Container(
             defer _ = EndPaint(hWnd, &ps);
 
             const target =
-                core.device_resources.provideRenderTargetFor(hWnd) catch {
+                core.device_resources.provideResourcesFor(hWnd) catch {
                     if (builtin.mode == .Debug)
-                        @panic("Failed to acquire render target");
-                    return 0; // having no render target is fatal
+                        @panic("Failed to create window device resources");
+                    return 0; // having no render target or resources is fatal
                 };
 
             target.beginDraw();
             defer target.endDraw() catch |err| switch (err) {
                 error.RecreateTarget => core
-                    .device_resources.releaseRenderTarget(),
+                    .device_resources.releaseResources(),
                 else => {},
             };
 
