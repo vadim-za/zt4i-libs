@@ -88,6 +88,7 @@ fn failStartup(
     comptime what: []const u8,
 ) os.INT {
     _ = message_box.showComptime(
+        null,
         app_title,
         "Could not " ++ what,
         .ok,

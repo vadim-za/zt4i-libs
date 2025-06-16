@@ -51,6 +51,7 @@ fn toResult(os_result: c_int) paw.Error!Result {
 // This function coverts strings to WTF16 at comptime
 // and therefore doesn't use allocator.
 pub fn showComptime(
+    parent_window: ?*paw.Window,
     comptime caption: []const u8,
     comptime text: []const u8,
     @"type": Type,
@@ -59,7 +60,7 @@ pub fn showComptime(
     const caption16 = std.unicode.wtf8ToWtf16LeStringLiteral(caption);
 
     const os_result = MessageBoxW(
-        null,
+        if (parent_window) |window| window.hWnd else null,
         text16.ptr,
         caption16.ptr,
         @intFromEnum(@"type"),
@@ -70,6 +71,7 @@ pub fn showComptime(
 
 // This function uses paw.allocator() to convert strings to WTF16
 pub fn show(
+    parent_window: ?*paw.Window,
     caption: [:0]const u8,
     text: [:0]const u8,
     @"type": Type,
@@ -81,7 +83,7 @@ pub fn show(
     defer caption16.deinit();
 
     const os_result = MessageBoxW(
-        null,
+        if (parent_window) |window| window.hWnd else null,
         text16.ptr(),
         caption16.ptr(),
         @intFromEnum(@"type"),

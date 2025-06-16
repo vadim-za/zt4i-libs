@@ -63,10 +63,11 @@ fn pawMain() void {
     window.init();
     defer window.deinit();
     window.create(800, 500) catch return;
-    z2.paw.runMessageLoop();
     // _ = z2.paw.showMessageBox(
+    //     &window.core,
     //     "Caption",
     //     "Text",
     //     .ok,
     // ) catch {};
+    z2.paw.runMessageLoop();
 }
