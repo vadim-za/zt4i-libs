@@ -45,9 +45,9 @@ pub const HWND_RENDER_TARGET_PROPERTIES = extern struct {
     presentOptions: PRESENT_OPTIONS = .NONE,
 };
 
-pub const WINDOW_STATE = enum(u32) {
-    NONE = 0,
-    OCCLUDED = 1,
+pub const WINDOW_STATE = packed struct(u32) {
+    OCCLUDED: bool,
+    _: u31,
 };
 
 pub const IRenderTarget = extern struct { // ID2D1RenderTarget
@@ -156,7 +156,7 @@ pub const IRenderTarget = extern struct { // ID2D1RenderTarget
     }
 
     pub fn createSolidColorBrush(
-        self: *Self,
+        self: *@This(),
         color: *const d2d1.COLOR_F,
     ) com.Error!*d2d1.ISolidColorBrush {
         var result: ?*d2d1.ISolidColorBrush = null;
@@ -172,12 +172,12 @@ pub const IRenderTarget = extern struct { // ID2D1RenderTarget
         return result orelse com.Error.OsApi;
     }
 
-    pub fn clear(self: *Self, color: *const d2d1.COLOR_F) void {
+    pub fn clear(self: *@This(), color: *const d2d1.COLOR_F) void {
         self.vtbl.Clear(self, color);
     }
 
     pub fn drawLine(
-        self: *Self,
+        self: *@This(),
         point0: *const d2d1.POINT_2F,
         point1: *const d2d1.POINT_2F,
         brush: *d2d1.IBrush,
@@ -187,7 +187,7 @@ pub const IRenderTarget = extern struct { // ID2D1RenderTarget
     }
 
     pub fn fillRectangle(
-        self: *Self,
+        self: *@This(),
         rect: *const d2d1.RECT_F,
         brush: *d2d1.IBrush,
     ) void {
@@ -203,10 +203,16 @@ pub const IHwndRenderTarget = extern struct { // ID2D1HwndRenderTarget
     vtbl: *const Vtbl,
     pub const Vtbl = extern struct {
         @".base": @".Base".Vtbl,
-        CheckWindowState__: *const fn () callconv(.winapi) void,
+        CheckWindowState: *const fn (
+            self: *Self,
+        ) callconv(.winapi) WINDOW_STATE,
         Resize__: *const fn () callconv(.winapi) void,
         GetHwnd__: *const fn () callconv(.winapi) void,
     };
 
     pub const as = com.cast;
+
+    pub fn checkWindowState(self: *@This()) WINDOW_STATE {
+        return self.vtbl.CheckWindowState(self);
+    }
 };

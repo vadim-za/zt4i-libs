@@ -43,10 +43,10 @@ fn addDeviceResource(self: *@This(), resource: *DeviceResource) void {
     resource.owner = self;
     resource.is_created = false;
 
-    if (self.render_target) |target| {
+    if (self.render_target) |render_target| {
         self.createDeviceResource(
             resource,
-            target.as(d2d1.IRenderTarget),
+            render_target.as(d2d1.IRenderTarget),
         ) catch {}; // ignore error, will try to create again on next paint
     }
 }
@@ -111,9 +111,9 @@ extern "user32" fn GetClientRect(os.HWND, *os.RECT) callconv(.winapi) os.BOOL;
 fn provideRenderTargetFor(
     self: *@This(),
     hWnd: os.HWND,
-) paw.Error!*d2d1.IRenderTarget {
-    if (self.render_target) |target|
-        return target.as(d2d1.IRenderTarget);
+) paw.Error!*d2d1.IHwndRenderTarget {
+    if (self.render_target) |render_target|
+        return render_target;
 
     var rc: os.RECT = undefined;
     if (GetClientRect(hWnd, &rc) == os.FALSE)
@@ -130,14 +130,15 @@ fn provideRenderTargetFor(
     );
 
     self.render_target = render_target;
-    return render_target.as(d2d1.IRenderTarget);
+    return render_target;
 }
 
 pub fn provideResourcesFor(
     self: *@This(),
     hWnd: os.HWND,
-) paw.Error!*d2d1.IRenderTarget {
-    const target = try self.provideRenderTargetFor(hWnd);
+) paw.Error!*d2d1.IHwndRenderTarget {
+    const hwnd_target = try self.provideRenderTargetFor(hWnd);
+    const target = hwnd_target.as(d2d1.IRenderTarget);
 
     var node = self.uncreated.first;
     while (node) |n| : (node = n.next) {
@@ -146,7 +147,7 @@ pub fn provideResourcesFor(
     }
     std.debug.assert(self.uncreated.first == null);
 
-    return target;
+    return hwnd_target;
 }
 
 pub fn releaseResources(

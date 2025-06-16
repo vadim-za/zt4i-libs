@@ -5,6 +5,7 @@ const paw = @import("../../paw.zig");
 const Window = @import("../Window.zig");
 const class = @import("class.zig");
 const Responders = @import("responders.zig").Responders;
+const d2d1 = @import("../d2d1.zig");
 const graphics = @import("../graphics.zig");
 
 const os = std.os.windows;
@@ -90,13 +91,17 @@ fn Container(
             _ = BeginPaint(hWnd, &ps);
             defer _ = EndPaint(hWnd, &ps);
 
-            const target =
+            const hwnd_target =
                 core.device_resources.provideResourcesFor(hWnd) catch {
                     if (builtin.mode == .Debug)
                         @panic("Failed to create window device resources");
                     return 0; // having no render target or resources is fatal
                 };
 
+            if (hwnd_target.checkWindowState().OCCLUDED)
+                return 0;
+
+            const target = hwnd_target.as(d2d1.IRenderTarget);
             target.beginDraw();
             defer target.endDraw() catch |err| switch (err) {
                 error.RecreateTarget => core
