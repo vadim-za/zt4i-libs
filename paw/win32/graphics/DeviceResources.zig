@@ -43,11 +43,12 @@ fn addDeviceResource(self: *@This(), resource: *DeviceResource) void {
     resource.owner = self;
     resource.is_created = false;
 
-    if (self.render_target) |target|
+    if (self.render_target) |target| {
         self.createDeviceResource(
             resource,
             target.as(d2d1.IRenderTarget),
-        );
+        ) catch {}; // ignore error, will try to create again on next paint
+    }
 }
 
 fn removeDeviceResource(
@@ -82,15 +83,11 @@ fn createDeviceResource(
     self: *@This(),
     resource: *DeviceResource,
     render_target: *d2d1.IRenderTarget,
-) void {
+) paw.Error!void {
     std.debug.assert(resource.owner == self);
     std.debug.assert(!resource.is_created);
 
-    resource.create(render_target) catch {
-        if (builtin.mode == .Debug)
-            @panic("Failed to create DD Resource");
-        return;
-    };
+    try resource.create(render_target);
     self.uncreated.remove(&resource.node);
     self.created.append(&resource.node);
     resource.is_created = true;
@@ -111,7 +108,7 @@ fn releaseDeviceResource(
 
 extern "user32" fn GetClientRect(os.HWND, *os.RECT) callconv(.winapi) os.BOOL;
 
-pub fn provideResourcesFor(
+fn provideRenderTargetFor(
     self: *@This(),
     hWnd: os.HWND,
 ) paw.Error!*d2d1.IRenderTarget {
@@ -127,31 +124,38 @@ pub fn provideResourcesFor(
         .height = @intCast(rc.bottom - rc.top),
     };
 
-    const hwnd_render_target = try directx.getD2d1Factory().createHwndRenderTarget(
+    const render_target = try directx.getD2d1Factory().createHwndRenderTarget(
         &.{},
         &.{ .hwnd = hWnd, .pixelSize = size },
     );
 
-    self.render_target = hwnd_render_target;
-    const render_target = hwnd_render_target.as(d2d1.IRenderTarget);
+    self.render_target = render_target;
+    return render_target.as(d2d1.IRenderTarget);
+}
+
+pub fn provideResourcesFor(
+    self: *@This(),
+    hWnd: os.HWND,
+) paw.Error!*d2d1.IRenderTarget {
+    const target = try self.provideRenderTargetFor(hWnd);
 
     var node = self.uncreated.first;
     while (node) |n| : (node = n.next) {
         const resource: *DeviceResource = .fromListNode(n);
-        self.createDeviceResource(resource, render_target);
+        try self.createDeviceResource(resource, target);
     }
     std.debug.assert(self.uncreated.first == null);
 
-    return render_target;
+    return target;
 }
 
 pub fn releaseResources(
     self: *@This(),
 ) void {
-    const render_target = self.render_target orelse return;
-
-    com.release(render_target);
-    self.render_target = null;
+    if (self.render_target) |render_target| {
+        com.release(render_target);
+        self.render_target = null;
+    }
 
     var node = self.created.first;
     while (node) |n| : (node = n.next) {

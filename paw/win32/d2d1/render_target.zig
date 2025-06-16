@@ -158,7 +158,7 @@ pub const IRenderTarget = extern struct { // ID2D1RenderTarget
     pub fn createSolidColorBrush(
         self: *Self,
         color: *const d2d1.COLOR_F,
-    ) !*d2d1.ISolidColorBrush {
+    ) com.Error!*d2d1.ISolidColorBrush {
         var result: ?*d2d1.ISolidColorBrush = null;
 
         if (com.FAILED(self.vtbl.CreateSolidColorBrush(

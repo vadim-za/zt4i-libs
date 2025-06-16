@@ -78,7 +78,10 @@ extern "d2d1" fn D2D1CreateFactory(
     ppIFactory: *?*anyopaque,
 ) callconv(.winapi) os.HRESULT;
 
-pub fn createFactory(IType: type, factoryType: FACTORY_TYPE) !*IType {
+pub fn createFactory(
+    IType: type,
+    factoryType: FACTORY_TYPE,
+) com.Error!*IType {
     var result: ?*IType = null;
 
     if (com.FAILED(D2D1CreateFactory(

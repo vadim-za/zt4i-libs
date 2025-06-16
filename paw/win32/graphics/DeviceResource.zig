@@ -3,6 +3,7 @@
 const std = @import("std");
 const d2d1 = @import("../d2d1.zig");
 const DeviceResources = @import("DeviceResources.zig");
+const paw = @import("../../paw.zig");
 
 pub const Self = @This();
 
@@ -11,13 +12,11 @@ node: List.Node = .{ .data = .{} },
 owner: ?*const DeviceResources = null,
 is_created: bool = false,
 
-pub const CreationError = error{Failed};
-
 pub const Vtbl = struct {
     create: *const fn (
         self: *Self,
         target: *d2d1.IRenderTarget,
-    ) CreationError!void,
+    ) paw.Error!void,
     release: *const fn (
         self: *Self,
     ) void,
@@ -36,7 +35,7 @@ pub fn init(Type: type) @This() {
 pub fn create(
     self: *Self,
     target: *d2d1.IRenderTarget,
-) CreationError!void {
+) paw.Error!void {
     return self.vtbl.create(self, target);
 }
 

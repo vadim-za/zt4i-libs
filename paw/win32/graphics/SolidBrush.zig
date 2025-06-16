@@ -1,4 +1,5 @@
 const std = @import("std");
+const paw = @import("../../paw.zig");
 const com = @import("../com.zig");
 const d2d1 = @import("../d2d1.zig");
 
@@ -24,7 +25,7 @@ pub const virtuals = struct {
     pub fn create(
         device_resource: *DeviceResource,
         target: *d2d1.IRenderTarget,
-    ) DeviceResource.CreationError!void {
+    ) paw.Error!void {
         const self: *Self = @alignCast(@fieldParentPtr(
             "device_resource",
             device_resource,
@@ -32,8 +33,7 @@ pub const virtuals = struct {
 
         if (self.ibrush == null) {
             self.ibrush =
-                target.createSolidColorBrush(&self.color.toD2d()) catch
-                    return DeviceResource.CreationError.Failed;
+                try target.createSolidColorBrush(&self.color.toD2d());
         } else std.debug.assert(false);
     }
 

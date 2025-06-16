@@ -20,11 +20,11 @@ pub const REFIID = *const IID;
 
 pub const IUnknown = @import("com/IUnknown.zig");
 
-pub fn queryInterface(iptr: anytype, IType: type) !?*IType {
+pub fn queryInterface(iptr: anytype, IType: type) Error!?*IType {
     return iptr.as(IUnknown).queryInterface(IType);
 }
 
-pub fn getInterface(iptr: anytype, IType: type) !*IType {
+pub fn getInterface(iptr: anytype, IType: type) Error!*IType {
     return iptr.as(IUnknown).getInterface(IType);
 }
 
