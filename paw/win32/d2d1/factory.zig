@@ -40,7 +40,7 @@ pub const IFactory = extern struct { // ID2D1Factory
         self: *@This(),
         render_target_properties: *const d2d1.RENDER_TARGET_PROPERTIES,
         hwnd_render_target_properties: *const d2d1.HWND_RENDER_TARGET_PROPERTIES,
-    ) !*d2d1.IHwndRenderTarget {
+    ) com.Error!*d2d1.IHwndRenderTarget {
         var result: ?*d2d1.IHwndRenderTarget = null;
 
         if (com.FAILED(self.vtbl.CreateHwndRenderTarget(

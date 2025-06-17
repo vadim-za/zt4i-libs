@@ -53,6 +53,11 @@ const Window = struct {
             self.dr.red_brush.ref(),
             2,
         );
+        dc.drawRectangle(
+            &.{ .left = 400, .top = 100, .right = 500, .bottom = 150 },
+            self.dr.red_brush.ref(),
+            2,
+        );
     }
 };
 

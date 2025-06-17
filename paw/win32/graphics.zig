@@ -5,7 +5,10 @@ pub const DeviceResources = @import("graphics/DeviceResources.zig");
 
 pub const DrawContext = @import("graphics/DrawContext.zig");
 
+pub const Path = @import("graphics/Path.zig");
+
 const types = @import("graphics/types.zig");
+pub const Bezier = types.Bezier;
 pub const Color = types.Color;
 pub const Point = types.Point;
 pub const Rectangle = types.Rectangle;

@@ -22,6 +22,12 @@ pub const RECT_F = extern struct {
     bottom: os.FLOAT,
 };
 
+pub const BEZIER_SEGMENT = extern struct {
+    point1: POINT_2F,
+    point2: POINT_2F,
+    point3: POINT_2F,
+};
+
 pub const MATRIX_3X2_F = [3][2]os.FLOAT;
 
 pub const identityMatrix = MATRIX_3X2_F{

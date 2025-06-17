@@ -25,6 +25,15 @@ pub fn drawLine(
     );
 }
 
+pub fn drawRectangle(
+    self: *const @This(),
+    rect: *const Rectangle,
+    brush: BrushRef,
+    width: f32,
+) void {
+    self.target.drawRectangle(&rect.toD2d(), brush.ibrush, width);
+}
+
 pub fn fillRectangle(
     self: *const @This(),
     rect: *const Rectangle,

@@ -3,6 +3,7 @@ const os = std.os.windows;
 
 const paw = @import("../paw.zig");
 
+// com.Error must at least coerce to paw.Error
 pub const Error = paw.Error;
 
 pub fn SUCCEEDED(hr: os.HRESULT) bool {
