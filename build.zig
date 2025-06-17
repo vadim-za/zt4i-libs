@@ -4,17 +4,17 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const z2 = b.addModule(
-        "z2",
+    const zz = b.addModule(
+        "zz",
         .{
-            .root_source_file = b.path("z2.zig"),
+            .root_source_file = b.path("zz.zig"),
             .target = target,
             .optimize = optimize,
         },
     );
 
     const z2_tests = b.addTest(.{
-        .root_source_file = b.path("z2.zig"),
+        .root_source_file = b.path("zz.zig"),
         .target = target,
         .optimize = optimize,
     });
@@ -28,7 +28,7 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
         });
         demo.rc_includes = .none;
-        demo.root_module.addImport("z2", z2);
+        demo.root_module.addImport("zz", zz);
         demo.subsystem = .Windows;
         b.installArtifact(demo);
     }

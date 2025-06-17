@@ -1,19 +1,19 @@
-const z2 = @import("z2");
+const zz = @import("zz");
 
-const app_title = "z2-libs demo";
+const app_title = "zz-libs demo";
 
-pub const wWinMain = z2.paw.wWinMain(
+pub const wWinMain = zz.paw.wWinMain(
     app_title,
     pawMain,
     null,
 );
 
 const Window = struct {
-    core: z2.paw.Window = .{},
+    core: zz.paw.Window = .{},
     dr: struct {
-        red_brush: z2.paw.SolidBrush = .init(.initRgb(1, 0, 0)),
+        red_brush: zz.paw.SolidBrush = .init(.initRgb(1, 0, 0)),
     } = .{},
-    path: z2.paw.Path = .{},
+    path: zz.paw.Path = .{},
 
     pub fn init(self: *@This()) !void {
         self.* = .{};
@@ -21,8 +21,8 @@ const Window = struct {
         self.core.addDeviceResource(&self.dr.red_brush);
 
         {
-            var sink = try z2.paw.Path.begin(.closed, &.{ .x = 300, .y = 200 });
-            sink.addLines(&[_]z2.paw.Point{
+            var sink = try zz.paw.Path.begin(.closed, &.{ .x = 300, .y = 200 });
+            sink.addLines(&[_]zz.paw.Point{
                 .{ .x = 350, .y = 250 },
                 .{ .x = 400, .y = 200 },
             });
@@ -37,8 +37,8 @@ const Window = struct {
         self.path.deinit();
     }
 
-    fn create(self: *@This(), width: f32, height: f32) z2.paw.Error!void {
-        try z2.paw.Window.create(
+    fn create(self: *@This(), width: f32, height: f32) zz.paw.Error!void {
+        try zz.paw.Window.create(
             @This(),
             self,
             app_title,
@@ -49,10 +49,10 @@ const Window = struct {
     }
 
     pub fn onDestroy(_: *@This()) void {
-        z2.paw.stopMessageLoop();
+        zz.paw.stopMessageLoop();
     }
 
-    pub fn onPaint(self: *@This(), dc: *z2.paw.DrawContext) void {
+    pub fn onPaint(self: *@This(), dc: *zz.paw.DrawContext) void {
         dc.clear(.initRgb(0, 0, 1));
         dc.fillRectangle(
             &.{ .left = 100, .right = 200, .top = 100, .bottom = 150 },
@@ -77,7 +77,7 @@ const Window = struct {
 fn pawMain() void {
     var window: Window = undefined;
     window.init() catch {
-        _ = z2.paw.showComptimeMessageBox(
+        _ = zz.paw.showComptimeMessageBox(
             null,
             app_title,
             "Failed to initialize window",
@@ -87,11 +87,11 @@ fn pawMain() void {
     };
     defer window.deinit();
     window.create(800, 500) catch return;
-    // _ = z2.paw.showMessageBox(
+    // _ = zz.paw.showMessageBox(
     //     &window.core,
     //     "Caption",
     //     "Text",
     //     .ok,
     // ) catch {};
-    z2.paw.runMessageLoop();
+    zz.paw.runMessageLoop();
 }
