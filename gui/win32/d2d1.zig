@@ -1,20 +1,18 @@
-const std = @import("std");
-
 const brush = @import("d2d1/brush.zig");
 pub const BRUSH_PROPERTIES = brush.BRUSH_PROPERTIES;
 pub const IBrush = brush.IBrush;
 pub const ISolidColorBrush = brush.ISolidColorBrush;
 
-const common = @import("d2d1/common.zig");
-pub const SIZE_U = common.SIZE_U;
-pub const POINT_2F = common.POINT_2F;
-pub const RECT_F = common.RECT_F;
-pub const BEZIER_SEGMENT = common.BEZIER_SEGMENT;
-pub const MATRIX_3X2_F = common.MATRIX_3X2_F;
-pub const identityMatrix = common.identityMatrix;
-pub const COLOR_F = common.COLOR_F;
-pub const ALPHA_MODE = common.ALPHA_MODE;
-pub const PIXEL_FORMAT = common.PIXEL_FORMAT;
+const types = @import("d2d1/types.zig");
+pub const SIZE_U = types.SIZE_U;
+pub const POINT_2F = types.POINT_2F;
+pub const RECT_F = types.RECT_F;
+pub const BEZIER_SEGMENT = types.BEZIER_SEGMENT;
+pub const MATRIX_3X2_F = types.MATRIX_3X2_F;
+pub const identityMatrix = types.identityMatrix;
+pub const COLOR_F = types.COLOR_F;
+pub const ALPHA_MODE = types.ALPHA_MODE;
+pub const PIXEL_FORMAT = types.PIXEL_FORMAT;
 
 const factory = @import("d2d1/factory.zig");
 pub const IFactory = factory.IFactory;

@@ -96,14 +96,13 @@ extern "d2d1" fn D2D1CreateFactory(
 ) callconv(.winapi) os.HRESULT;
 
 pub fn createFactory(
-    IType: type,
-    factoryType: FACTORY_TYPE,
-) com.Error!*IType {
-    var result: ?*IType = null;
+    factory_type: FACTORY_TYPE,
+) com.Error!*IFactory {
+    var result: ?*IFactory = null;
 
     if (com.FAILED(D2D1CreateFactory(
-        factoryType,
-        &IType.iid,
+        factory_type,
+        &IFactory.iid,
         if (builtin.mode == .Debug)
             &.{ .debugLevel = .ERROR }
         else

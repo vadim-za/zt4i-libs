@@ -55,17 +55,17 @@ pub const ISimplifiedGeometrySink = extern struct { // ID2D1SimplifiedGeometrySi
 
     pub fn beginFigure(
         self: *@This(),
-        startPoint: d2d1.POINT_2F,
-        figureBegin: FIGURE_BEGIN,
+        start_point: d2d1.POINT_2F,
+        figure_begin: FIGURE_BEGIN,
     ) void {
-        self.vtbl.BeginFigure(self, startPoint, figureBegin);
+        self.vtbl.BeginFigure(self, start_point, figure_begin);
     }
 
     pub fn endFigure(
         self: *@This(),
-        figureEnd: FIGURE_END,
+        figure_end: FIGURE_END,
     ) void {
-        self.vtbl.EndFigure(self, figureEnd);
+        self.vtbl.EndFigure(self, figure_end);
     }
 
     pub fn close(self: *@This()) com.Error!void {
