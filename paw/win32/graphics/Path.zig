@@ -9,7 +9,7 @@ const paw = @import("../../paw.zig");
 
 const Self = @This();
 
-d2d_geometry: *d2d1.IPathGeometry,
+d2d_geometry: ?*d2d1.IPathGeometry = null,
 
 pub const Mode = enum {
     open,
@@ -17,18 +17,21 @@ pub const Mode = enum {
 };
 
 pub fn deinit(self: @This()) void {
-    self.d2d_geometry.releaseInterface();
+    if (self.d2d_geometry) |geometry|
+        com.release(geometry);
 }
 
 pub fn begin(mode: Mode, at: *const Point) paw.Error!Sink {
     const d2d_factory = directx.getD2d1Factory();
-    const geometry = try d2d_factory.createPathGeometry();
-    errdefer com.release(geometry);
+    const d2d_geometry = try d2d_factory.createPathGeometry();
+    errdefer com.release(d2d_geometry);
 
-    const sink = try geometry.open();
-    errdefer com.release(sink);
+    const d2d_geometry_sink = try d2d_geometry.open();
+    errdefer com.release(d2d_geometry_sink);
 
-    sink.beginFigure(
+    const d2d_sink = d2d_geometry_sink.as(d2d1.ISimplifiedGeometrySink);
+
+    d2d_sink.beginFigure(
         at.toD2d(),
         switch (mode) {
             .open => .HOLLOW,
@@ -37,8 +40,8 @@ pub fn begin(mode: Mode, at: *const Point) paw.Error!Sink {
     );
 
     return .{
-        .d2d_geometry = geometry,
-        .d2d_sink = sink,
+        .d2d_geometry = d2d_geometry,
+        .d2d_sink = d2d_geometry_sink,
         .mode = mode,
         .is_open = true,
     };
@@ -46,7 +49,7 @@ pub fn begin(mode: Mode, at: *const Point) paw.Error!Sink {
 
 pub const Sink = struct {
     d2d_geometry: *d2d1.IPathGeometry,
-    d2d_sink: d2d1.IGeometrySink,
+    d2d_sink: *d2d1.IGeometrySink,
     mode: Mode,
     is_open: bool,
 
@@ -90,14 +93,14 @@ pub const Sink = struct {
 
     pub fn addLines(self: *@This(), points: []const Point) void {
         // TODO: use ISimplifiedGeometrySink.AddLines
-        for (points[1..]) |*p|
-            self.addLine(p.toD2d());
+        for (points) |*p|
+            self.d2d_sink.addLine(p.toD2d());
     }
 
     pub fn addBeziers(self: *@This(), segments: []const BezierTo) void {
         // TODO: use ISimplifiedGeometrySink.AddBeziers
         for (segments) |*seg|
-            self.addBezier(&.{
+            self.d2d_sink.addBezier(&.{
                 .point1 = seg.c_from.toD2d(),
                 .point2 = seg.c_to.toD2d(),
                 .point3 = seg.to.toD2d(),

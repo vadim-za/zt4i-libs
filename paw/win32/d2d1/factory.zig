@@ -20,7 +20,10 @@ pub const IFactory = extern struct { // ID2D1Factory
         CreateEllipseGeometry__: *const fn () callconv(.winapi) void,
         CreateGeometryGroup__: *const fn () callconv(.winapi) void,
         CreateTransformedGeometry__: *const fn () callconv(.winapi) void,
-        CreatePathGeometry__: *const fn () callconv(.winapi) void,
+        CreatePathGeometry: *const fn (
+            self: *Self,
+            pathGeometry: *?*d2d1.IPathGeometry,
+        ) callconv(.winapi) os.HRESULT,
         CreateStrokeStyle__: *const fn () callconv(.winapi) void,
         CreateDrawingStateBlock__: *const fn () callconv(.winapi) void,
         CreateWicBitmapRenderTarget__: *const fn () callconv(.winapi) void,
@@ -47,6 +50,20 @@ pub const IFactory = extern struct { // ID2D1Factory
             self,
             render_target_properties,
             hwnd_render_target_properties,
+            &result,
+        )))
+            return com.Error.OsApi;
+
+        return result orelse com.Error.OsApi;
+    }
+
+    pub fn createPathGeometry(
+        self: *@This(),
+    ) com.Error!*d2d1.IPathGeometry {
+        var result: ?*d2d1.IPathGeometry = null;
+
+        if (com.FAILED(self.vtbl.CreatePathGeometry(
+            self,
             &result,
         )))
             return com.Error.OsApi;

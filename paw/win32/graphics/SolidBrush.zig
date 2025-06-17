@@ -9,6 +9,7 @@ const Color = graphics.Color;
 const DeviceResource = @import("DeviceResource.zig");
 
 const Self = @This();
+
 device_resource: DeviceResource = .init(@This()),
 ibrush: ?*d2d1.ISolidColorBrush = null,
 color: Color,

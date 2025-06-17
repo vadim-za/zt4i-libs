@@ -2,6 +2,7 @@ const std = @import("std");
 const d2d1 = @import("../d2d1.zig");
 const types = @import("types.zig");
 const BrushRef = @import("BrushRef.zig");
+const Path = @import("Path.zig");
 
 const Color = types.Color;
 const Point = types.Point;
@@ -40,6 +41,17 @@ pub fn fillRectangle(
     brush: BrushRef,
 ) void {
     self.target.fillRectangle(&rect.toD2d(), brush.ibrush);
+}
+
+pub fn fillPath(
+    self: *const @This(),
+    path: *const Path,
+    brush: BrushRef,
+) void {
+    self.target.fillGeometry(
+        path.d2d_geometry.?.as(d2d1.IGeometry),
+        brush.ibrush,
+    );
 }
 
 pub fn clear(self: *const @This(), color: Color) void {

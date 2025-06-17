@@ -99,7 +99,12 @@ pub const IRenderTarget = extern struct { // ID2D1RenderTarget
         DrawEllipse__: *const fn () callconv(.winapi) void,
         FillEllipse__: *const fn () callconv(.winapi) void,
         DrawGeometry__: *const fn () callconv(.winapi) void,
-        FillGeometry__: *const fn () callconv(.winapi) void,
+        FillGeometry: *const fn (
+            self: *Self,
+            geometry: *d2d1.IGeometry,
+            brush: *d2d1.IBrush,
+            opacityBrush: ?*d2d1.IBrush,
+        ) callconv(.winapi) void,
         FillMesh__: *const fn () callconv(.winapi) void,
         FillOpacityMask__: *const fn () callconv(.winapi) void,
         DrawBitmap__: *const fn () callconv(.winapi) void,
@@ -207,6 +212,14 @@ pub const IRenderTarget = extern struct { // ID2D1RenderTarget
         brush: *d2d1.IBrush,
     ) void {
         self.vtbl.FillRectangle(self, rect, brush);
+    }
+
+    pub fn fillGeometry(
+        self: *@This(),
+        geometry: *d2d1.IGeometry,
+        brush: *d2d1.IBrush,
+    ) callconv(.winapi) void {
+        self.vtbl.FillGeometry(self, geometry, brush, null);
     }
 };
 

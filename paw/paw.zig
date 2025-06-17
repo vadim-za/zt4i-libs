@@ -31,13 +31,15 @@ pub const stopMessageLoop = message_loop.stop;
 pub const Window = platform.Window;
 
 pub const graphics = platform.graphics;
+pub const BrushRef = graphics.BrushRef;
+pub const SolidBrush = graphics.SolidBrush;
 pub const DeviceResources = graphics.DeviceResources;
 pub const DrawContext = graphics.DrawContext;
+pub const Path = graphics.Path;
+pub const Bezier = graphics.Bezier;
 pub const Color = graphics.Color;
 pub const Point = graphics.Point;
 pub const Rectangle = graphics.Rectangle;
-pub const BrushRef = graphics.BrushRef;
-pub const SolidBrush = graphics.SolidBrush;
 
 // Conditional platform reexports
 pub const wWinMain =

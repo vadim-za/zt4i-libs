@@ -13,17 +13,28 @@ const Window = struct {
     dr: struct {
         red_brush: z2.paw.SolidBrush = .init(.initRgb(1, 0, 0)),
     } = .{},
+    path: z2.paw.Path = .{},
 
-    pub fn init(self: *@This()) void {
+    pub fn init(self: *@This()) !void {
         self.* = .{};
 
         self.core.addDeviceResource(&self.dr.red_brush);
+
+        {
+            var sink = try z2.paw.Path.begin(.closed, &.{ .x = 300, .y = 200 });
+            sink.addLines(&[_]z2.paw.Point{
+                .{ .x = 350, .y = 250 },
+                .{ .x = 400, .y = 200 },
+            });
+            self.path = try sink.close();
+        }
     }
 
     fn deinit(self: *@This()) void {
         self.core.removeAllDeviceResources();
 
         self.core.deinit();
+        self.path.deinit();
     }
 
     fn create(self: *@This(), width: f32, height: f32) z2.paw.Error!void {
@@ -58,12 +69,21 @@ const Window = struct {
             self.dr.red_brush.ref(),
             2,
         );
+        dc.fillPath(&self.path, self.dr.red_brush.ref());
     }
 };
 
 fn pawMain() void {
     var window: Window = undefined;
-    window.init();
+    window.init() catch {
+        _ = z2.paw.showComptimeMessageBox(
+            null,
+            app_title,
+            "Failed to initialize window",
+            .ok,
+        ) catch {};
+        return;
+    };
     defer window.deinit();
     window.create(800, 500) catch return;
     // _ = z2.paw.showMessageBox(

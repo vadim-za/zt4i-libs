@@ -37,6 +37,7 @@ pub const IPathGeometry = extern struct { // ID2D1PathGeometry
 
     vtbl: *const Vtbl,
     pub const Vtbl = extern struct {
+        @".base": @".Base".Vtbl,
         Open: *const fn (
             self: *Self,
             *?*d2d1.IGeometrySink,
@@ -57,4 +58,6 @@ pub const IPathGeometry = extern struct { // ID2D1PathGeometry
 
         return result orelse com.Error.OsApi;
     }
+
+    pub const as = com.cast;
 };
