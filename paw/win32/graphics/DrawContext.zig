@@ -43,6 +43,19 @@ pub fn fillRectangle(
     self.target.fillRectangle(&rect.toD2d(), brush.ibrush);
 }
 
+pub fn drawPath(
+    self: *const @This(),
+    path: *const Path,
+    brush: BrushRef,
+    width: f32,
+) void {
+    self.target.drawGeometry(
+        path.d2d_geometry.?.as(d2d1.IGeometry),
+        brush.ibrush,
+        width,
+    );
+}
+
 pub fn fillPath(
     self: *const @This(),
     path: *const Path,

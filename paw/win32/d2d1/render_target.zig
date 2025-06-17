@@ -98,7 +98,13 @@ pub const IRenderTarget = extern struct { // ID2D1RenderTarget
         FillRoundedRectangle__: *const fn () callconv(.winapi) void,
         DrawEllipse__: *const fn () callconv(.winapi) void,
         FillEllipse__: *const fn () callconv(.winapi) void,
-        DrawGeometry__: *const fn () callconv(.winapi) void,
+        DrawGeometry: *const fn (
+            self: *Self,
+            geometry: *d2d1.IGeometry,
+            brush: *d2d1.IBrush,
+            strokeWidth: os.FLOAT,
+            strokeStyle: ?*anyopaque, // don't bother with exact type for now
+        ) callconv(.winapi) void,
         FillGeometry: *const fn (
             self: *Self,
             geometry: *d2d1.IGeometry,
@@ -212,6 +218,15 @@ pub const IRenderTarget = extern struct { // ID2D1RenderTarget
         brush: *d2d1.IBrush,
     ) void {
         self.vtbl.FillRectangle(self, rect, brush);
+    }
+
+    pub fn drawGeometry(
+        self: *@This(),
+        geometry: *d2d1.IGeometry,
+        brush: *d2d1.IBrush,
+        strokeWidth: os.FLOAT,
+    ) callconv(.winapi) void {
+        self.vtbl.DrawGeometry(self, geometry, brush, strokeWidth, null);
     }
 
     pub fn fillGeometry(

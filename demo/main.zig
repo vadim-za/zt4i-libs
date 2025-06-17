@@ -69,7 +69,8 @@ const Window = struct {
             self.dr.red_brush.ref(),
             2,
         );
-        dc.fillPath(&self.path, self.dr.red_brush.ref());
+        //dc.fillPath(&self.path, self.dr.red_brush.ref());
+        dc.drawPath(&self.path, self.dr.red_brush.ref(), 2);
     }
 };
 
