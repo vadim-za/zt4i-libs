@@ -12,5 +12,5 @@ pub const graphics = @import("win32/graphics.zig");
 const std = @import("std");
 
 comptime {
-    std.testing.refAllDecls(@import("win32/Wtf16Str.zig"));
+    std.testing.refAllDecls(@import("win32/unicode.zig"));
 }

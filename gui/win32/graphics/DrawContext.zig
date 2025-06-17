@@ -4,7 +4,7 @@ const types = @import("types.zig");
 const BrushRef = @import("BrushRef.zig");
 const Path = @import("Path.zig");
 const Font = @import("Font.zig");
-const Wtf16Str = @import("../Wtf16Str.zig").Wtf16Str;
+const unicode = @import("../unicode.zig");
 const gui = @import("../../gui.zig");
 const winmain = @import("../winmain.zig");
 
@@ -82,7 +82,7 @@ pub fn drawText(
     text: []const u8,
     brush: BrushRef,
 ) gui.Error!void {
-    var text16: Wtf16Str(2000) = undefined;
+    var text16: unicode.Wtf16Str(2000) = undefined;
     try text16.initU8(text);
     defer text16.deinit();
 

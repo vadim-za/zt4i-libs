@@ -2,7 +2,7 @@ const std = @import("std");
 const os = std.os.windows;
 
 const gui = @import("../gui.zig");
-const Wtf16Str = @import("Wtf16Str.zig");
+const unicode = @import("unicode.zig");
 
 // ----------------------------------------------------------------
 
@@ -76,10 +76,12 @@ pub fn show(
     text: [:0]const u8,
     @"type": Type,
 ) gui.Error!Result {
-    const text16: Wtf16Str = try .initU8(text);
+    var text16: unicode.Wtf16Str(2000) = undefined;
+    try text16.initU8(text);
     defer text16.deinit();
 
-    const caption16: Wtf16Str = try .initU8(caption);
+    var caption16: unicode.Wtf16Str(200) = undefined;
+    try caption16.initU8(caption);
     defer caption16.deinit();
 
     const os_result = MessageBoxW(

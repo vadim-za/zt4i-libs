@@ -1,7 +1,7 @@
 const std = @import("std");
 const com = @import("../com.zig");
 const dwrite = @import("../dwrite.zig");
-const Wtf16Str = @import("../Wtf16Str.zig").Wtf16Str;
+const unicode = @import("../unicode.zig");
 
 const os = std.os.windows;
 
@@ -60,7 +60,7 @@ pub const IFactory = extern struct { // IDWriteFactory
         var result: ?*dwrite.ITextFormat = null;
 
         {
-            var font_family16: Wtf16Str(200) = undefined;
+            var font_family16: unicode.Wtf16Str(200) = undefined;
             try font_family16.initU8(font_family);
             defer font_family16.deinit();
             if (com.FAILED(self.vtbl.CreateTextFormat(

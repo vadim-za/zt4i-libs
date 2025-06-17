@@ -7,7 +7,7 @@ const responders = @import("window/responders.zig");
 const Responders = responders.Responders;
 const winmain = @import("winmain.zig");
 const dpi = @import("dpi.zig");
-const Wtf16Str = @import("Wtf16Str.zig").Wtf16Str;
+const unicode = @import("unicode.zig");
 const wndproc = @import("window/wndproc.zig");
 const d2d1 = @import("d2d1.zig");
 const DeviceResources = @import("graphics/DeviceResources.zig");
@@ -132,7 +132,7 @@ pub fn create(
 }
 
 fn createWindowRaw(title: []const u8) gui.Error!os.HWND {
-    var title16: Wtf16Str(200) = undefined;
+    var title16: unicode.Wtf16Str(200) = undefined;
     try title16.initU8(title);
     defer title16.deinit();
 
