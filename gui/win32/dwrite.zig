@@ -10,3 +10,4 @@ const types = @import("dwrite/types.zig");
 pub const FONT_WEIGHT = types.FONT_WEIGHT;
 pub const FONT_STRETCH = types.FONT_STRETCH;
 pub const FONT_STYLE = types.FONT_STYLE;
+pub const MEASURING_MODE = types.MEASURING_MODE;

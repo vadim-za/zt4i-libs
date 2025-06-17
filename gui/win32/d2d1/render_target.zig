@@ -1,6 +1,7 @@
 const std = @import("std");
 const com = @import("../com.zig");
 const d2d1 = @import("../d2d1.zig");
+const dwrite = @import("../dwrite.zig");
 
 const os = std.os.windows;
 
@@ -48,6 +49,16 @@ pub const HWND_RENDER_TARGET_PROPERTIES = extern struct {
 pub const WINDOW_STATE = packed struct(u32) {
     OCCLUDED: bool,
     _: u31,
+};
+
+pub const DRAW_TEXT_OPTIONS = packed struct(u32) {
+    NO_SNAP: bool = false,
+    CLIP: bool = false,
+    ENABLE_COLOR_PRINT: bool = false,
+    DISABLE_COLOR_BITMAP_SNAPPING: bool = false,
+    _: u28 = 0,
+
+    pub const NONE = @This(){};
 };
 
 pub const IRenderTarget = extern struct { // ID2D1RenderTarget
@@ -114,7 +125,16 @@ pub const IRenderTarget = extern struct { // ID2D1RenderTarget
         FillMesh__: *const fn () callconv(.winapi) void,
         FillOpacityMask__: *const fn () callconv(.winapi) void,
         DrawBitmap__: *const fn () callconv(.winapi) void,
-        DrawText__: *const fn () callconv(.winapi) void,
+        DrawText: *const fn (
+            self: *Self,
+            string: [*]const os.WCHAR,
+            stringLength: u32,
+            textFormat: *dwrite.ITextFormat,
+            layoutRect: *const d2d1.RECT_F,
+            defaultFillBrush: *d2d1.IBrush,
+            options: DRAW_TEXT_OPTIONS,
+            measuringMode: dwrite.MEASURING_MODE,
+        ) callconv(.winapi) void,
         DrawTextLayout__: *const fn () callconv(.winapi) void,
         DrawGlyphRun__: *const fn () callconv(.winapi) void,
         SetTransform__: *const fn () callconv(.winapi) void,
@@ -235,6 +255,25 @@ pub const IRenderTarget = extern struct { // ID2D1RenderTarget
         brush: *d2d1.IBrush,
     ) callconv(.winapi) void {
         self.vtbl.FillGeometry(self, geometry, brush, null);
+    }
+
+    pub fn drawText(
+        self: *@This(),
+        text: []const os.WCHAR,
+        format: *dwrite.ITextFormat,
+        rect: *const d2d1.RECT_F,
+        brush: *d2d1.IBrush,
+    ) void {
+        self.vtbl.DrawText(
+            self,
+            text.ptr,
+            @intCast(text.len),
+            format,
+            rect,
+            brush,
+            .NONE,
+            .NATURAL,
+        );
     }
 };
 

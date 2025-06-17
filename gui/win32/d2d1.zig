@@ -42,6 +42,7 @@ pub const PRESENT_OPTIONS = render_target.PRESENT_OPTIONS;
 pub const RENDER_TARGET_PROPERTIES = render_target.RENDER_TARGET_PROPERTIES;
 pub const HWND_RENDER_TARGET_PROPERTIES = render_target.HWND_RENDER_TARGET_PROPERTIES;
 pub const WINDOW_STATE = render_target.WINDOW_STATE;
+pub const DRAW_TEXT_OPTIONS = render_target.DRAW_TEXT_OPTIONS;
 pub const IRenderTarget = render_target.IRenderTarget;
 pub const IHwndRenderTarget = render_target.IHwndRenderTarget;
 

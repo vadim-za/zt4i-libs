@@ -3,6 +3,10 @@ const d2d1 = @import("../d2d1.zig");
 const types = @import("types.zig");
 const BrushRef = @import("BrushRef.zig");
 const Path = @import("Path.zig");
+const Font = @import("Font.zig");
+const Wtf16Str = @import("../Wtf16Str.zig").Wtf16Str;
+const gui = @import("../../gui.zig");
+const winmain = @import("../winmain.zig");
 
 const Color = types.Color;
 const Point = types.Point;
@@ -69,6 +73,25 @@ pub fn fillPath(
 
 pub fn clear(self: *const @This(), color: Color) void {
     self.target.clear(&color.toD2d());
+}
+
+pub fn drawText(
+    self: *const @This(),
+    font: *const Font,
+    rect: *const Rectangle,
+    text: []const u8,
+    brush: BrushRef,
+) gui.Error!void {
+    var text16: Wtf16Str(2000) = undefined;
+    try text16.initU8(text);
+    defer text16.deinit();
+
+    self.target.drawText(
+        text16.slice(),
+        font.dwrite_text_format.?,
+        &rect.toD2d(),
+        brush.ibrush,
+    );
 }
 
 pub fn setOrigin(self: *const @This(), new_origin: Point) Point {

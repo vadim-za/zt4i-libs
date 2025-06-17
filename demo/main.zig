@@ -1,3 +1,4 @@
+const std = @import("std");
 const zz = @import("zz");
 
 const app_title = "zz-libs demo";
@@ -75,6 +76,13 @@ const Window = struct {
         );
         //dc.fillPath(&self.path, self.dr.red_brush.ref());
         dc.drawPath(&self.path, self.dr.red_brush.ref(), 2);
+
+        dc.drawText(
+            &self.font,
+            &.{ .left = 400, .top = 300, .right = 600, .bottom = 350 },
+            "Dummy text",
+            self.dr.red_brush.ref(),
+        ) catch |err| std.debug.assert(err != zz.gui.Error.Usage);
     }
 };
 

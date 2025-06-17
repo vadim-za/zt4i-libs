@@ -38,3 +38,9 @@ pub const FONT_STYLE = enum(c_uint) {
     OBLIQUE = 1,
     ITALIC = 2,
 };
+
+pub const MEASURING_MODE = enum(c_uint) {
+    NATURAL,
+    CLASSIC,
+    GDI_NATURAL,
+};
