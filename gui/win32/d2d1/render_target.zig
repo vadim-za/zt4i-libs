@@ -198,18 +198,18 @@ pub const IRenderTarget = extern struct { // ID2D1RenderTarget
         point0: *const d2d1.POINT_2F,
         point1: *const d2d1.POINT_2F,
         brush: *d2d1.IBrush,
-        strokeWidth: os.FLOAT,
+        stroke_width: f32,
     ) void {
-        self.vtbl.DrawLine(self, point0.*, point1.*, brush, strokeWidth, null);
+        self.vtbl.DrawLine(self, point0.*, point1.*, brush, stroke_width, null);
     }
 
     pub fn drawRectangle(
         self: *@This(),
         rect: *const d2d1.RECT_F,
         brush: *d2d1.IBrush,
-        strokeWidth: os.FLOAT,
+        stroke_width: f32,
     ) void {
-        self.vtbl.DrawRectangle(self, rect, brush, strokeWidth, null);
+        self.vtbl.DrawRectangle(self, rect, brush, stroke_width, null);
     }
 
     pub fn fillRectangle(
@@ -224,9 +224,9 @@ pub const IRenderTarget = extern struct { // ID2D1RenderTarget
         self: *@This(),
         geometry: *d2d1.IGeometry,
         brush: *d2d1.IBrush,
-        strokeWidth: os.FLOAT,
+        stroke_width: f32,
     ) callconv(.winapi) void {
-        self.vtbl.DrawGeometry(self, geometry, brush, strokeWidth, null);
+        self.vtbl.DrawGeometry(self, geometry, brush, stroke_width, null);
     }
 
     pub fn fillGeometry(
