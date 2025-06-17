@@ -1,5 +1,5 @@
 const std = @import("std");
-const paw = @import("../../paw.zig");
+const gui = @import("../../gui.zig");
 const com = @import("../com.zig");
 const d2d1 = @import("../d2d1.zig");
 
@@ -26,7 +26,7 @@ pub const virtuals = struct {
     pub fn create(
         device_resource: *DeviceResource,
         target: *d2d1.IRenderTarget,
-    ) paw.Error!void {
+    ) gui.Error!void {
         const self: *Self = @alignCast(@fieldParentPtr(
             "device_resource",
             device_resource,

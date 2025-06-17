@@ -24,7 +24,7 @@
             "type": "cppvsdbg",
             "request": "launch",
             "name": "Paw VS",
-            "program": "${workspaceFolder}/zig-out/paw.exe",
+            "program": "${workspaceFolder}/zig-out/gui.exe",
             "args": [],
             "cwd": "${workspaceFolder}"
         },
@@ -32,7 +32,7 @@
             "type": "lldb",
             "request": "launch",
             "name": "Paw LLDB",
-            "program": "${workspaceFolder}/zig-out/paw.exe",
+            "program": "${workspaceFolder}/zig-out/gui.exe",
             "args": [],
             "cwd": "${workspaceFolder}"
         },

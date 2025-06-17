@@ -1,10 +1,10 @@
 const std = @import("std");
 const os = std.os.windows;
 
-const paw = @import("../paw.zig");
+const gui = @import("../gui.zig");
 
-// com.Error must at least coerce to paw.Error
-pub const Error = paw.Error;
+// com.Error must at least coerce to gui.Error
+pub const Error = gui.Error;
 
 pub fn SUCCEEDED(hr: os.HRESULT) bool {
     return hr >= 0;

@@ -5,7 +5,7 @@ const graphics = @import("../graphics.zig");
 const directx = @import("../directx.zig");
 const Point = graphics.Point;
 const Bezier = graphics.Bezier;
-const paw = @import("../../paw.zig");
+const gui = @import("../../gui.zig");
 
 const Self = @This();
 
@@ -21,7 +21,7 @@ pub fn deinit(self: @This()) void {
         com.release(geometry);
 }
 
-pub fn begin(mode: Mode, at: *const Point) paw.Error!Sink {
+pub fn begin(mode: Mode, at: *const Point) gui.Error!Sink {
     const d2d_factory = directx.getD2d1Factory();
     const d2d_geometry = try d2d_factory.createPathGeometry();
     errdefer com.release(d2d_geometry);
@@ -68,7 +68,7 @@ pub const Sink = struct {
         com.release(self.d2d_geometry);
     }
 
-    pub fn close(self: *@This()) paw.Error!Self {
+    pub fn close(self: *@This()) gui.Error!Self {
         std.debug.assert(self.is_open);
         self.is_open = false;
 

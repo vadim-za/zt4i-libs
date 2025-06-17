@@ -3,7 +3,7 @@
 const std = @import("std");
 const d2d1 = @import("../d2d1.zig");
 const DeviceResources = @import("DeviceResources.zig");
-const paw = @import("../../paw.zig");
+const gui = @import("../../gui.zig");
 
 pub const Self = @This();
 
@@ -16,7 +16,7 @@ pub const Vtbl = struct {
     create: *const fn (
         self: *Self,
         target: *d2d1.IRenderTarget,
-    ) paw.Error!void,
+    ) gui.Error!void,
     release: *const fn (
         self: *Self,
     ) void,
@@ -35,7 +35,7 @@ pub fn init(Type: type) @This() {
 pub fn create(
     self: *Self,
     target: *d2d1.IRenderTarget,
-) paw.Error!void {
+) gui.Error!void {
     return self.vtbl.create(self, target);
 }
 

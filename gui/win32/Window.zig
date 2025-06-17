@@ -1,7 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 
-const paw = @import("../paw.zig");
+const gui = @import("../gui.zig");
 const class = @import("window/class.zig");
 const responders = @import("window/responders.zig");
 const Responders = responders.Responders;
@@ -98,10 +98,10 @@ pub fn create(
     comptime resps: Responders(Impl),
     width: f32,
     height: f32,
-) paw.Error!void {
+) gui.Error!void {
     const window = resps.getCore(impl);
     if (window.hWnd != null)
-        return paw.Error.Usage; // window already exists
+        return gui.Error.Usage; // window already exists
 
     const hWnd = try createWindowRaw(title);
     errdefer _ = DestroyWindow(hWnd);
@@ -121,7 +121,7 @@ pub fn create(
         physical_height,
         SWP_NOMOVE | SWP_NOZORDER,
     ) == 0)
-        return paw.Error.OsApi;
+        return gui.Error.OsApi;
 
     class.subclass(hWnd, wndproc.make(Impl, resps), impl);
     window.hWnd = hWnd;
@@ -131,7 +131,7 @@ pub fn create(
     _ = UpdateWindow(hWnd); // ignore return value
 }
 
-fn createWindowRaw(title: []const u8) paw.Error!os.HWND {
+fn createWindowRaw(title: []const u8) gui.Error!os.HWND {
     const title16: Wtf16Str = try .initU8(title);
     defer title16.deinit();
 
@@ -149,7 +149,7 @@ fn createWindowRaw(title: []const u8) paw.Error!os.HWND {
         winmain.thisInstance(),
         null,
     ) orelse
-        paw.Error.OsApi;
+        gui.Error.OsApi;
 }
 
 pub fn destroy(self: *@This()) void {

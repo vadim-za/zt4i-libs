@@ -1,24 +1,24 @@
 const std = @import("std");
 const os = std.os.windows;
 
-const paw = @import("../paw.zig");
+const gui = @import("../gui.zig");
 
 str16: [:0]u16,
 
-pub fn initU8(str8: []const u8) paw.Error!@This() {
+pub fn initU8(str8: []const u8) gui.Error!@This() {
     const str16 = std.unicode.wtf8ToWtf16LeAllocZ(
-        paw.allocator(),
+        gui.allocator(),
         str8,
     ) catch |err| return switch (err) {
-        error.OutOfMemory => paw.Error.OutOfMemory,
-        error.InvalidWtf8 => paw.Error.Usage,
+        error.OutOfMemory => gui.Error.OutOfMemory,
+        error.InvalidWtf8 => gui.Error.Usage,
     };
 
     return .{ .str16 = str16 };
 }
 
 pub fn deinit(self: @This()) void {
-    paw.allocator().free(self.str16);
+    gui.allocator().free(self.str16);
 }
 
 pub fn str(self: @This()) [:0]u16 {

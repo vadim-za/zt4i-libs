@@ -2,7 +2,7 @@ const std = @import("std");
 const builtin = @import("builtin");
 const DeviceResource = @import("DeviceResource.zig");
 const d2d1 = @import("../d2d1.zig");
-const paw = @import("../../paw.zig");
+const gui = @import("../../gui.zig");
 const directx = @import("../directx.zig");
 const com = @import("../com.zig");
 
@@ -83,7 +83,7 @@ fn createDeviceResource(
     self: *@This(),
     resource: *DeviceResource,
     render_target: *d2d1.IRenderTarget,
-) paw.Error!void {
+) gui.Error!void {
     std.debug.assert(resource.owner == self);
     std.debug.assert(!resource.is_created);
 
@@ -111,13 +111,13 @@ extern "user32" fn GetClientRect(os.HWND, *os.RECT) callconv(.winapi) os.BOOL;
 fn provideRenderTargetFor(
     self: *@This(),
     hWnd: os.HWND,
-) paw.Error!*d2d1.IHwndRenderTarget {
+) gui.Error!*d2d1.IHwndRenderTarget {
     if (self.render_target) |render_target|
         return render_target;
 
     var rc: os.RECT = undefined;
     if (GetClientRect(hWnd, &rc) == os.FALSE)
-        return paw.Error.OsApi;
+        return gui.Error.OsApi;
 
     const size = d2d1.SIZE_U{
         .width = @intCast(rc.right - rc.left),
@@ -136,7 +136,7 @@ fn provideRenderTargetFor(
 pub fn provideResourcesFor(
     self: *@This(),
     hWnd: os.HWND,
-) paw.Error!*d2d1.IHwndRenderTarget {
+) gui.Error!*d2d1.IHwndRenderTarget {
     const hwnd_target = try self.provideRenderTargetFor(hWnd);
     const target = hwnd_target.as(d2d1.IRenderTarget);
 

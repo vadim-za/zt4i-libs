@@ -1,7 +1,7 @@
 const std = @import("std");
 const os = std.os.windows;
 
-const paw = @import("../../paw.zig");
+const gui = @import("../../gui.zig");
 const winmain = @import("../winmain.zig");
 
 // ----------------------------------------------------------------
@@ -78,7 +78,7 @@ pub fn getClass() [*:0]align(1) const os.WCHAR {
     return @ptrFromInt(classAtom);
 }
 
-pub fn registerClass() paw.Error!void {
+pub fn registerClass() gui.Error!void {
     if (classAtom != 0)
         return;
 
@@ -101,10 +101,10 @@ pub fn registerClass() paw.Error!void {
 
     classAtom = RegisterClassW(&wndClass);
     if (classAtom == 0)
-        return paw.Error.OsApi;
+        return gui.Error.OsApi;
 }
 
-pub fn unregisterClass() paw.Error!void {
+pub fn unregisterClass() gui.Error!void {
     if (classAtom == 0)
         return;
 
@@ -112,7 +112,7 @@ pub fn unregisterClass() paw.Error!void {
         @ptrFromInt(classAtom),
         winmain.thisInstance(),
     ) == 0)
-        return paw.Error.OsApi;
+        return gui.Error.OsApi;
 
     classAtom = 0;
 }

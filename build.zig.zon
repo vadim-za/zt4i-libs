@@ -12,6 +12,6 @@
         ".gitignore",
         "rsp",
         "demo",
-        "paw",
+        "gui",
     },
 }

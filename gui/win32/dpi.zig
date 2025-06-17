@@ -1,7 +1,7 @@
 const std = @import("std");
 const os = std.os.windows;
 
-const paw = @import("../paw.zig");
+const gui = @import("../gui.zig");
 
 // ----------------------------------------------------------------
 
@@ -18,11 +18,11 @@ extern "user32" fn GetDpiForWindow(hWnd: os.HWND) callconv(.winapi) os.UINT;
 
 // ----------------------------------------------------------------
 
-pub fn setupDpiAwareness() paw.Error!void {
+pub fn setupDpiAwareness() gui.Error!void {
     if (SetProcessDpiAwarenessContext(
         DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2,
     ) == 0)
-        return paw.Error.OsApi;
+        return gui.Error.OsApi;
 }
 
 pub fn getDprFor(hWnd: os.HWND) f32 {

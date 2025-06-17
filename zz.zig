@@ -1,6 +1,6 @@
 const std = @import("std");
 
-pub const paw = @import("paw/paw.zig");
+pub const gui = @import("gui/gui.zig");
 
 comptime {
     std.testing.refAllDecls(@This());
