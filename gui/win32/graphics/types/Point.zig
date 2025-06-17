@@ -23,7 +23,7 @@ pub fn movedBy(self: *const @This(), by: *const @This()) @This() {
     };
 }
 
-pub fn relativeTo(self: @This(), origin: *@This()) @This() {
+pub fn relativeTo(self: *const @This(), origin: *const @This()) @This() {
     return .{
         .x = self.x - origin.x,
         .y = self.y - origin.y,

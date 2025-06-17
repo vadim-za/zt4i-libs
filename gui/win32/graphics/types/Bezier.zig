@@ -7,6 +7,7 @@ pt: [4]Point,
 
 pub fn initHermite(p0: Point, v0: Point, p1: Point, v1: Point) @This() {
     const vscale = 1.0 / 3.0;
+
     return .{ .pt = .{
         p0,
         .{ .x = p0.x + v0.x * vscale, .y = p0.y + v0.y * vscale },
@@ -15,7 +16,7 @@ pub fn initHermite(p0: Point, v0: Point, p1: Point, v1: Point) @This() {
     } };
 }
 
-pub fn at(self: @This(), t: f32) Point {
+pub fn at(self: *const @This(), t: f32) Point {
     const t2 = t * t;
     const t3 = t2 * t;
     const ct = 1 - t;
@@ -32,7 +33,7 @@ pub fn at(self: @This(), t: f32) Point {
     return result;
 }
 
-pub fn derivativeAt(self: @This(), t: f32) Point {
+pub fn derivativeAt(self: *const @This(), t: f32) Point {
     const t2 = t * t;
     const ct = 1 - t;
     const ct2 = ct * ct;
@@ -47,7 +48,7 @@ pub fn derivativeAt(self: @This(), t: f32) Point {
     return result;
 }
 
-pub fn boundingRect(self: @This()) Rectangle {
+pub fn boundingRect(self: *const @This()) Rectangle {
     var result = Rectangle{
         .left = self.pt[0].x,
         .top = self.pt[0].y,
@@ -65,7 +66,7 @@ pub fn boundingRect(self: @This()) Rectangle {
     return result;
 }
 
-pub fn segment(self: @This(), t0: f32, t1: f32) @This() {
+pub fn segment(self: *const @This(), t0: f32, t1: f32) @This() {
     const p0 = self.at(t0);
     const p1 = self.at(t1);
 
@@ -82,10 +83,13 @@ pub fn segment(self: @This(), t0: f32, t1: f32) @This() {
     } };
 }
 
-pub fn hit(self: @This(), p: Point, abs_tolerance: f32) ?f32 {
+pub fn hit(self: *const @This(), p: Point, abs_tolerance: f32) ?f32 {
     const rect = self.boundingRect();
+
     if (rect.grownBy(.{ .x = abs_tolerance, .y = abs_tolerance }).hit(p)) {
-        if (rect.diag() < 0.5 * abs_tolerance) return 0.5;
+        if (rect.diag() < 0.5 * abs_tolerance)
+            return 0.5;
+
         if (self.segment(0, 0.5).hit(p, abs_tolerance)) |tau| {
             return std.math.lerp(0, 0.5, tau);
         } else if (self.segment(0.5, 1).hit(p, abs_tolerance)) |tau| {

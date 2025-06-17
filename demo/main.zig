@@ -14,9 +14,11 @@ const Window = struct {
         red_brush: zz.gui.SolidBrush = .init(.initRgb(1, 0, 0)),
     } = .{},
     path: zz.gui.Path = .{},
+    font: zz.gui.Font = .{},
 
     pub fn init(self: *@This()) !void {
         self.* = .{};
+        errdefer self.deinit();
 
         self.core.addDeviceResource(&self.dr.red_brush);
 
@@ -28,13 +30,15 @@ const Window = struct {
             });
             self.path = try sink.close();
         }
+
+        self.font = try .init("Verdana", 15);
     }
 
     fn deinit(self: *@This()) void {
-        self.core.removeAllDeviceResources();
-
+        self.core.removeAllDeviceResources(); // do this before core.deinit()
         self.core.deinit();
         self.path.deinit();
+        self.font.deinit();
     }
 
     fn create(self: *@This(), width: f32, height: f32) zz.gui.Error!void {

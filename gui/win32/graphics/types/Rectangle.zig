@@ -34,7 +34,7 @@ pub fn movedBy(self: *const @This(), by: *const Point) @This() {
     };
 }
 
-pub fn grownBy(self: @This(), by: *const Point) @This() {
+pub fn grownBy(self: *const @This(), by: *const Point) @This() {
     return .{
         .left = self.left - by.x,
         .top = self.top - by.y,

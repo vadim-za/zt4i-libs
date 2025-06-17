@@ -17,15 +17,15 @@ pub fn initU8(str8: []const u8) gui.Error!@This() {
     return .{ .str16 = str16 };
 }
 
-pub fn deinit(self: @This()) void {
+pub fn deinit(self: *const @This()) void {
     gui.allocator().free(self.str16);
 }
 
-pub fn str(self: @This()) [:0]u16 {
+pub fn str(self: *const @This()) [:0]u16 {
     return self.str16;
 }
 
-pub fn ptr(self: @This()) [*:0]u16 {
+pub fn ptr(self: *const @This()) [*:0]u16 {
     return self.str16.ptr;
 }
 

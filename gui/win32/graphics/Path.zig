@@ -16,9 +16,11 @@ pub const Mode = enum {
     closed,
 };
 
-pub fn deinit(self: @This()) void {
-    if (self.d2d_geometry) |geometry|
+pub fn deinit(self: *@This()) void {
+    if (self.d2d_geometry) |geometry| {
         com.release(geometry);
+        self.d2d_geometry = null;
+    }
 }
 
 pub fn begin(mode: Mode, at: *const Point) gui.Error!Sink {

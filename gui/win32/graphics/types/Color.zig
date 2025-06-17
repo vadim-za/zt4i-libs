@@ -22,6 +22,6 @@ pub fn initGray(intensity: f32) @This() {
     };
 }
 
-pub fn toD2d(self: @This()) d2d1.COLOR_F {
+pub fn toD2d(self: *const @This()) d2d1.COLOR_F {
     return .{ .r = self.r, .g = self.g, .b = self.b, .a = self.a };
 }

@@ -36,6 +36,7 @@ pub const SolidBrush = graphics.SolidBrush;
 pub const DeviceResources = graphics.DeviceResources;
 pub const DrawContext = graphics.DrawContext;
 pub const Path = graphics.Path;
+pub const Font = graphics.Font;
 pub const Bezier = graphics.Bezier;
 pub const Color = graphics.Color;
 pub const Point = graphics.Point;
