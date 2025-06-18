@@ -1,0 +1,2 @@
+-Mroot=zt4i.zig
+-target native-native-msvc -femit-bin=zig-out/zt4i.exe --cache-dir .zig-cache

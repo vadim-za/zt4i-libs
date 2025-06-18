@@ -24,7 +24,7 @@
             "type": "cppvsdbg",
             "request": "launch",
             "name": "Test VS",
-            "program": "${workspaceFolder}/zig-out/zz.exe",
+            "program": "${workspaceFolder}/zig-out/zt4i.exe",
             "args": [],
             "cwd": "${workspaceFolder}"
         },
@@ -32,7 +32,7 @@
             "type": "lldb",
             "request": "launch",
             "name": "Test LLDB",
-            "program": "${workspaceFolder}/zig-out/zz.exe",
+            "program": "${workspaceFolder}/zig-out/zt4i.exe",
             "args": [],
             "cwd": "${workspaceFolder}"
         },

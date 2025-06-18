@@ -1,13 +1,13 @@
 .{
-    .name = .zz,
+    .name = .zt4i,
     .version = "0.0.0",
-    .fingerprint = 0x24d91ba1a1fc6ab3, // Changing this has security and trust implications.
+    .fingerprint = 0xf97a756369908fb0, // Changing this has security and trust implications.
     .minimum_zig_version = "0.14.1",
 
     .paths = .{
         "build.zig",
         "build.zig.zon",
-        "zz.zig",
+        "zt4i.zig",
         "README.md",
         ".gitignore",
         "rsp",

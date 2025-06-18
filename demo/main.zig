@@ -1,21 +1,21 @@
 const std = @import("std");
-const zz = @import("zz");
+const zt4i = @import("zt4i");
 
-const app_title = "zz-libs demo";
+const app_title = "zt4i-libs demo";
 
-pub const wWinMain = zz.gui.wWinMain(
+pub const wWinMain = zt4i.gui.wWinMain(
     app_title,
-    zzMain,
+    appMain,
     null,
 );
 
 const Window = struct {
-    core: zz.gui.Window = .{},
+    core: zt4i.gui.Window = .{},
     dr: struct {
-        red_brush: zz.gui.SolidBrush = .init(.initRgb(1, 0, 0)),
+        red_brush: zt4i.gui.SolidBrush = .init(.initRgb(1, 0, 0)),
     } = .{},
-    path: zz.gui.Path = .{},
-    font: zz.gui.Font = .{},
+    path: zt4i.gui.Path = .{},
+    font: zt4i.gui.Font = .{},
 
     pub fn init(self: *@This()) !void {
         self.* = .{};
@@ -24,8 +24,8 @@ const Window = struct {
         self.core.addDeviceResource(&self.dr.red_brush);
 
         {
-            var sink = try zz.gui.Path.begin(.closed, &.{ .x = 300, .y = 200 });
-            sink.addLines(&[_]zz.gui.Point{
+            var sink = try zt4i.gui.Path.begin(.closed, &.{ .x = 300, .y = 200 });
+            sink.addLines(&[_]zt4i.gui.Point{
                 .{ .x = 350, .y = 250 },
                 .{ .x = 400, .y = 200 },
             });
@@ -42,8 +42,8 @@ const Window = struct {
         self.font.deinit();
     }
 
-    fn create(self: *@This(), width: f32, height: f32) zz.gui.Error!void {
-        try zz.gui.Window.create(
+    fn create(self: *@This(), width: f32, height: f32) zt4i.gui.Error!void {
+        try zt4i.gui.Window.create(
             @This(),
             self,
             app_title,
@@ -54,10 +54,10 @@ const Window = struct {
     }
 
     pub fn onDestroy(_: *@This()) void {
-        zz.gui.stopMessageLoop();
+        zt4i.gui.stopMessageLoop();
     }
 
-    pub fn onPaint(self: *@This(), dc: *zz.gui.DrawContext) void {
+    pub fn onPaint(self: *@This(), dc: *zt4i.gui.DrawContext) void {
         dc.clear(.initRgb(0, 0, 1));
         dc.fillRectangle(
             &.{ .left = 100, .right = 200, .top = 100, .bottom = 150 },
@@ -82,14 +82,14 @@ const Window = struct {
             &.{ .left = 400, .top = 300, .right = 600, .bottom = 350 },
             "Dummy text",
             self.dr.red_brush.ref(),
-        ) catch |err| std.debug.assert(err != zz.gui.Error.Usage);
+        ) catch |err| std.debug.assert(err != zt4i.gui.Error.Usage);
     }
 };
 
-fn zzMain() void {
+fn appMain() void {
     var window: Window = undefined;
     window.init() catch {
-        _ = zz.gui.showComptimeMessageBox(
+        _ = zt4i.gui.showComptimeMessageBox(
             null,
             app_title,
             "Failed to initialize window",
@@ -99,11 +99,11 @@ fn zzMain() void {
     };
     defer window.deinit();
     window.create(800, 500) catch return;
-    // _ = zz.gui.showMessageBox(
+    // _ = zt4i.gui.showMessageBox(
     //     &window.core,
     //     "Caption",
     //     "Text",
     //     .ok,
     // ) catch {};
-    zz.gui.runMessageLoop();
+    zt4i.gui.runMessageLoop();
 }

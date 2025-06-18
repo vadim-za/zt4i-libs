@@ -1,4 +1,4 @@
---dep zz -Mroot=demo/main.zig
--Mzz=zz.zig
+--dep zt4i -Mroot=demo/main.zig
+-Mzt4i=zt4i.zig
 -target native-native-msvc -femit-bin=zig-out/demo.exe --cache-dir .zig-cache
 --subsystem windows

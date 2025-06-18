@@ -4,21 +4,19 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const zz = b.addModule(
-        "zz",
+    const zt4i = b.addModule(
+        "zt4i",
         .{
-            .root_source_file = b.path("zz.zig"),
-            .target = target,
-            .optimize = optimize,
+            .root_source_file = b.path("zt4i.zig"),
         },
     );
 
-    const z2_tests = b.addTest(.{
-        .root_source_file = b.path("zz.zig"),
+    const zt4i_tests = b.addTest(.{
+        .root_source_file = b.path("zt4i.zig"),
         .target = target,
         .optimize = optimize,
     });
-    const run_z2_tests = b.addRunArtifact(z2_tests);
+    const run_zt4i_tests = b.addRunArtifact(zt4i_tests);
 
     if (target.result.os.tag == .windows) {
         const demo = b.addExecutable(.{
@@ -28,11 +26,11 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
         });
         demo.rc_includes = .none;
-        demo.root_module.addImport("zz", zz);
+        demo.root_module.addImport("zt4i", zt4i);
         demo.subsystem = .Windows;
         b.installArtifact(demo);
     }
 
     const test_step = b.step("test", "Run unit tests");
-    test_step.dependOn(&run_z2_tests.step);
+    test_step.dependOn(&run_zt4i_tests.step);
 }
