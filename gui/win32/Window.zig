@@ -15,7 +15,7 @@ const DeviceResources = @import("graphics/DeviceResources.zig");
 const os = std.os.windows;
 
 hWnd: ?os.HWND = null,
-dpr: f32 = 1,
+dpr: ?f32 = null,
 device_resources: DeviceResources = .{},
 
 // ----------------------------------------------------------------
@@ -104,9 +104,14 @@ pub fn create(
         return gui.Error.Usage; // window already exists
 
     const hWnd = try createWindowRaw(title);
-    errdefer _ = DestroyWindow(hWnd);
-
     const dpr = dpi.getDprFor(hWnd);
+    window.dpr = dpr;
+    window.hWnd = hWnd;
+    errdefer {
+        _ = DestroyWindow(hWnd);
+        window.hWnd = null;
+        window.dpr = null;
+    }
 
     const physical_width: i32 =
         @intFromFloat(dpi.physicalFromLogical(dpr, width));
@@ -123,8 +128,6 @@ pub fn create(
     ) == 0)
         return gui.Error.OsApi;
 
-    window.hWnd = hWnd;
-    window.dpr = dpr;
     class.subclass(hWnd, wndproc.make(Impl, resps), impl);
 
     _ = ShowWindow(hWnd, .show); // return value does not matter

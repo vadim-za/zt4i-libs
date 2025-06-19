@@ -1,4 +1,5 @@
 const std = @import("std");
+const graphics = @import("graphics.zig");
 
 const os = std.os.windows;
 
@@ -29,3 +30,16 @@ pub const Pos = struct {
 
 pub const Modifier = enum { shift, control, alt };
 pub const Modifiers = std.EnumSet(Modifier);
+
+pub const Event = struct {
+    action: Action,
+    pos: graphics.Point,
+    modifiers: Modifiers,
+    buttons: Buttons,
+
+    pub fn relativeTo(self: *const @This(), origin: graphics.Point) @This() {
+        var new = self.*;
+        new.pos = self.point.relativeTo(origin);
+        return new;
+    }
+};

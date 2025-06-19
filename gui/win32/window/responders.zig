@@ -1,9 +1,11 @@
 const std = @import("std");
 const Window = @import("../Window.zig");
 const graphics = @import("../graphics.zig");
+const mouse = @import("../mouse.zig");
 
 pub fn Responders(Impl: type) type {
     const ImplDefaults = Defaults(Impl);
+
     return struct {
         getCore: *const fn (impl: *Impl) *Window,
         onClose: *const fn (impl: *Impl) bool = override("onClose"),
@@ -12,6 +14,10 @@ pub fn Responders(Impl: type) type {
             impl: *Impl,
             dc: *graphics.DrawContext,
         ) void = override("onPaint"),
+        onMouse: *const fn (
+            impl: *Impl,
+            event: *const mouse.Event,
+        ) bool = override("onMouse"),
 
         pub const default = @This(){
             .getCore = if (@hasDecl(Impl, "getCore"))
@@ -51,6 +57,11 @@ fn Defaults(Impl: type) type {
         fn onPaint(impl: *Impl, dc: *graphics.DrawContext) void {
             _ = impl;
             _ = dc;
+        }
+        fn onMouse(impl: *Impl, event: *const mouse.Event) bool {
+            _ = impl;
+            _ = event;
+            return false;
         }
     };
 }

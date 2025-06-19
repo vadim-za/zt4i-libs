@@ -9,6 +9,7 @@ const d2d1 = @import("../d2d1.zig");
 const graphics = @import("../graphics.zig");
 const mouse = @import("../mouse.zig");
 const mouse_util = @import("mouse_util.zig");
+const dpi = @import("../dpi.zig");
 
 const os = std.os.windows;
 
@@ -55,8 +56,8 @@ pub fn ReceivedMessage(
         pub fn handle(
             self: *const @This(),
         ) Result {
-            // if(handleAsMouseMessage()) |result|
-            //     return result;
+            if (self.handleMouse()) |result|
+                return result;
             return switch (self.uMsg) {
                 WM_DESTROY => self.onDestroy(),
                 WM_PAINT, WM_DISPLAYCHANGE => self.onPaint(),
@@ -111,6 +112,31 @@ pub fn ReceivedMessage(
             if (resps.onClose(self.impl))
                 self.core.destroy();
             return .zero;
+        }
+
+        fn handleMouse(self: *const @This()) ?Result {
+            const action = mouse_util.actionFromMsg(self.uMsg) orelse
+                return null;
+
+            const physical_pos = mouse_util.posFromLParam(self.lParam);
+            const modifiers = mouse_util.modifiersFromWParamSync(self.wParam);
+            const buttons = mouse_util.buttonsFromWParam(self.wParam);
+            const dpr = self.core.dpr.?;
+            const logical_pos = graphics.Point{
+                .x = dpi.logicalFromPhysical(dpr, physical_pos.x),
+                .y = dpi.logicalFromPhysical(dpr, physical_pos.y),
+            };
+
+            const mouse_event = mouse.Event{
+                .action = action,
+                .pos = logical_pos,
+                .modifiers = modifiers,
+                .buttons = buttons,
+            };
+            return if (resps.onMouse(self.impl, &mouse_event))
+                .zero
+            else
+                null;
         }
     };
 }

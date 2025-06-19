@@ -34,10 +34,12 @@ pub fn getDprFor(hWnd: os.HWND) f32 {
     return @as(f32, @floatFromInt(dpi)) / 96;
 }
 
+// Physical coordinates are supposed to be i32, but we return
+// f32 and let the caller decide on the rounding details.
 pub fn physicalFromLogical(dpr: f32, logical: f32) f32 {
     return logical * dpr;
 }
 
 pub fn logicalFromPhysical(dpr: f32, physical: i32) f32 {
-    return physical / dpr;
+    return @as(f32, @floatFromInt(physical)) / dpr;
 }
