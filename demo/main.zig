@@ -84,6 +84,19 @@ const Window = struct {
             self.dr.red_brush.ref(),
         ) catch |err| std.debug.assert(err != zt4i.gui.Error.Usage);
     }
+
+    pub fn onMouse(self: *@This(), event: *const zt4i.gui.mouse.Event) bool {
+        if (event.action.type == .up) {
+            _ = zt4i.gui.showMessageBox(
+                &self.core,
+                "Caption",
+                "Text",
+                .ok,
+            ) catch {};
+            return true;
+        }
+        return false;
+    }
 };
 
 fn appMain() void {

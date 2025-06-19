@@ -7,7 +7,6 @@ const class = @import("class.zig");
 const Responders = @import("responders.zig").Responders;
 const d2d1 = @import("../d2d1.zig");
 const graphics = @import("../graphics.zig");
-const mouse = @import("../mouse.zig");
 const mouse_util = @import("mouse_util.zig");
 const dpi = @import("../dpi.zig");
 
@@ -127,7 +126,7 @@ pub fn ReceivedMessage(
                 .y = dpi.logicalFromPhysical(dpr, physical_pos.y),
             };
 
-            const mouse_event = mouse.Event{
+            const mouse_event = gui.mouse.Event{
                 .action = action,
                 .pos = logical_pos,
                 .modifiers = modifiers,

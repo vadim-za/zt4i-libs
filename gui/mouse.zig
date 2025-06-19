@@ -1,7 +1,6 @@
 const std = @import("std");
-const graphics = @import("graphics.zig");
-
-const os = std.os.windows;
+const gui = @import("gui.zig");
+const graphics = gui.graphics;
 
 pub const Action = struct {
     button: ?Button, // null for "move" action

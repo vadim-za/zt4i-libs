@@ -1,7 +1,7 @@
 const std = @import("std");
 const Window = @import("../Window.zig");
 const graphics = @import("../graphics.zig");
-const mouse = @import("../mouse.zig");
+const gui = @import("../../gui.zig");
 
 pub fn Responders(Impl: type) type {
     const ImplDefaults = Defaults(Impl);
@@ -16,7 +16,7 @@ pub fn Responders(Impl: type) type {
         ) void = override("onPaint"),
         onMouse: *const fn (
             impl: *Impl,
-            event: *const mouse.Event,
+            event: *const gui.mouse.Event,
         ) bool = override("onMouse"),
 
         pub const default = @This(){
@@ -58,7 +58,7 @@ fn Defaults(Impl: type) type {
             _ = impl;
             _ = dc;
         }
-        fn onMouse(impl: *Impl, event: *const mouse.Event) bool {
+        fn onMouse(impl: *Impl, event: *const gui.mouse.Event) bool {
             _ = impl;
             _ = event;
             return false;

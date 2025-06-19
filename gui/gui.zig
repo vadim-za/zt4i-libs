@@ -10,6 +10,11 @@ pub const Error = error{
 };
 
 // --------------------------------------------------------------
+// Platform-independent decls
+
+pub const mouse = @import("mouse.zig");
+
+// --------------------------------------------------------------
 // Platforms
 
 pub const win32 = @import("win32.zig");
