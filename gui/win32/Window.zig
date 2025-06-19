@@ -123,9 +123,9 @@ pub fn create(
     ) == 0)
         return gui.Error.OsApi;
 
-    class.subclass(hWnd, wndproc.make(Impl, resps), impl);
     window.hWnd = hWnd;
     window.dpr = dpr;
+    class.subclass(hWnd, wndproc.make(Impl, resps), impl);
 
     _ = ShowWindow(hWnd, .show); // return value does not matter
     _ = UpdateWindow(hWnd); // ignore return value
