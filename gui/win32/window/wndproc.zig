@@ -37,8 +37,10 @@ fn Container(
                     .lParam = lParam,
                 };
 
-                if (msg.handle()) |result|
-                    return result;
+                switch (msg.handle()) {
+                    .return_value => |value| return value,
+                    .call_default => {}, // fall through
+                }
             } else if (std.debug.runtime_safety)
                 @panic("Window handle mismatch");
 

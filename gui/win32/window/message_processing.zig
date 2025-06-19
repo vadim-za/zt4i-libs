@@ -45,26 +45,35 @@ pub fn ReceivedMessage(
         wParam: os.WPARAM,
         lParam: os.LPARAM,
 
+        pub const Result = union(enum) {
+            return_value: os.LRESULT,
+            call_default: void,
+
+            const zero = @This(){ .return_value = 0 };
+        };
+
         pub fn handle(
             self: *const @This(),
-        ) ?os.LRESULT {
+        ) Result {
+            // if(handleAsMouseMessage()) |result|
+            //     return result;
             return switch (self.uMsg) {
                 WM_DESTROY => self.onDestroy(),
                 WM_PAINT, WM_DISPLAYCHANGE => self.onPaint(),
                 WM_CLOSE => self.onClose(),
-                else => null,
+                else => .call_default,
             };
         }
 
-        fn onDestroy(self: *const @This()) ?os.LRESULT {
+        fn onDestroy(self: *const @This()) Result {
             resps.onDestroy(self.impl);
             class.subclass(self.core.hWnd.?, null, null);
             self.core.device_resources.releaseResources();
             self.core.hWnd = null;
-            return 0;
+            return .zero;
         }
 
-        fn onPaint(self: *const @This()) ?os.LRESULT {
+        fn onPaint(self: *const @This()) Result {
             var ps: PAINTSTRUCT = undefined;
             _ = BeginPaint(self.core.hWnd.?, &ps);
             defer _ = EndPaint(self.core.hWnd.?, &ps);
@@ -73,13 +82,14 @@ pub fn ReceivedMessage(
                 self.core.device_resources.provideResourcesFor(
                     self.core.hWnd.?,
                 ) catch {
+                    // having no render target or resources is fatal
                     if (builtin.mode == .Debug)
                         @panic("Failed to create window device resources");
-                    return 0; // having no render target or resources is fatal
+                    return .zero;
                 };
 
             if (hwnd_target.checkWindowState().OCCLUDED)
-                return 0;
+                return .zero;
 
             const target = hwnd_target.as(d2d1.IRenderTarget);
             target.beginDraw();
@@ -94,13 +104,13 @@ pub fn ReceivedMessage(
                 .origin = .zero,
             };
             resps.onPaint(self.impl, &dc);
-            return 0;
+            return .zero;
         }
 
-        fn onClose(self: *const @This()) ?os.LRESULT {
+        fn onClose(self: *const @This()) Result {
             if (resps.onClose(self.impl))
                 self.core.destroy();
-            return 0;
+            return .zero;
         }
     };
 }
