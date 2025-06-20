@@ -4,6 +4,7 @@
 
 const std = @import("std");
 const graphics = @import("graphics.zig");
+const keys = @import("keys.zig");
 
 pub const Action = struct {
     button: ?Button, // null for "move" action
@@ -30,13 +31,10 @@ pub const Pos = struct {
     y: i32,
 };
 
-pub const Modifier = enum { shift, control, alt };
-pub const Modifiers = std.EnumSet(Modifier);
-
 pub const Event = struct {
     action: Action,
     pos: graphics.Point,
-    modifiers: Modifiers,
+    modifiers: keys.Modifiers,
     buttons: Buttons,
 
     pub fn relativeTo(self: *const @This(), origin: graphics.Point) @This() {

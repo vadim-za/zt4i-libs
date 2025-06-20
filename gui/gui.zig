@@ -45,6 +45,7 @@ pub const Point = graphics.Point;
 pub const Rectangle = graphics.Rectangle;
 
 pub const mouse = platform.mouse;
+pub const keys = platform.keys;
 
 // Conditional platform reexports
 pub const wWinMain =

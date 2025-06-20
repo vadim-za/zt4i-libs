@@ -26,15 +26,17 @@ fn Container(
             lParam: os.LPARAM,
         ) callconv(.winapi) os.LRESULT {
             const impl = class.getUserPtr(?*Impl, hWnd).?;
-            const core = resps.getCore(impl);
+            const window = resps.getCore(impl);
 
-            if (core.hWnd == hWnd) {
+            if (window.hWnd == hWnd) {
                 const msg = ReceivedMessage(Impl, resps){
                     .impl = impl,
-                    .core = core,
-                    .uMsg = uMsg,
-                    .wParam = wParam,
-                    .lParam = lParam,
+                    .core = .{
+                        .window = window,
+                        .uMsg = uMsg,
+                        .wParam = wParam,
+                        .lParam = lParam,
+                    },
                 };
 
                 switch (msg.handle()) {

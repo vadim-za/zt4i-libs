@@ -8,7 +8,7 @@ const Responders = @import("responders.zig").Responders;
 const d2d1 = @import("../d2d1.zig");
 const graphics = @import("../graphics.zig");
 const mouse_util = @import("mouse_util.zig");
-const dpi = @import("../dpi.zig");
+const keys_util = @import("keys_util.zig");
 
 const os = std.os.windows;
 
@@ -34,16 +34,20 @@ const PAINTSTRUCT = extern struct {
 
 // ----------------------------------------------------------------
 
+pub const ReceivedMessageCore = struct {
+    window: *Window,
+    uMsg: os.UINT,
+    wParam: os.WPARAM,
+    lParam: os.LPARAM,
+};
+
 pub fn ReceivedMessage(
     Impl: type,
     comptime resps: Responders(Impl),
 ) type {
     return struct {
         impl: *Impl,
-        core: *Window,
-        uMsg: os.UINT,
-        wParam: os.WPARAM,
-        lParam: os.LPARAM,
+        core: ReceivedMessageCore,
 
         pub const Result = union(enum) {
             return_value: os.LRESULT,
@@ -57,7 +61,7 @@ pub fn ReceivedMessage(
         ) Result {
             if (self.handleMouse()) |result|
                 return result;
-            return switch (self.uMsg) {
+            return switch (self.core.uMsg) {
                 WM_DESTROY => self.onDestroy(),
                 WM_PAINT, WM_DISPLAYCHANGE => self.onPaint(),
                 WM_CLOSE => self.onClose(),
@@ -66,21 +70,25 @@ pub fn ReceivedMessage(
         }
 
         fn onDestroy(self: *const @This()) Result {
+            const window = self.core.window;
+
             resps.onDestroy(self.impl);
-            class.subclass(self.core.hWnd.?, null, null);
-            self.core.device_resources.releaseResources();
-            self.core.hWnd = null;
+            class.subclass(window.hWnd.?, null, null);
+            window.device_resources.releaseResources();
+            window.hWnd = null;
             return .zero;
         }
 
         fn onPaint(self: *const @This()) Result {
+            const window = self.core.window;
+
             var ps: PAINTSTRUCT = undefined;
-            _ = BeginPaint(self.core.hWnd.?, &ps);
-            defer _ = EndPaint(self.core.hWnd.?, &ps);
+            _ = BeginPaint(window.hWnd.?, &ps);
+            defer _ = EndPaint(window.hWnd.?, &ps);
 
             const hwnd_target =
-                self.core.device_resources.provideResourcesFor(
-                    self.core.hWnd.?,
+                window.device_resources.provideResourcesFor(
+                    window.hWnd.?,
                 ) catch {
                     // having no render target or resources is fatal
                     if (builtin.mode == .Debug)
@@ -94,7 +102,7 @@ pub fn ReceivedMessage(
             const target = hwnd_target.as(d2d1.IRenderTarget);
             target.beginDraw();
             defer target.endDraw() catch |err| switch (err) {
-                error.RecreateTarget => self.core
+                error.RecreateTarget => window
                     .device_resources.releaseResources(),
                 else => {},
             };
@@ -108,34 +116,68 @@ pub fn ReceivedMessage(
         }
 
         fn onClose(self: *const @This()) Result {
+            const window = self.core.window;
             if (resps.onClose(self.impl))
-                self.core.destroy();
+                window.destroy();
             return .zero;
         }
 
         fn handleMouse(self: *const @This()) ?Result {
-            const action = mouse_util.actionFromMsg(self.uMsg) orelse
+            const mouse_event = mouse_util.eventFromMsg(&self.core) orelse
                 return null;
 
-            const physical_pos = mouse_util.posFromLParam(self.lParam);
-            const modifiers = mouse_util.modifiersFromWParamSync(self.wParam);
-            const buttons = mouse_util.buttonsFromWParam(self.wParam);
-            const dpr = self.core.dpr.?;
-            const logical_pos = graphics.Point{
-                .x = dpi.logicalFromPhysical(dpr, physical_pos.x),
-                .y = dpi.logicalFromPhysical(dpr, physical_pos.y),
-            };
-
-            const mouse_event = gui.mouse.Event{
-                .action = action,
-                .pos = logical_pos,
-                .modifiers = modifiers,
-                .buttons = buttons,
-            };
             return if (resps.onMouse(self.impl, &mouse_event))
                 .zero
             else
                 null;
+        }
+
+        fn handleKey(self: *const @This()) ?Result {
+            const event, const is_char =
+                keys_util.eventFromMsg(&self.core) orelse return null;
+
+            if (is_char)
+                return handleChar(
+                    &event,
+                    @as(u16, @truncate(self.core.wParam)),
+                )
+            else {
+                return if (resps.onKey(self.impl, &event))
+                    .zero
+                else
+                    null;
+            }
+        }
+
+        fn handleChar(
+            self: *const @This(),
+            event: *const gui.keys.Event,
+            wtf16char: u16,
+        ) ?Result {
+            if (comptime builtin.cpu.arch.endian() != .little)
+                @compileError("Only little endian archs supported by Win32 backend");
+
+            // TODO: Handle surrogate pairs
+            if (std.unicode.utf16IsHighSurrogate(wtf16char) or
+                std.unicode.utf16IsLowSurrogate(wtf16char))
+                return null;
+
+            var utf8buf: [4]u8 = undefined;
+            const len = std.unicode.utf8Encode(wtf16char, &utf8buf) catch {
+                if (std.debug.runtime_safety)
+                    @panic("Unicode conversion error in keyboard input");
+            };
+
+            const utf8str = utf8buf[0..len];
+            var handled = false;
+            for (utf8str) |c| {
+                var char_event = event;
+                char_event.char = c;
+                if (resps.onKey(self.impl, &char_event))
+                    handled = true;
+            }
+
+            return if (handled) .zero else null;
         }
     };
 }

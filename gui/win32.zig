@@ -7,6 +7,7 @@ pub const message_loop = @import("win32/message_loop.zig");
 pub const Window = @import("win32/Window.zig");
 pub const graphics = @import("win32/graphics.zig");
 pub const mouse = @import("win32/mouse.zig");
+pub const keys = @import("win32/keys.zig");
 
 // --------------------------------------------------------------
 
