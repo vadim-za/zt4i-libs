@@ -100,10 +100,17 @@ const Window = struct {
 
     pub fn onKey(self: *@This(), event: *const zt4i.gui.keys.Event) bool {
         if (event.logical_action == .down and event.char != null) {
+            var utf8buf: [4]u8 = undefined;
+            const len = std.unicode.utf8Encode(event.char.?, &utf8buf) catch {
+                if (std.debug.runtime_safety)
+                    @panic("Unicode conversion error in keyboard input");
+            };
+
+            const utf8str = utf8buf[0..len];
             _ = zt4i.gui.showMessageBox(
                 &self.core,
                 "Caption",
-                (&event.char.?)[0..1], //"Key",
+                utf8str, //"Key",
                 .ok,
             ) catch {};
             return true;

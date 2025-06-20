@@ -14,7 +14,7 @@ pub const Event = struct {
 
     // Some or all of the .vk and .char may be null
     vkey: ?u8, // can be sent with .down and .up actions
-    char: ?u8, // canonly sent with .down actions
+    char: ?u21, // unicode codepoint, can only be sent with .down actions
 };
 
 // The order of modifiers matches the order of VK_... codes,

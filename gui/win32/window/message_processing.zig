@@ -62,7 +62,7 @@ pub fn ReceivedMessage(
             if (self.handleMouse()) |result|
                 return result;
 
-            if(self.handleKey()) |result|
+            if (self.handleKey()) |result|
                 return result;
 
             return switch (self.core.uMsg) {
@@ -166,22 +166,12 @@ pub fn ReceivedMessage(
                 std.unicode.utf16IsLowSurrogate(wtf16char))
                 return null;
 
-            var utf8buf: [4]u8 = undefined;
-            const len = std.unicode.utf8Encode(wtf16char, &utf8buf) catch {
-                if (std.debug.runtime_safety)
-                    @panic("Unicode conversion error in keyboard input");
-            };
-
-            const utf8str = utf8buf[0..len];
-            var handled = false;
-            for (utf8str) |c| {
-                var char_event = event.*;
-                char_event.char = c;
-                if (resps.onKey(self.impl, &char_event))
-                    handled = true;
-            }
-
-            return if (handled) .zero else null;
+            var char_event = event.*;
+            char_event.char = wtf16char;
+            return if (resps.onKey(self.impl, &char_event))
+                .zero
+            else
+                null;
         }
     };
 }
