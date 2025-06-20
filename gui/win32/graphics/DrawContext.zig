@@ -1,6 +1,5 @@
 const std = @import("std");
 const d2d1 = @import("../d2d1.zig");
-const types = @import("types.zig");
 const BrushRef = @import("BrushRef.zig");
 const Path = @import("Path.zig");
 const Font = @import("Font.zig");
@@ -8,9 +7,9 @@ const unicode = @import("../unicode.zig");
 const gui = @import("../../gui.zig");
 const winmain = @import("../winmain.zig");
 
-const Color = types.Color;
-const Point = types.Point;
-const Rectangle = types.Rectangle;
+const Color = gui.Color;
+const Point = gui.Point;
+const Rectangle = gui.Rectangle;
 
 target: *d2d1.IRenderTarget,
 origin: Point,
@@ -23,8 +22,8 @@ pub fn drawLine(
     width: f32,
 ) void {
     self.target.drawLine(
-        &pt1.toD2d(),
-        &pt2.toD2d(),
+        &.fromGui(pt1),
+        &.fromGui(pt2),
         brush.ibrush,
         width,
     );
@@ -36,7 +35,7 @@ pub fn drawRectangle(
     brush: BrushRef,
     width: f32,
 ) void {
-    self.target.drawRectangle(&rect.toD2d(), brush.ibrush, width);
+    self.target.drawRectangle(&.fromGui(rect), brush.ibrush, width);
 }
 
 pub fn fillRectangle(
@@ -44,7 +43,7 @@ pub fn fillRectangle(
     rect: *const Rectangle,
     brush: BrushRef,
 ) void {
-    self.target.fillRectangle(&rect.toD2d(), brush.ibrush);
+    self.target.fillRectangle(&.fromGui(rect), brush.ibrush);
 }
 
 pub fn drawPath(
@@ -71,8 +70,8 @@ pub fn fillPath(
     );
 }
 
-pub fn clear(self: *const @This(), color: Color) void {
-    self.target.clear(&color.toD2d());
+pub fn clear(self: *const @This(), color: *const Color) void {
+    self.target.clear(&.fromGui(color));
 }
 
 pub fn drawText(
@@ -89,7 +88,7 @@ pub fn drawText(
     self.target.drawText(
         text16.slice(),
         font.dwrite_text_format.?,
-        &rect.toD2d(),
+        &.fromGui(rect),
         brush.ibrush,
     );
 }

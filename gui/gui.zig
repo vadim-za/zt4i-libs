@@ -20,17 +20,19 @@ const platform = win32;
 // Platform reexports
 pub const allocator = platform.allocator;
 
-pub const message_box = platform.message_box;
+const message_box = platform.message_box;
 pub const showMessageBox = message_box.show;
 pub const showComptimeMessageBox = message_box.showComptime;
+pub const MessageBoxType = message_box.Type;
+pub const MessageBoxResult = message_box.Result;
 
-pub const message_loop = platform.message_loop;
+const message_loop = platform.message_loop;
 pub const runMessageLoop = message_loop.run;
 pub const stopMessageLoop = message_loop.stop;
 
 pub const Window = platform.Window;
 
-pub const graphics = platform.graphics;
+const graphics = platform.graphics;
 pub const BrushRef = graphics.BrushRef;
 pub const SolidBrush = graphics.SolidBrush;
 pub const DeviceResources = graphics.DeviceResources;

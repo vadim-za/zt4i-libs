@@ -34,7 +34,7 @@ pub const virtuals = struct {
 
         if (self.ibrush == null) {
             self.ibrush =
-                try target.createSolidColorBrush(&self.color.toD2d());
+                try target.createSolidColorBrush(&.fromGui(&self.color));
         } else std.debug.assert(false);
     }
 

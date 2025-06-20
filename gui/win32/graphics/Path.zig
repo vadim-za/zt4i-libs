@@ -34,7 +34,7 @@ pub fn begin(mode: Mode, at: *const Point) gui.Error!Sink {
     const d2d_sink = d2d_geometry_sink.as(d2d1.ISimplifiedGeometrySink);
 
     d2d_sink.beginFigure(
-        at.toD2d(),
+        &.fromGui(at),
         switch (mode) {
             .open => .HOLLOW,
             .closed => .FILLED,
@@ -96,7 +96,7 @@ pub const Sink = struct {
     pub fn addLines(self: *@This(), points: []const Point) void {
         // TODO: use ISimplifiedGeometrySink.AddLines
         for (points) |*p|
-            self.d2d_sink.addLine(p.toD2d());
+            self.d2d_sink.addLine(&.fromGui(p));
     }
 
     pub fn addBeziers(self: *@This(), segments: []const BezierTo) void {

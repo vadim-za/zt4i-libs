@@ -55,10 +55,10 @@ pub const ISimplifiedGeometrySink = extern struct { // ID2D1SimplifiedGeometrySi
 
     pub fn beginFigure(
         self: *@This(),
-        start_point: d2d1.POINT_2F,
+        start_point: *const d2d1.POINT_2F,
         figure_begin: FIGURE_BEGIN,
     ) void {
-        self.vtbl.BeginFigure(self, start_point, figure_begin);
+        self.vtbl.BeginFigure(self, start_point.*, figure_begin);
     }
 
     pub fn endFigure(
@@ -97,8 +97,8 @@ pub const IGeometrySink = extern struct { // ID2D1GeometrySink
 
     pub const as = com.cast;
 
-    pub fn addLine(self: *@This(), point: d2d1.POINT_2F) void {
-        self.vtbl.AddLine(self, point);
+    pub fn addLine(self: *@This(), point: *const d2d1.POINT_2F) void {
+        self.vtbl.AddLine(self, point.*);
     }
 
     pub fn addBezier(self: *@This(), bezier: *const d2d1.BEZIER_SEGMENT) void {

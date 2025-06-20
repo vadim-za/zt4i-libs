@@ -1,5 +1,4 @@
 const std = @import("std");
-const d2d1 = @import("../../d2d1.zig");
 const Point = @import("Point.zig");
 
 left: f32,
@@ -13,15 +12,6 @@ pub fn initCorners(lt: *const Point, rb: *const Point) @This() {
         .top = lt.y,
         .right = rb.x,
         .bottom = rb.y,
-    };
-}
-
-pub fn toD2d(self: *const @This()) d2d1.RECT_F {
-    return .{
-        .left = self.left,
-        .top = self.top,
-        .right = self.right,
-        .bottom = self.bottom,
     };
 }
 

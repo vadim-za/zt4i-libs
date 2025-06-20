@@ -1,5 +1,3 @@
-const d2d1 = @import("../../d2d1.zig");
-
 r: f32,
 g: f32,
 b: f32,
@@ -20,8 +18,4 @@ pub fn initGray(intensity: f32) @This() {
         .b = intensity,
         .a = 1,
     };
-}
-
-pub fn toD2d(self: *const @This()) d2d1.COLOR_F {
-    return .{ .r = self.r, .g = self.g, .b = self.b, .a = self.a };
 }

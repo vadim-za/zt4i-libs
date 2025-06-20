@@ -1,7 +1,6 @@
 const std = @import("std");
-const graphics = @import("../../graphics.zig");
-const Point = graphics.Point;
-const Rectangle = graphics.Rectangle;
+const Point = @import("Point.zig");
+const Rectangle = @import("Rectangle.zig");
 
 pt: [4]Point,
 

@@ -7,8 +7,7 @@ pub const DrawContext = @import("graphics/DrawContext.zig");
 pub const Font = @import("graphics/Font.zig");
 pub const Path = @import("graphics/Path.zig");
 
-const types = @import("graphics/types.zig");
-pub const Bezier = types.Bezier;
-pub const Color = types.Color;
-pub const Point = types.Point;
-pub const Rectangle = types.Rectangle;
+pub const Bezier = @import("../shared/graphics/Bezier.zig");
+pub const Color = @import("../shared/graphics/Color.zig");
+pub const Point = @import("../shared/graphics/Point.zig");
+pub const Rectangle = @import("../shared/graphics/Rectangle.zig");

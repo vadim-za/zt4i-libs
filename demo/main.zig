@@ -58,7 +58,7 @@ const Window = struct {
     }
 
     pub fn onPaint(self: *@This(), dc: *zt4i.gui.DrawContext) void {
-        dc.clear(.initRgb(0, 0, 1));
+        dc.clear(&.initRgb(0, 0, 1));
         dc.fillRectangle(
             &.{ .left = 100, .right = 200, .top = 100, .bottom = 150 },
             self.dr.red_brush.ref(),

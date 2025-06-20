@@ -1,6 +1,7 @@
 // dcommon.h and other headers
 const std = @import("std");
 const dxgi = @import("../dxgi.zig");
+const gui = @import("../../gui.zig");
 
 const os = std.os.windows;
 const DXGI_FORMAT = dxgi.format.DXGI_FORMAT;
@@ -13,6 +14,10 @@ pub const SIZE_U = extern struct {
 pub const POINT_2F = extern struct {
     x: os.FLOAT,
     y: os.FLOAT,
+
+    pub fn fromGui(point: *const gui.Point) @This() {
+        return .{ .x = point.x, .y = point.y };
+    }
 };
 
 pub const RECT_F = extern struct {
@@ -20,6 +25,15 @@ pub const RECT_F = extern struct {
     top: os.FLOAT,
     right: os.FLOAT,
     bottom: os.FLOAT,
+
+    pub fn fromGui(rect: *const gui.Rectangle) @This() {
+        return .{
+            .left = rect.left,
+            .top = rect.top,
+            .right = rect.right,
+            .bottom = rect.bottom,
+        };
+    }
 };
 
 pub const BEZIER_SEGMENT = extern struct {
@@ -41,6 +55,15 @@ pub const COLOR_F = extern struct { // D2D_COLOR_F (d2dbasetypes.h) = D3DCOLORVA
     g: f32,
     b: f32,
     a: f32,
+
+    pub fn fromGui(color: *const gui.Color) @This() {
+        return .{
+            .r = color.r,
+            .g = color.g,
+            .b = color.b,
+            .a = color.a,
+        };
+    }
 };
 
 pub const ALPHA_MODE = enum(u32) {

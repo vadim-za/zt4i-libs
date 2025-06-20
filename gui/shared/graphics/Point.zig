@@ -1,13 +1,7 @@
-const d2d1 = @import("../../d2d1.zig");
-
 x: f32,
 y: f32,
 
 pub const zero = @This(){ .x = 0, .y = 0 };
-
-pub fn toD2d(self: *const @This()) d2d1.POINT_2F {
-    return .{ .x = self.x, .y = self.y };
-}
 
 pub fn negated(self: *const @This()) @This() {
     return .{
