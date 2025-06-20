@@ -13,7 +13,7 @@ pub const Event = struct {
     modifiers: Modifiers,
 
     // Some or all of the .vk and .char may be null
-    vk: ?u8, // can be sent with .down and .up actions
+    vkey: ?u8, // can be sent with .down and .up actions
     char: ?u8, // canonly sent with .down actions
 };
 

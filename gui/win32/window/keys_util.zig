@@ -5,7 +5,7 @@ const MessageCore =
 
 const os = std.os.windows;
 
-fn modifierVK(modifier: gui.keys.Modifier) c_int {
+fn modifierVKey(modifier: gui.keys.Modifier) c_int {
     return 0x10 + @as(c_int, @intFromEnum(modifier));
 }
 
@@ -13,8 +13,8 @@ extern "user32" fn GetKeyState(nVirtKey: c_int) callconv(.winapi) os.SHORT;
 
 // Must be called synchronously! (That is while processing the message)
 pub fn modifierStateSync(modifier: gui.keys.Modifier) bool {
-    const vk = modifierVK(modifier);
-    return GetKeyState(vk) < 0;
+    const vkey = modifierVKey(modifier);
+    return GetKeyState(vkey) < 0;
 }
 
 // Must be called synchronously! (That is while processing the message)
@@ -26,7 +26,7 @@ pub fn modifiersStateSync() gui.keys.Modifiers {
     });
 }
 
-fn guiVkFromWParam(wParam: os.WPARAM) ?u8 {
+fn guiVKeyFromWParam(wParam: os.WPARAM) ?u8 {
     // TODO: Gui Virtual Key codes
     return switch (wParam) {
         '0'...'9', 'A'...'Z' => @intCast(wParam),
@@ -67,13 +67,13 @@ pub fn eventFromMsg(msg: *const MessageCore) ?struct {
         .physical_action = actions.physical,
         .logical_action = actions.logical,
         .modifiers = modifiersStateSync(),
-        .vk = null,
+        .vkey = null,
         .char = null,
     };
 
     switch (msg.uMsg) {
         WM_KEYDOWN, WM_KEYUP => {
-            event.vk = guiVkFromWParam(msg.wParam);
+            event.vkey = guiVKeyFromWParam(msg.wParam);
             return .{ event, false };
         },
         else => {

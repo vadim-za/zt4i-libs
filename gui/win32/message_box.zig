@@ -72,8 +72,8 @@ pub fn showComptime(
 // This function uses gui.allocator() to convert strings to WTF16
 pub fn show(
     parent_window: ?*gui.Window,
-    caption: [:0]const u8,
-    text: [:0]const u8,
+    caption: []const u8,
+    text: []const u8,
     @"type": Type,
 ) gui.Error!Result {
     var text16: unicode.Wtf16Str(2000) = undefined;

@@ -97,6 +97,19 @@ const Window = struct {
         }
         return false;
     }
+
+    pub fn onKey(self: *@This(), event: *const zt4i.gui.keys.Event) bool {
+        if (event.logical_action == .down and event.char != null) {
+            _ = zt4i.gui.showMessageBox(
+                &self.core,
+                "Caption",
+                (&event.char.?)[0..1], //"Key",
+                .ok,
+            ) catch {};
+            return true;
+        }
+        return false;
+    }
 };
 
 fn appMain() void {
