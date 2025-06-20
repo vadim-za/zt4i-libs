@@ -1,6 +1,9 @@
+// Even though this file has no formal dependencies on
+// platform-specific types, there is a potential implementation
+// dependency: enum values are adjusted to WinAPI.
+
 const std = @import("std");
-const gui = @import("gui.zig");
-const graphics = gui.graphics;
+const graphics = @import("graphics.zig");
 
 pub const Action = struct {
     button: ?Button, // null for "move" action

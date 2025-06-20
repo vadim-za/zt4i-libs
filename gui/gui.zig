@@ -10,11 +10,6 @@ pub const Error = error{
 };
 
 // --------------------------------------------------------------
-// Platform-independent decls
-
-pub const mouse = @import("mouse.zig");
-
-// --------------------------------------------------------------
 // Platforms
 
 pub const win32 = @import("win32.zig");
@@ -46,6 +41,8 @@ pub const Bezier = graphics.Bezier;
 pub const Color = graphics.Color;
 pub const Point = graphics.Point;
 pub const Rectangle = graphics.Rectangle;
+
+pub const mouse = platform.mouse;
 
 // Conditional platform reexports
 pub const wWinMain =
