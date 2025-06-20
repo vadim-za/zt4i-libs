@@ -61,6 +61,10 @@ pub fn ReceivedMessage(
         ) Result {
             if (self.handleMouse()) |result|
                 return result;
+
+            if(self.handleKey()) |result|
+                return result;
+
             return switch (self.core.uMsg) {
                 WM_DESTROY => self.onDestroy(),
                 WM_PAINT, WM_DISPLAYCHANGE => self.onPaint(),
@@ -137,7 +141,7 @@ pub fn ReceivedMessage(
                 keys_util.eventFromMsg(&self.core) orelse return null;
 
             if (is_char)
-                return handleChar(
+                return self.handleChar(
                     &event,
                     @as(u16, @truncate(self.core.wParam)),
                 )
@@ -171,7 +175,7 @@ pub fn ReceivedMessage(
             const utf8str = utf8buf[0..len];
             var handled = false;
             for (utf8str) |c| {
-                var char_event = event;
+                var char_event = event.*;
                 char_event.char = c;
                 if (resps.onKey(self.impl, &char_event))
                     handled = true;

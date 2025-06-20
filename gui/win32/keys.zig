@@ -13,13 +13,8 @@ pub const Event = struct {
     modifiers: Modifiers,
 
     // Some or all of the .vk and .char may be null
-    vk: ?VirtualKeyEvent, // can be sent with .down and .up actions
+    vk: ?u8, // can be sent with .down and .up actions
     char: ?u8, // canonly sent with .down actions
-};
-
-pub const VirtualKeyEvent = struct {
-    key: u8,
-    modifiers: Modifiers,
 };
 
 // The order of modifiers matches the order of VK_... codes,

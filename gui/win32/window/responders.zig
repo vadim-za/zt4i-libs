@@ -18,6 +18,10 @@ pub fn Responders(Impl: type) type {
             impl: *Impl,
             event: *const gui.mouse.Event,
         ) bool = override("onMouse"),
+        onKey: *const fn (
+            impl: *Impl,
+            event: *const gui.keys.Event,
+        ) bool = override("onKey"),
 
         pub const default = @This(){
             .getCore = if (@hasDecl(Impl, "getCore"))
@@ -59,6 +63,11 @@ fn Defaults(Impl: type) type {
             _ = dc;
         }
         fn onMouse(impl: *Impl, event: *const gui.mouse.Event) bool {
+            _ = impl;
+            _ = event;
+            return false;
+        }
+        fn onKey(impl: *Impl, event: *const gui.keys.Event) bool {
             _ = impl;
             _ = event;
             return false;
