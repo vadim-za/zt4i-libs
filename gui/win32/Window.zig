@@ -57,33 +57,37 @@ extern "user32" fn SetWindowPos(
     y: c_int,
     cx: c_int,
     cy: c_int,
-    uFlags: os.UINT,
+    uFlags: SwpFlags,
 ) callconv(.winapi) os.BOOL;
 
-const SWP_NOSIZE: os.UINT = 1;
-const SWP_NOMOVE: os.UINT = 2;
-const SWP_NOZORDER: os.UINT = 4;
+const SwpFlags = packed struct(os.UINT) {
+    NOSIZE: bool = false,
+    NOMOVE: bool = false,
+    NOZORDER: bool = false,
+    _: u29 = 0,
+};
 
 extern "user32" fn DestroyWindow(hWnd: os.HWND) callconv(.winapi) os.BOOL;
 extern "user32" fn UpdateWindow(os.HWND) callconv(.winapi) os.BOOL;
 extern "user32" fn ShowWindow(os.HWND, CmdShow) callconv(.winapi) os.BOOL;
 
 const CmdShow = enum(c_int) {
-    hide = 0,
-    normal = 1,
-    minimized = 2,
-    maximized = 3,
-    no_activate = 4,
-    show = 5,
-    minimize = 6,
-    show_min_no_activate = 7,
-    show_na = 8,
-    restore = 9,
-    show_default = 10,
-    force_minimize = 11,
+    HIDE = 0,
+    SHOWNORMAL = 1,
+    SHOWMINIMIZED = 2,
+    SHOWMAXIMIZED = 3,
+    SHOWNOACTIVATE = 4,
+    SHOW = 5,
+    MINIMIZE = 6,
+    SHOWMINNOACTIVATE = 7,
+    SHOWNA = 8,
+    RESTORE = 9,
+    SHOWDEFAULT = 10,
+    FORCEMINIMIZE = 11,
 
-    const show_normal = .normal;
-    const maximize = .maximized;
+    const NORMAL = .SHOWNORMAL;
+    const MAXIMIZE = .SHOWMAXIMIZED;
+    const MAX = .FORCEMINIMIZE;
 };
 
 // ----------------------------------------------------------------
@@ -125,13 +129,13 @@ pub fn create(
         0,
         physical_width,
         physical_height,
-        SWP_NOMOVE | SWP_NOZORDER,
+        .{ .NOMOVE = true, .NOZORDER = true },
     ) == 0)
         return gui.Error.OsApi;
 
     class.subclass(hWnd, wndproc.make(Impl, resps), impl);
 
-    _ = ShowWindow(hWnd, .show); // return value does not matter
+    _ = ShowWindow(hWnd, .SHOW); // return value does not matter
     _ = UpdateWindow(hWnd); // ignore return value
 }
 
