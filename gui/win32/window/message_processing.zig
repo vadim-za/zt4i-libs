@@ -121,8 +121,10 @@ pub fn ReceivedMessage(
 
         fn onClose(self: *const @This()) Result {
             const window = self.core.window;
-            if (resps.onClose(self.impl))
-                window.destroy();
+            switch (resps.onClose(self.impl)) {
+                .destroy_window => window.destroy(),
+                .dont_destroy_window => {},
+            }
             return .zero;
         }
 
@@ -130,10 +132,16 @@ pub fn ReceivedMessage(
             const mouse_event = mouse_util.eventFromMsg(&self.core) orelse
                 return null;
 
-            return if (resps.onMouse(self.impl, &mouse_event))
-                .zero
-            else
-                null;
+            if (resps.onMouse(self.impl, &mouse_event)) |result| {
+                mouse_util.handleEventResult(
+                    self.core.window,
+                    &mouse_event,
+                    result,
+                );
+                return .zero;
+            }
+
+            return null;
         }
 
         fn handleKey(self: *const @This()) ?Result {
@@ -146,7 +154,7 @@ pub fn ReceivedMessage(
                     @as(u16, @truncate(self.core.wParam)),
                 )
             else {
-                return if (resps.onKey(self.impl, &event))
+                return if (resps.onKey(self.impl, &event)) |_|
                     .zero
                 else
                     null;
@@ -168,7 +176,7 @@ pub fn ReceivedMessage(
 
             var char_event = event.*;
             char_event.char = wtf16char;
-            return if (resps.onKey(self.impl, &char_event))
+            return if (resps.onKey(self.impl, &char_event)) |_|
                 .zero
             else
                 null;

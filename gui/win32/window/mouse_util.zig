@@ -3,6 +3,8 @@ const gui = @import("../../gui.zig");
 const graphics = @import("../graphics.zig");
 const dpi = @import("../dpi.zig");
 const keys_util = @import("keys_util.zig");
+const Window = @import("../Window.zig");
+const responders = @import("responders.zig");
 const MessageCore =
     @import("message_processing.zig").ReceivedMessageCore;
 
@@ -69,4 +71,33 @@ fn modifiersFromWParamSync(wParam: os.WPARAM) gui.keys.Modifiers {
         .control = (wParam & 8) != 0,
         .alt = keys_util.modifierStateSync(.alt),
     });
+}
+
+extern "user32" fn SetCapture(hWnd: os.HWND) callconv(.winapi) ?os.HWND;
+extern "user32" fn ReleaseCapture() callconv(.winapi) os.BOOL;
+extern "user32" fn GetCapture() callconv(.winapi) ?os.HWND;
+
+pub fn handleEventResult(
+    window: *Window,
+    event: *const gui.mouse.Event,
+    result: responders.CommonResults.OnMouse,
+) void {
+    switch (event.action.type) {
+        .down => switch (result) {
+            .capture => _ = SetCapture(window.hWnd.?),
+            .dont_capture => {},
+            // .processed is not supposed to be returned for .down events
+            .processed => std.debug.assert(false),
+        },
+        .up => {
+            // For .up events the only expected result is .processed
+            std.debug.assert(result == .processed);
+            if (event.buttons.count() == 0 and GetCapture() == window.hWnd.?)
+                _ = ReleaseCapture();
+        },
+        .move => {
+            // For .move events the only expected result is .processed
+            std.debug.assert(result == .processed);
+        },
+    }
 }

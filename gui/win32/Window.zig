@@ -4,7 +4,6 @@ const builtin = @import("builtin");
 const gui = @import("../gui.zig");
 const class = @import("window/class.zig");
 const responders = @import("window/responders.zig");
-const Responders = responders.Responders;
 const winmain = @import("winmain.zig");
 const dpi = @import("dpi.zig");
 const unicode = @import("unicode.zig");
@@ -13,6 +12,8 @@ const d2d1 = @import("d2d1.zig");
 const DeviceResources = @import("graphics/DeviceResources.zig");
 
 const os = std.os.windows;
+
+pub const Responders = responders.Responders;
 
 hWnd: ?os.HWND = null,
 dpr: ?f32 = null,

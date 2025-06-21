@@ -3,12 +3,21 @@ const Window = @import("../Window.zig");
 const graphics = @import("../graphics.zig");
 const gui = @import("../../gui.zig");
 
+// Results which do not depend on Impl
+pub const CommonResults = struct {
+    pub const OnClose = enum { destroy_window, dont_destroy_window };
+    pub const OnMouse = enum { capture, dont_capture, processed };
+};
+
 pub fn Responders(Impl: type) type {
-    const ImplDefaults = Defaults(Impl);
+    const ResultsForImpl = CommonResults;
+    const ImplDefaults = Defaults(Impl, ResultsForImpl);
 
     return struct {
+        pub const Results = ResultsForImpl;
+
         getCore: *const fn (impl: *Impl) *Window,
-        onClose: *const fn (impl: *Impl) bool = override("onClose"),
+        onClose: *const fn (impl: *Impl) Results.OnClose = override("onClose"),
         onDestroy: *const fn (impl: *Impl) void = override("onDestroy"),
         onPaint: *const fn (
             impl: *Impl,
@@ -17,11 +26,11 @@ pub fn Responders(Impl: type) type {
         onMouse: *const fn (
             impl: *Impl,
             event: *const gui.mouse.Event,
-        ) bool = override("onMouse"),
+        ) ?Results.OnMouse = override("onMouse"),
         onKey: *const fn (
             impl: *Impl,
             event: *const gui.keys.Event,
-        ) bool = override("onKey"),
+        ) ?void = override("onKey"),
 
         pub const default = @This(){
             .getCore = if (@hasDecl(Impl, "getCore"))
@@ -49,28 +58,35 @@ pub fn Responders(Impl: type) type {
     };
 }
 
-fn Defaults(Impl: type) type {
+fn Defaults(Impl: type, Results: type) type {
     return struct {
-        fn onClose(impl: *Impl) bool {
+        fn onClose(impl: *Impl) Results.OnClose {
             _ = impl;
-            return true;
+            return .destroy_window;
         }
+
         fn onDestroy(impl: *Impl) void {
             _ = impl;
         }
+
         fn onPaint(impl: *Impl, dc: *graphics.DrawContext) void {
             _ = impl;
             _ = dc;
         }
-        fn onMouse(impl: *Impl, event: *const gui.mouse.Event) bool {
+
+        fn onMouse(
+            impl: *Impl,
+            event: *const gui.mouse.Event,
+        ) ?Results.OnMouse {
             _ = impl;
             _ = event;
-            return false;
+            return null;
         }
-        fn onKey(impl: *Impl, event: *const gui.keys.Event) bool {
+
+        fn onKey(impl: *Impl, event: *const gui.keys.Event) ?void {
             _ = impl;
             _ = event;
-            return false;
+            return null;
         }
     };
 }
@@ -83,7 +99,7 @@ test "Defaults applied" {
 
     var impl: Impl = undefined;
     try std.testing.expectEqual(&impl.core, r.getCore(&impl));
-    try std.testing.expectEqual(true, r.onClose(&impl));
+    try std.testing.expectEqual(.destroy_window, r.onClose(&impl));
 }
 
 test "getCore auto-overridden" {
@@ -97,43 +113,44 @@ test "getCore auto-overridden" {
 
     var impl: Impl = undefined;
     try std.testing.expectEqual(&impl.wnd, r.getCore(&impl));
-    try std.testing.expectEqual(true, r.onClose(&impl));
+    try std.testing.expectEqual(.destroy_window, r.onClose(&impl));
 }
 
 test "onClose auto-overridden" {
     const Impl = struct {
         core: Window,
-        fn onClose(self: *@This()) bool {
+        fn onClose(self: *@This()) Responders(@This()).Results.OnClose {
             _ = self;
-            return false;
+            return .dont_destroy_window;
         }
     };
     const r: Responders(Impl) = .default;
 
     var impl: Impl = undefined;
     try std.testing.expectEqual(&impl.core, r.getCore(&impl));
-    try std.testing.expectEqual(false, r.onClose(&impl));
+    try std.testing.expectEqual(.dont_destroy_window, r.onClose(&impl));
 }
 
 test "Defaults explicitly overridden" {
     const Impl = struct {
         wnd: Window,
     };
+    const Resps = Responders(Impl);
     const Methods = struct {
         fn getWindow(impl: *Impl) *Window {
             return &impl.wnd;
         }
-        fn onClose(impl: *Impl) bool {
+        fn onClose(impl: *Impl) Resps.Results.OnClose {
             _ = impl;
-            return false;
+            return .dont_destroy_window;
         }
     };
-    const r: Responders(Impl) = .{
+    const r: Resps = .{
         .getCore = Methods.getWindow,
         .onClose = Methods.onClose,
     };
 
     var impl: Impl = undefined;
     try std.testing.expectEqual(&impl.wnd, r.getCore(&impl));
-    try std.testing.expectEqual(false, r.onClose(&impl));
+    try std.testing.expectEqual(.dont_destroy_window, r.onClose(&impl));
 }

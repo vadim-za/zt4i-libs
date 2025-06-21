@@ -17,6 +17,8 @@ const Window = struct {
     path: zt4i.gui.Path = .{},
     font: zt4i.gui.Font = .{},
 
+    const RespResults = zt4i.gui.Window.Responders(@This()).Results;
+
     pub fn init(self: *@This()) !void {
         self.* = .{};
         errdefer self.deinit();
@@ -85,7 +87,10 @@ const Window = struct {
         ) catch |err| std.debug.assert(err != zt4i.gui.Error.Usage);
     }
 
-    pub fn onMouse(self: *@This(), event: *const zt4i.gui.mouse.Event) bool {
+    pub fn onMouse(
+        self: *@This(),
+        event: *const zt4i.gui.mouse.Event,
+    ) ?RespResults.OnMouse {
         if (event.action.type == .up) {
             _ = zt4i.gui.showMessageBox(
                 &self.core,
@@ -93,12 +98,15 @@ const Window = struct {
                 "Text",
                 .ok,
             ) catch {};
-            return true;
+            return .processed;
         }
-        return false;
+        return null;
     }
 
-    pub fn onKey(self: *@This(), event: *const zt4i.gui.keys.Event) bool {
+    pub fn onKey(
+        self: *@This(),
+        event: *const zt4i.gui.keys.Event,
+    ) ?void {
         if (event.logical_action == .down and event.char != null) {
             var utf8buf: [4]u8 = undefined;
             const len = std.unicode.utf8Encode(event.char.?, &utf8buf) catch {
@@ -113,9 +121,9 @@ const Window = struct {
                 utf8str, //"Key",
                 .ok,
             ) catch {};
-            return true;
+            return {};
         }
-        return false;
+        return null;
     }
 };
 
