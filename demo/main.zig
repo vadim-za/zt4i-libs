@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 const zt4i = @import("zt4i");
 
 const app_title = "zt4i-libs demo";
@@ -8,6 +9,36 @@ pub const wWinMain = zt4i.gui.wWinMain(
     appMain,
     null,
 );
+
+pub const panic = std.debug.FullPanic(panicFn);
+
+// Display panic message in a message box before dumping
+// it to stderr. Otherwise chances are the message won't
+// even be seen unless running under debugger.
+//
+// This implementation only supports panicking from
+// the main GUI thread. Panicking from other threads
+// may lead to incorrect functionality.
+fn panicFn(
+    msg: []const u8,
+    first_trace_addr: ?usize,
+) noreturn {
+    @branchHint(.cold);
+
+    if (main_up) {
+        const title = app_title ++ " - Panic";
+        _ = zt4i.gui.showMessageBox(null, title, msg, .ok) catch {
+            _ = zt4i.gui.showComptimeMessageBox(
+                null,
+                title,
+                "Could not display full panic message",
+                .ok,
+            ) catch {};
+        };
+    }
+
+    return std.debug.defaultPanic(msg, first_trace_addr);
+}
 
 const Window = struct {
     core: zt4i.gui.Window = .{},
@@ -137,16 +168,22 @@ const Window = struct {
             _ = zt4i.gui.showMessageBox(
                 &self.core,
                 "Caption",
-                utf8str, //"Key",
+                utf8str,
                 .ok,
             ) catch {};
+
             return {};
         }
         return null;
     }
 };
 
+var main_up = false;
+
 fn appMain() void {
+    main_up = true;
+    defer main_up = false;
+
     var window: Window = undefined;
     window.init() catch {
         _ = zt4i.gui.showComptimeMessageBox(
