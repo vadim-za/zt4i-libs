@@ -166,6 +166,19 @@ pub fn destroy(self: *@This()) void {
     }
 }
 
+extern "user32" fn InvalidateRect(
+    os.HWND,
+    ?*const os.RECT,
+    bErase: os.BOOL,
+) callconv(.winapi) os.BOOL;
+
+pub fn redraw(self: *@This()) void {
+    if (self.hWnd) |hWnd| {
+        _ = InvalidateRect(hWnd, null, os.FALSE);
+        _ = UpdateWindow(hWnd);
+    }
+}
+
 const dr_methods = @import("window//device_resource_methods.zig");
 pub const addDeviceResource = dr_methods.addDeviceResource;
 pub const removeDeviceResource = dr_methods.removeDeviceResource;

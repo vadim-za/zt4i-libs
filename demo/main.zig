@@ -16,6 +16,7 @@ const Window = struct {
     } = .{},
     path: zt4i.gui.Path = .{},
     font: zt4i.gui.Font = .{},
+    xy: ?zt4i.gui.Point = null,
 
     const Results = zt4i.gui.Window.Responders(@This()).Results;
 
@@ -79,12 +80,17 @@ const Window = struct {
         //dc.fillPath(&self.path, self.dr.red_brush.ref());
         dc.drawPath(&self.path, self.dr.red_brush.ref(), 2);
 
-        dc.drawText(
-            &self.font,
-            &.{ .left = 400, .top = 300, .right = 600, .bottom = 350 },
-            "Dummy text",
-            self.dr.red_brush.ref(),
-        ) catch |err| std.debug.assert(err != zt4i.gui.Error.Usage);
+        if (self.xy) |xy| {
+            var buf: [100]u8 = undefined;
+            if (std.fmt.bufPrint(&buf, "{d},{d}", .{ xy.x, xy.y })) |text| {
+                dc.drawText(
+                    &self.font,
+                    &.{ .left = 400, .top = 300, .right = 600, .bottom = 350 },
+                    text,
+                    self.dr.red_brush.ref(),
+                ) catch |err| std.debug.assert(err != zt4i.gui.Error.Usage);
+            } else |_| std.debug.assert(false);
+        }
     }
 
     pub fn onMouse(
@@ -92,6 +98,12 @@ const Window = struct {
         event: *const zt4i.gui.mouse.Event,
     ) ?Results.OnMouse {
         switch (event.action.type) {
+            .down => return .capture,
+            .move => {
+                self.xy = event.pos;
+                self.core.redraw();
+                return .processed;
+            },
             .up => {
                 _ = zt4i.gui.showMessageBox(
                     &self.core,
@@ -101,7 +113,6 @@ const Window = struct {
                 ) catch {};
                 return .processed;
             },
-            else => return null,
         }
     }
 
