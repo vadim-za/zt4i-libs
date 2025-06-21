@@ -81,15 +81,21 @@ const Window = struct {
         dc.drawPath(&self.path, self.dr.red_brush.ref(), 2);
 
         if (self.xy) |xy| {
-            var buf: [100]u8 = undefined;
-            if (std.fmt.bufPrint(&buf, "{d},{d}", .{ xy.x, xy.y })) |text| {
-                dc.drawText(
-                    &self.font,
-                    &.{ .left = 400, .top = 300, .right = 600, .bottom = 350 },
-                    text,
-                    self.dr.red_brush.ref(),
-                ) catch |err| std.debug.assert(err != zt4i.gui.Error.Usage);
-            } else |_| std.debug.assert(false);
+            var buf: [5]u8 = undefined;
+            const text = std.fmt.bufPrint(
+                &buf,
+                "{d},{d}",
+                .{ xy.x, xy.y },
+            ) catch |err| switch (err) {
+                error.NoSpaceLeft => &buf,
+            };
+
+            dc.drawText(
+                &self.font,
+                &.{ .left = 400, .top = 300, .right = 600, .bottom = 350 },
+                text,
+                self.dr.red_brush.ref(),
+            ) catch |err| std.debug.assert(err != zt4i.gui.Error.Usage);
         }
     }
 
