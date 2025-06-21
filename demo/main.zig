@@ -81,7 +81,7 @@ const Window = struct {
         dc.drawPath(&self.path, self.dr.red_brush.ref(), 2);
 
         if (self.xy) |xy| {
-            var buf: [5]u8 = undefined;
+            var buf: [100]u8 = undefined;
             const text = std.fmt.bufPrint(
                 &buf,
                 "{d},{d}",
@@ -107,7 +107,7 @@ const Window = struct {
             .down => return .capture,
             .move => {
                 self.xy = event.pos;
-                self.core.redraw();
+                self.core.redraw(false);
                 return .processed;
             },
             .up => {

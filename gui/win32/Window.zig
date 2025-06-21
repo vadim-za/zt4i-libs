@@ -172,10 +172,11 @@ extern "user32" fn InvalidateRect(
     bErase: os.BOOL,
 ) callconv(.winapi) os.BOOL;
 
-pub fn redraw(self: *@This()) void {
+pub fn redraw(self: *@This(), now: bool) void {
     if (self.hWnd) |hWnd| {
         _ = InvalidateRect(hWnd, null, os.FALSE);
-        _ = UpdateWindow(hWnd);
+        if (now)
+            _ = UpdateWindow(hWnd);
     }
 }
 
