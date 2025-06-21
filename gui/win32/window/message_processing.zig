@@ -132,6 +132,8 @@ pub fn ReceivedMessage(
             const mouse_event = mouse_util.eventFromMsg(&self.core) orelse
                 return null;
 
+            mouse_util.preprocessEvent(self.core.window, &mouse_event);
+
             if (resps.onMouse(self.impl, &mouse_event)) |result| {
                 mouse_util.handleEventResult(
                     self.core.window,

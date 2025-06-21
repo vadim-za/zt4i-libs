@@ -17,7 +17,7 @@ const Window = struct {
     path: zt4i.gui.Path = .{},
     font: zt4i.gui.Font = .{},
 
-    const RespResults = zt4i.gui.Window.Responders(@This()).Results;
+    const Results = zt4i.gui.Window.Responders(@This()).Results;
 
     pub fn init(self: *@This()) !void {
         self.* = .{};
@@ -90,17 +90,19 @@ const Window = struct {
     pub fn onMouse(
         self: *@This(),
         event: *const zt4i.gui.mouse.Event,
-    ) ?RespResults.OnMouse {
-        if (event.action.type == .up) {
-            _ = zt4i.gui.showMessageBox(
-                &self.core,
-                "Caption",
-                "Text",
-                .ok,
-            ) catch {};
-            return .processed;
+    ) ?Results.OnMouse {
+        switch (event.action.type) {
+            .up => {
+                _ = zt4i.gui.showMessageBox(
+                    &self.core,
+                    "Caption",
+                    "Text",
+                    .ok,
+                ) catch {};
+                return .processed;
+            },
+            else => return null,
         }
-        return null;
     }
 
     pub fn onKey(

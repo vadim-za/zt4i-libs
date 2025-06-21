@@ -77,6 +77,20 @@ extern "user32" fn SetCapture(hWnd: os.HWND) callconv(.winapi) ?os.HWND;
 extern "user32" fn ReleaseCapture() callconv(.winapi) os.BOOL;
 extern "user32" fn GetCapture() callconv(.winapi) ?os.HWND;
 
+pub fn preprocessEvent(
+    window: *Window,
+    event: *const gui.mouse.Event,
+) void {
+    switch (event.action.type) {
+        .down => {},
+        .up => {
+            if (event.buttons.count() == 0 and GetCapture() == window.hWnd.?)
+                _ = ReleaseCapture();
+        },
+        .move => {},
+    }
+}
+
 pub fn handleEventResult(
     window: *Window,
     event: *const gui.mouse.Event,
@@ -92,8 +106,6 @@ pub fn handleEventResult(
         .up => {
             // For .up events the only expected result is .processed
             std.debug.assert(result == .processed);
-            if (event.buttons.count() == 0 and GetCapture() == window.hWnd.?)
-                _ = ReleaseCapture();
         },
         .move => {
             // For .move events the only expected result is .processed
