@@ -25,7 +25,13 @@ fn panicFn(
 ) noreturn {
     @branchHint(.cold);
 
-    if (main_up) {
+    const Statics = struct {
+        var panicking = false;
+    };
+    const already_panicking = Statics.panicking;
+    Statics.panicking = true;
+
+    if (!already_panicking and main_up) {
         const title = app_title ++ " - Panic";
         _ = zt4i.gui.showMessageBox(null, title, msg, .ok) catch {
             _ = zt4i.gui.showComptimeMessageBox(
@@ -48,11 +54,23 @@ const Window = struct {
     path: zt4i.gui.Path = .{},
     font: zt4i.gui.Font = .{},
     xy: ?zt4i.gui.Point = null,
+    timer_flag: bool = false,
+    timer: zt4i.gui.Timer(struct {
+        window: *Window,
+        pub fn init(window: *Window) @This() {
+            return .{ .window = window };
+        }
+        pub fn onTimer(self: *@This()) void {
+            self.window.timer_flag = !self.window.timer_flag;
+        }
+    }),
 
     const Results = zt4i.gui.Window.Responders(@This()).Results;
 
     pub fn init(self: *@This()) !void {
-        self.* = .{};
+        self.* = .{
+            .timer = .{ .payload = .init(self) },
+        };
         errdefer self.deinit();
 
         self.core.addDeviceResource(&self.dr.red_brush);
@@ -85,6 +103,9 @@ const Window = struct {
             width,
             height,
         );
+        errdefer self.core.destroy();
+
+        try self.timer.setup(1.0);
     }
 
     pub fn onDestroy(_: *@This()) void {

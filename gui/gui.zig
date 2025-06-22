@@ -47,6 +47,8 @@ pub const Rectangle = graphics.Rectangle;
 pub const mouse = platform.mouse;
 pub const keys = platform.keys;
 
+pub const Timer = platform.Timer;
+
 // Conditional platform reexports
 pub const wWinMain =
     if (platform == win32) platform.wWinMain;
