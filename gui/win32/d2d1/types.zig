@@ -36,6 +36,12 @@ pub const RECT_F = extern struct {
     }
 };
 
+pub const ELLIPSE = extern struct {
+    point: POINT_2F,
+    radiusX: os.FLOAT,
+    radiusY: os.FLOAT,
+};
+
 pub const BEZIER_SEGMENT = extern struct {
     point1: POINT_2F,
     point2: POINT_2F,

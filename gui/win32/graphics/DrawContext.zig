@@ -93,6 +93,40 @@ pub fn drawText(
     );
 }
 
+pub fn drawEllipse(
+    self: *const @This(),
+    center: *const Point,
+    semiaxes: *const Point,
+    brush: BrushRef,
+    width: f32,
+) void {
+    self.target.drawEllipse(
+        &.{
+            .point = .fromGui(center),
+            .radiusX = semiaxes.x,
+            .radiusY = semiaxes.y,
+        },
+        brush.ibrush,
+        width,
+    );
+}
+
+pub fn fillEllipse(
+    self: *const @This(),
+    center: *const Point,
+    semiaxes: *const Point,
+    brush: BrushRef,
+) void {
+    self.target.fillEllipse(
+        &.{
+            .point = .fromGui(center),
+            .radiusX = semiaxes.x,
+            .radiusY = semiaxes.y,
+        },
+        brush.ibrush,
+    );
+}
+
 pub fn setOrigin(self: *const @This(), new_origin: Point) Point {
     const prev_origin = self.context.origin;
 

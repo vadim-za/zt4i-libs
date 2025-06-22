@@ -93,23 +93,39 @@ const Window = struct {
 
     pub fn onPaint(self: *@This(), dc: *zt4i.gui.DrawContext) void {
         dc.clear(&.initRgb(0, 0, 1));
+
+        const red_brush = self.dr.red_brush.ref();
+
         dc.fillRectangle(
             &.{ .left = 100, .right = 200, .top = 100, .bottom = 150 },
-            self.dr.red_brush.ref(),
+            red_brush,
         );
         dc.drawLine(
             &.{ .x = 200, .y = 200 },
             &.{ .x = 300, .y = 300 },
-            self.dr.red_brush.ref(),
+            red_brush,
             2,
         );
         dc.drawRectangle(
             &.{ .left = 400, .top = 100, .right = 500, .bottom = 150 },
-            self.dr.red_brush.ref(),
+            red_brush,
             2,
         );
-        //dc.fillPath(&self.path, self.dr.red_brush.ref());
-        dc.drawPath(&self.path, self.dr.red_brush.ref(), 2);
+        //dc.fillPath(&self.path, red_brush);
+        dc.drawPath(&self.path, red_brush, 2);
+
+        dc.drawEllipse(
+            &.{ .x = 450, .y = 200 },
+            &.{ .x = 20, .y = 10 },
+            red_brush,
+            1,
+        );
+
+        dc.fillEllipse(
+            &.{ .x = 500, .y = 200 },
+            &.{ .x = 20, .y = 10 },
+            red_brush,
+        );
 
         if (self.xy) |xy| {
             var buf: [100]u8 = undefined;

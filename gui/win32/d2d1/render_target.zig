@@ -107,8 +107,18 @@ pub const IRenderTarget = extern struct { // ID2D1RenderTarget
         ) callconv(.winapi) void,
         DrawRoundedRectangle__: *const fn () callconv(.winapi) void,
         FillRoundedRectangle__: *const fn () callconv(.winapi) void,
-        DrawEllipse__: *const fn () callconv(.winapi) void,
-        FillEllipse__: *const fn () callconv(.winapi) void,
+        DrawEllipse: *const fn (
+            self: *Self,
+            ellipse: *const d2d1.ELLIPSE,
+            brush: *d2d1.IBrush,
+            strokeWidth: os.FLOAT,
+            strokeStyle: ?*anyopaque, // don't bother with exact type for now
+        ) callconv(.winapi) void,
+        FillEllipse: *const fn (
+            self: *Self,
+            ellipse: *const d2d1.ELLIPSE,
+            brush: *d2d1.IBrush,
+        ) callconv(.winapi) void,
         DrawGeometry: *const fn (
             self: *Self,
             geometry: *d2d1.IGeometry,
@@ -274,6 +284,23 @@ pub const IRenderTarget = extern struct { // ID2D1RenderTarget
             .NONE,
             .NATURAL,
         );
+    }
+
+    pub fn drawEllipse(
+        self: *@This(),
+        ellipse: *const d2d1.ELLIPSE,
+        brush: *d2d1.IBrush,
+        stroke_width: f32,
+    ) callconv(.winapi) void {
+        self.vtbl.DrawEllipse(self, ellipse, brush, stroke_width, null);
+    }
+
+    pub fn fillEllipse(
+        self: *@This(),
+        ellipse: *const d2d1.ELLIPSE,
+        brush: *d2d1.IBrush,
+    ) callconv(.winapi) void {
+        self.vtbl.FillEllipse(self, ellipse, brush);
     }
 };
 
