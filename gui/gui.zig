@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 
 // --------------------------------------------------------------
 // Common decls
@@ -12,10 +13,13 @@ pub const Error = error{
 // --------------------------------------------------------------
 // Platforms
 
-pub const win32 = @import("win32.zig");
+const win32 = @import("win32.zig");
 
 // Current platform
-const platform = win32;
+const platform = switch (builtin.os.tag) {
+    .windows => win32,
+    else => @compileError("Unsupported platform"),
+};
 
 // Platform reexports
 pub const allocator = platform.allocator;
