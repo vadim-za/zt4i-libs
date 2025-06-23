@@ -48,6 +48,21 @@ fn toResult(os_result: c_int) gui.Error!Result {
     ) catch gui.Error.OsApi;
 }
 
+pub fn showWtf16(
+    parent_window: ?*gui.Window,
+    caption: [:0]const u16,
+    text: [:0]const u16,
+    @"type": Type,
+) gui.Error!Result {
+    const os_result = MessageBoxW(
+        if (parent_window) |window| window.hWnd else null,
+        text,
+        caption,
+        @intFromEnum(@"type"),
+    );
+    return toResult(os_result);
+}
+
 // This function coverts strings to WTF16 at comptime
 // and therefore doesn't use allocator.
 pub fn showComptime(
@@ -56,17 +71,12 @@ pub fn showComptime(
     comptime text: []const u8,
     @"type": Type,
 ) gui.Error!Result {
-    const text16 = std.unicode.wtf8ToWtf16LeStringLiteral(text);
-    const caption16 = std.unicode.wtf8ToWtf16LeStringLiteral(caption);
-
-    const os_result = MessageBoxW(
-        if (parent_window) |window| window.hWnd else null,
-        text16.ptr,
-        caption16.ptr,
-        @intFromEnum(@"type"),
+    return showWtf16(
+        parent_window,
+        std.unicode.wtf8ToWtf16LeStringLiteral(caption),
+        std.unicode.wtf8ToWtf16LeStringLiteral(text),
+        @"type",
     );
-
-    return toResult(os_result);
 }
 
 // This function uses gui.allocator() to convert strings to WTF16
@@ -84,12 +94,10 @@ pub fn show(
     try caption16.initU8(caption);
     defer caption16.deinit();
 
-    const os_result = MessageBoxW(
-        if (parent_window) |window| window.hWnd else null,
-        text16.ptr(),
-        caption16.ptr(),
-        @intFromEnum(@"type"),
+    return showWtf16(
+        parent_window,
+        caption16.slice(),
+        text16.slice(),
+        @"type",
     );
-
-    return toResult(os_result);
 }
