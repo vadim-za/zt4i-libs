@@ -186,11 +186,12 @@ fn wtf8ToWtf16LeTruncateZ(
     } else false;
 
     if (truncated) {
-        var restbuf = wtf16le[ellipsis_pos..];
+        idx = ellipsis_pos;
+        var restbuf = wtf16le[idx..];
         const len = @min(ellipsis16.len, restbuf.len - 1); // leave space for sentinel
         @memcpy(restbuf[0..len], ellipsis16[0..len]);
 
-        idx = ellipsis_pos + len;
+        idx += len;
     }
 
     wtf16le[idx] = 0;
