@@ -15,7 +15,8 @@ pub fn deinit(self: *@This()) void {
     if (use_dbga) {
         switch (self.dbga.deinit()) {
             .ok => {},
-            .leak => @panic("Memory leak detected"),
+            .leak => if (std.debug.runtime_safety)
+                @panic("Memory leak detected"),
         }
     }
 }
