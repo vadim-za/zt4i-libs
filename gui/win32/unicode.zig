@@ -6,7 +6,7 @@ const winmain = @import("winmain.zig");
 
 pub fn Wtf16Str(comptime buf_size: usize) type {
     return struct {
-        str16: [:0]u16,
+        str16: [:0]const u16,
         sfba: std.heap.StackFallbackAllocator(buf_size),
         alloc: std.mem.Allocator,
 
@@ -27,11 +27,11 @@ pub fn Wtf16Str(comptime buf_size: usize) type {
             self.alloc.free(self.str16);
         }
 
-        pub fn slice(self: *const @This()) [:0]u16 {
+        pub fn slice(self: *const @This()) [:0]const u16 {
             return self.str16;
         }
 
-        pub fn ptr(self: *const @This()) [*:0]u16 {
+        pub fn ptr(self: *const @This()) [*:0]const u16 {
             return self.str16.ptr;
         }
     };
