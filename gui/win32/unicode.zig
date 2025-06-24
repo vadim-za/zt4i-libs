@@ -4,7 +4,10 @@ const os = std.os.windows;
 const gui = @import("../gui.zig");
 const winmain = @import("winmain.zig");
 
-pub fn Wtf16Str(comptime buf_size: usize) type {
+// Buffer length is in u16 characters, not including terminating 0
+pub fn Wtf16Str(comptime buf16_len: usize) type {
+    const buf_size = (buf16_len + 1) * @sizeOf(u16);
+
     return struct {
         str16: [:0]const u16,
         sfba: std.heap.StackFallbackAllocator(buf_size),
@@ -36,7 +39,6 @@ pub fn Wtf16Str(comptime buf_size: usize) type {
         }
     };
 }
-// -----------------------------------------------------------
 
 test "Wtf16Str" {
     const test_startup = @import("winmain.zig").test_startup;
@@ -61,6 +63,58 @@ test "Wtf16Str" {
         try std.testing.expect(std.mem.order(
             u16,
             std.unicode.wtf8ToWtf16LeStringLiteral("abcde"),
+            s16_long.slice(),
+        ) == .eq);
+    }
+}
+// -----------------------------------------------------------
+
+// Buffer length is in u16 characters, not including terminating 0
+pub fn BoundedWtf16Str(comptime buf_len: usize) type {
+    return struct {
+        buf: [buf_len + 1]u16,
+        len: usize,
+
+        pub fn initU8(self: *@This(), str8: []const u8) gui.Error!void {
+            const wtf16, _ = wtf8ToWtf16LeTruncateZ(
+                &self.buf,
+                str8,
+                null,
+            ) catch |err| return switch (err) {
+                error.InvalidWtf8 => gui.Error.Usage,
+            };
+
+            std.debug.assert(wtf16.ptr == &self.buf);
+            self.len = wtf16.len;
+        }
+
+        pub fn slice(self: *const @This()) [:0]const u16 {
+            return self.buf[0..self.len :0];
+        }
+
+        pub fn ptr(self: *const @This()) [*:0]const u16 {
+            return self.slice().ptr;
+        }
+    };
+}
+
+test "BoundedWtf16Str" {
+    {
+        var s16: BoundedWtf16Str(10) = undefined;
+        try s16.initU8("abc");
+        try std.testing.expect(std.mem.order(
+            u16,
+            std.unicode.wtf8ToWtf16LeStringLiteral("abc"),
+            s16.slice(),
+        ) == .eq);
+    }
+
+    {
+        var s16_long: BoundedWtf16Str(4) = undefined;
+        try s16_long.initU8("abcde");
+        try std.testing.expect(std.mem.order(
+            u16,
+            std.unicode.wtf8ToWtf16LeStringLiteral("a..."),
             s16_long.slice(),
         ) == .eq);
     }
@@ -102,7 +156,7 @@ test "wtf16Encode" {
 // Returned bool indicates whether truncation happened.
 // The wtf16le buffer must have at least 1 element
 // (which is going to hold the trailing 0 value).
-fn wtf16LeFromWtf8TruncateZ(
+fn wtf8ToWtf16LeTruncateZ(
     wtf16le: []u16,
     wtf8: []const u8,
     comptime ellipsis: ?[]const u8, // null means use default ellipsis
@@ -144,12 +198,12 @@ fn wtf16LeFromWtf8TruncateZ(
     return .{ wtf16le[0..idx :0], truncated };
 }
 
-test "wtf16LeFromWtf8TruncateZ" {
+test "wtf8ToWtf16LeTruncateZ" {
     var out: [10]u16 = undefined;
 
     {
         const res, const truncated =
-            try wtf16LeFromWtf8TruncateZ(out[0..4], "ABC", null);
+            try wtf8ToWtf16LeTruncateZ(out[0..4], "ABC", null);
         try std.testing.expect(!truncated);
         try std.testing.expectEqualSentinel(
             u16,
@@ -161,7 +215,7 @@ test "wtf16LeFromWtf8TruncateZ" {
 
     {
         const res, const truncated =
-            try wtf16LeFromWtf8TruncateZ(out[0..6], "ABCDEF", null);
+            try wtf8ToWtf16LeTruncateZ(out[0..6], "ABCDEF", null);
         try std.testing.expect(truncated);
         try std.testing.expectEqualSentinel(
             u16,
@@ -174,7 +228,7 @@ test "wtf16LeFromWtf8TruncateZ" {
     // Test non-ASCII
     {
         const res, const truncated =
-            try wtf16LeFromWtf8TruncateZ(out[0..4], "A\u{8A00}C", null);
+            try wtf8ToWtf16LeTruncateZ(out[0..4], "A\u{8A00}C", null);
         try std.testing.expect(!truncated);
         try std.testing.expectEqualSentinel(
             u16,
@@ -186,7 +240,7 @@ test "wtf16LeFromWtf8TruncateZ" {
 
     {
         const res, const truncated =
-            try wtf16LeFromWtf8TruncateZ(out[0..3], "A\u{8A00}C", null);
+            try wtf8ToWtf16LeTruncateZ(out[0..3], "A\u{8A00}C", null);
         try std.testing.expect(truncated);
         try std.testing.expectEqualSentinel(
             u16,
@@ -198,7 +252,7 @@ test "wtf16LeFromWtf8TruncateZ" {
 
     {
         const res, const truncated =
-            try wtf16LeFromWtf8TruncateZ(out[0..5], "A\u{8A00}CDE", null);
+            try wtf8ToWtf16LeTruncateZ(out[0..5], "A\u{8A00}CDE", null);
         try std.testing.expect(truncated);
         try std.testing.expectEqualSentinel(
             u16,
@@ -211,7 +265,7 @@ test "wtf16LeFromWtf8TruncateZ" {
     // Test surrogate pair
     {
         const res, const truncated =
-            try wtf16LeFromWtf8TruncateZ(out[0..8], "AB\u{10000}DEF", null);
+            try wtf8ToWtf16LeTruncateZ(out[0..8], "AB\u{10000}DEF", null);
         try std.testing.expect(!truncated);
         try std.testing.expectEqualSentinel(
             u16,
@@ -223,7 +277,7 @@ test "wtf16LeFromWtf8TruncateZ" {
 
     {
         const res, const truncated =
-            try wtf16LeFromWtf8TruncateZ(out[0..7], "AB\u{10000}DEF", null);
+            try wtf8ToWtf16LeTruncateZ(out[0..7], "AB\u{10000}DEF", null);
         try std.testing.expect(truncated);
         try std.testing.expectEqualSentinel(
             u16,
