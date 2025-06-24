@@ -3,6 +3,7 @@ const os = std.os.windows;
 
 const gui = @import("../gui.zig");
 const unicode = @import("unicode.zig");
+const winmain = @import("winmain.zig");
 
 // ----------------------------------------------------------------
 
@@ -100,4 +101,33 @@ pub fn show(
         text16.slice(),
         @"type",
     );
+}
+
+// Doesn't use allocator.
+// Doesn't fail.
+// Blocks window and timer callbacks for good
+//(to prevent potential further panics).
+// 'text' will be clipped to 'max_text_len' WTF16 characters.
+// To be used only inside panic handlers.
+pub fn showPanic(
+    comptime caption: []const u8,
+    text: []const u8,
+    comptime max_text_len: usize,
+) void {
+    var buf16: unicode.BoundedWtf16Str(max_text_len) = undefined;
+    const text16 = if (buf16.initU8(text))
+        buf16.slice()
+    else |_|
+        std.unicode.wtf8ToWtf16LeStringLiteral(
+            "Failed to convert panic message",
+        );
+
+    winmain.enterPanicMode();
+
+    _ = showWtf16(
+        null,
+        std.unicode.wtf8ToWtf16LeStringLiteral(caption),
+        text16,
+        .ok,
+    ) catch @panic("Failed to display panic message");
 }

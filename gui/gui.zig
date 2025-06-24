@@ -27,6 +27,7 @@ pub const allocator = platform.allocator;
 const message_box = platform.message_box;
 pub const showMessageBox = message_box.show;
 pub const showComptimeMessageBox = message_box.showComptime;
+pub const showPanicMessageBox = message_box.showPanic;
 pub const MessageBoxType = message_box.Type;
 pub const MessageBoxResult = message_box.Result;
 

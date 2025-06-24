@@ -51,6 +51,16 @@ pub fn allocator() std.mem.Allocator {
     return global_allocator.?;
 }
 
+var panicking = false;
+
+pub fn enterPanicMode() void {
+    panicking = true;
+}
+
+pub inline fn isPanicMode() bool {
+    return panicking;
+}
+
 fn wWinMainImpl(
     comptime app_title: []const u8,
     comptime mainFunc: fn () void,

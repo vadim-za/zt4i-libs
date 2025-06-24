@@ -13,7 +13,7 @@ pub const WndProc = fn (
     lParam: os.LPARAM,
 ) callconv(.winapi) os.LRESULT;
 
-extern "user32" fn DefWindowProcW(
+pub extern "user32" fn DefWindowProcW(
     hWnd: os.HWND,
     uMsg: os.UINT,
     wParam: os.WPARAM,

@@ -15,15 +15,21 @@ const os = std.os.windows;
 // ----------------------------------------------------------------
 
 const WM_DESTROY: os.UINT = 0x2;
-const WM_PAINT: os.UINT = 0xF;
-const WM_CLOSE: os.UINT = 0x10;
+pub const WM_PAINT: os.UINT = 0xF;
+pub const WM_CLOSE: os.UINT = 0x10;
 const WM_DISPLAYCHANGE: os.UINT = 0x7E;
 const WM_KEYDOWN: os.UINT = 0x100;
 
-extern "user32" fn BeginPaint(hWnd: os.HWND, lpPaint: *PAINTSTRUCT) callconv(.winapi) ?os.HDC;
-extern "user32" fn EndPaint(hWnd: os.HWND, lpPaint: *const PAINTSTRUCT) callconv(.winapi) os.BOOL;
+pub extern "user32" fn BeginPaint(
+    hWnd: os.HWND,
+    lpPaint: *PAINTSTRUCT,
+) callconv(.winapi) ?os.HDC;
+pub extern "user32" fn EndPaint(
+    hWnd: os.HWND,
+    lpPaint: *const PAINTSTRUCT,
+) callconv(.winapi) os.BOOL;
 
-const PAINTSTRUCT = extern struct {
+pub const PAINTSTRUCT = extern struct {
     hdc: os.HDC,
     fErase: os.BOOL,
     rcPaint: os.RECT,

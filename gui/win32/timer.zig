@@ -1,4 +1,5 @@
 const std = @import("std");
+const winmain = @import("winmain.zig");
 const gui = @import("../gui.zig");
 
 const os = std.os.windows;
@@ -73,6 +74,8 @@ pub fn Timer(Payload_: type) type {
             nIDEvent: usize,
             dwTime: os.DWORD,
         ) callconv(.winapi) void {
+            if (winmain.isPanicMode())
+                return;
             _ = hWnd;
             _ = uMsg;
             _ = dwTime;

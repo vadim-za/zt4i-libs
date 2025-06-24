@@ -31,16 +31,9 @@ fn panicFn(
     const already_panicking = Statics.panicking;
     Statics.panicking = true;
 
-    if (!already_panicking and main_up) {
+    if (!already_panicking) {
         const title = app_title ++ " - Panic";
-        _ = zt4i.gui.showMessageBox(null, title, msg, .ok) catch {
-            _ = zt4i.gui.showComptimeMessageBox(
-                null,
-                title,
-                "Could not display full panic message",
-                .ok,
-            ) catch {};
-        };
+        _ = zt4i.gui.showPanicMessageBox(title, msg, 2000);
     }
 
     return std.debug.defaultPanic(msg, first_trace_addr);
@@ -215,12 +208,7 @@ const Window = struct {
     }
 };
 
-var main_up = false;
-
 fn appMain() void {
-    main_up = true;
-    defer main_up = false;
-
     var window: Window = undefined;
     window.init() catch {
         _ = zt4i.gui.showComptimeMessageBox(
