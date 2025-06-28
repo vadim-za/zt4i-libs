@@ -55,6 +55,7 @@ const Window = struct {
         }
         pub fn onTimer(self: *@This()) void {
             self.window.timer_flag = !self.window.timer_flag;
+            self.window.core.redraw(false);
         }
     }),
 
@@ -88,7 +89,7 @@ const Window = struct {
     }
 
     fn create(self: *@This(), width: f32, height: f32) zt4i.gui.Error!void {
-        try zt4i.gui.Window.create(
+        return zt4i.gui.Window.create(
             @This(),
             self,
             app_title,
@@ -96,12 +97,14 @@ const Window = struct {
             width,
             height,
         );
-        errdefer self.core.destroy();
-
-        try self.timer.setup(1.0);
     }
 
-    pub fn onDestroy(_: *@This()) void {
+    pub fn onCreate(self: *@This()) zt4i.gui.Error!void {
+        try self.timer.setupWithWindow(&self.core, 1.0);
+    }
+
+    pub fn onDestroy(self: *@This()) void {
+        self.timer.releaseWithWindow(&self.core);
         zt4i.gui.stopMessageLoop();
     }
 
@@ -128,12 +131,13 @@ const Window = struct {
         //dc.fillPath(&self.path, red_brush);
         dc.drawPath(&self.path, red_brush, 2);
 
-        dc.drawEllipse(
-            &.{ .x = 450, .y = 200 },
-            &.{ .x = 20, .y = 10 },
-            red_brush,
-            1,
-        );
+        if (self.timer_flag)
+            dc.drawEllipse(
+                &.{ .x = 450, .y = 200 },
+                &.{ .x = 20, .y = 10 },
+                red_brush,
+                1,
+            );
 
         dc.fillEllipse(
             &.{ .x = 500, .y = 200 },

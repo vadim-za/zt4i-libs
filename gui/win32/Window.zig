@@ -133,6 +133,8 @@ pub fn create(
     ) == 0)
         return gui.Error.OsApi;
 
+    try resps.onCreate(impl);
+
     class.subclass(hWnd, wndproc.make(Impl, resps), impl);
 
     _ = ShowWindow(hWnd, .SHOW); // return value does not matter

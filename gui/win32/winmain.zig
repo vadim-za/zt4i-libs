@@ -45,6 +45,13 @@ pub fn thisInstance() os.HINSTANCE {
     return this_instance.?;
 }
 
+var main_thread: ?std.Thread.Id = null;
+
+pub inline fn assertMainThread() std.Thread.Id {
+    if (std.debug.runtime_safety)
+        std.debug.assert(std.Thread.getCurrentId() == main_thread.?);
+}
+
 var global_allocator: ?std.mem.Allocator = null;
 
 pub fn allocator() std.mem.Allocator {
@@ -68,6 +75,9 @@ fn wWinMainImpl(
     hInst: ?os.HINSTANCE,
 ) os.INT {
     this_instance = hInst;
+
+    main_thread = std.Thread.getCurrentId();
+    defer main_thread = null;
 
     const AllocatorObject = Allocator orelse DefaultAllocator;
     var allocator_object: AllocatorObject = undefined;

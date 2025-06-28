@@ -41,9 +41,8 @@ pub fn Wtf16Str(comptime buf16_len: usize) type {
 }
 
 test "Wtf16Str" {
-    const test_startup = @import("winmain.zig").test_startup;
-    test_startup.init();
-    defer test_startup.deinit();
+    winmain.test_startup.init();
+    defer winmain.test_startup.deinit();
 
     {
         var s16: Wtf16Str(10) = undefined;

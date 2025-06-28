@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 const winmain = @import("winmain.zig");
 const gui = @import("../gui.zig");
 
@@ -8,12 +9,7 @@ extern "user32" fn SetTimer(
     hWnd: ?os.HWND,
     nIDEvent: usize,
     uElapse: os.UINT,
-    lpTimerFunc: *const fn (
-        hWnd: ?os.HWND,
-        uMsg: os.UINT,
-        nIDEvent: usize,
-        dwTime: os.DWORD,
-    ) callconv(.winapi) void,
+    lpTimerFunc: *const TIMERPROC,
 ) callconv(.winapi) usize;
 
 extern "user32" fn KillTimer(
@@ -21,66 +17,98 @@ extern "user32" fn KillTimer(
     nIDEvent: usize,
 ) callconv(.winapi) os.BOOL;
 
-// const Payload = struct {
-//     .....
-//     pub fn onTimer(self: *@This()) void { ..... }
-// };
-// var timer: Timer(Payload) = .{ .payload = .... };
-// try timer.setup(period_in_milliseconds);
-// defer timer.release();
-pub fn Timer(Payload_: type) type {
+const TIMERPROC = fn (
+    hWnd: ?os.HWND,
+    uMsg: os.UINT,
+    nIDEvent: usize,
+    dwTime: os.DWORD,
+) callconv(.winapi) void;
+
+const TimerCore = struct {
+    nIDEvent: usize = 0,
+
+    fn setupWithWindow(
+        self: *@This(),
+        window: *gui.Window,
+        timeout: f32,
+        impl: *anyopaque,
+        callback: *const TIMERPROC,
+    ) gui.Error!void {
+        if (self.active())
+            return gui.Error.Usage; // timer already set up
+
+        const nIDEvent: usize = @intFromPtr(impl);
+
+        const timeout_ms: os.INT = @intFromFloat(@round(timeout * 1000));
+        const uElapse: os.UINT = @max(timeout_ms, 1);
+
+        const result = SetTimer(
+            window.hWnd.?,
+            nIDEvent,
+            uElapse,
+            callback,
+        );
+        if (result == 0)
+            return gui.Error.OsApi;
+
+        self.nIDEvent = nIDEvent;
+    }
+
+    fn releaseWithWindow(self: *@This(), window: *gui.Window) void {
+        if (!self.active()) {
+            std.debug.assert(false);
+            return;
+        }
+
+        const result = KillTimer(window.hWnd.?, self.nIDEvent);
+        std.debug.assert(result != os.FALSE);
+    }
+
+    fn active(self: *const @This()) bool {
+        return self.nIDEvent != 0;
+    }
+};
+
+pub fn Timer(Payload: type) type {
     return struct {
-        pub const Payload = Payload_;
-        payload: Payload, // This is a public field
-        timer_id: usize = 0, // This is implementation's private field
+        core: TimerCore = .{},
+        payload: Payload, // public field
 
-        pub fn setup(
+        pub fn setupWithWindow(
             self: *@This(),
-            period_in_seconds: f32,
+            window: *gui.Window,
+            timeout: f32,
         ) gui.Error!void {
-            if (self.timer_id != 0)
-                return gui.Error.Usage; // timer already set up
-
-            const period_in_milliseconds: os.INT = @intFromFloat(
-                @round(period_in_seconds * 1000),
+            return self.core.setupWithWindow(
+                window,
+                timeout,
+                self,
+                callbackForWindow,
             );
-
-            const nIDEvent = @intFromPtr(&self.payload);
-            const uElapse: os.UINT = @max(period_in_milliseconds, 1);
-
-            const timer_id = SetTimer(
-                null,
-                nIDEvent,
-                uElapse,
-                &callback,
-            );
-            if (timer_id == 0)
-                return gui.Error.OsApi;
-
-            self.timer_id = timer_id;
         }
 
-        pub fn release(self: *@This()) void {
-            if (self.timer_id != 0)
-                return; // not set up
-
-            const result = KillTimer(null, self.timer_id);
-            std.debug.assert(result);
+        pub fn releaseWithWindow(self: *@This(), window: *gui.Window) void {
+            self.core.releaseWithWindow(window);
         }
 
-        fn callback(
+        pub fn active(self: *const @This()) bool {
+            return self.core.active();
+        }
+
+        fn callbackForWindow(
             hWnd: ?os.HWND,
             uMsg: os.UINT,
             nIDEvent: usize,
             dwTime: os.DWORD,
         ) callconv(.winapi) void {
-            if (winmain.isPanicMode())
-                return;
             _ = hWnd;
             _ = uMsg;
             _ = dwTime;
-            var payload: *Payload = @ptrFromInt(nIDEvent);
-            payload.onTimer();
+            if (winmain.isPanicMode())
+                return;
+
+            const self: *@This() = @ptrFromInt(nIDEvent);
+            self.payload.onTimer();
         }
     };
 }
