@@ -33,7 +33,7 @@ fn panicFn(
 
     if (!already_panicking) {
         const title = app_title ++ " - Panic";
-        _ = zt4i.gui.showPanicMessageBox(title, msg, 2000);
+        _ = zt4i.gui.mbox.showPanic(title, msg, 2000);
     }
 
     return std.debug.defaultPanic(msg, first_trace_addr);
@@ -115,7 +115,7 @@ const Window = struct {
     // calling onCreate().
     pub fn onDestroy(self: *@This()) void {
         self.timer.releaseWithWindow(&self.core);
-        zt4i.gui.stopMessageLoop();
+        zt4i.gui.mloop.stop();
     }
 
     pub fn onPaint(self: *@This(), dc: *zt4i.gui.DrawContext) void {
@@ -186,7 +186,7 @@ const Window = struct {
                 return .processed;
             },
             .up => {
-                _ = zt4i.gui.showMessageBox(
+                _ = zt4i.gui.mbox.show(
                     &self.core,
                     "Caption",
                     "Text",
@@ -209,7 +209,7 @@ const Window = struct {
             };
 
             const utf8str = utf8buf[0..len];
-            _ = zt4i.gui.showMessageBox(
+            _ = zt4i.gui.mbox.show(
                 &self.core,
                 "Caption",
                 utf8str,
@@ -225,7 +225,7 @@ const Window = struct {
 fn appMain() void {
     var window: Window = undefined;
     window.init() catch {
-        _ = zt4i.gui.showComptimeMessageBox(
+        _ = zt4i.gui.mbox.showComptime(
             null,
             app_title,
             "Failed to initialize window",
@@ -235,11 +235,11 @@ fn appMain() void {
     };
     defer window.deinit();
     window.create(800, 500) catch return;
-    // _ = zt4i.gui.showMessageBox(
+    // _ = zt4i.gui.mbox.show(
     //     &window.core,
     //     "Caption",
     //     "Text",
     //     .ok,
     // ) catch {};
-    zt4i.gui.runMessageLoop();
+    zt4i.gui.mloop.run();
 }

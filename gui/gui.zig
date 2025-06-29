@@ -24,16 +24,20 @@ const platform = switch (builtin.os.tag) {
 // Platform reexports
 pub const allocator = platform.allocator;
 
-const message_box = platform.message_box;
-pub const showMessageBox = message_box.show;
-pub const showComptimeMessageBox = message_box.showComptime;
-pub const showPanicMessageBox = message_box.showPanic;
-pub const MessageBoxType = message_box.Type;
-pub const MessageBoxResult = message_box.Result;
+pub const mbox = struct {
+    const impl = platform.message_box;
+    pub const show = impl.show;
+    pub const showComptime = impl.showComptime;
+    pub const showPanic = impl.showPanic;
+    pub const Type = impl.Type;
+    pub const Result = impl.Result;
+};
 
-const message_loop = platform.message_loop;
-pub const runMessageLoop = message_loop.run;
-pub const stopMessageLoop = message_loop.stop;
+pub const mloop = struct {
+    const impl = platform.message_loop;
+    pub const run = impl.run;
+    pub const stop = impl.stop;
+};
 
 pub const Window = platform.Window;
 
