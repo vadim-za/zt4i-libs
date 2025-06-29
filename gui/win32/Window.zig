@@ -96,20 +96,24 @@ pub fn deinit(self: *@This()) void {
     self.device_resources.deinit();
 }
 
+pub const CreateParams = struct {
+    title: []const u8,
+    width: f32,
+    height: f32,
+};
+
 pub fn create(
     Impl: type,
     impl: *Impl,
-    title: []const u8,
     comptime resps: Responders(Impl),
-    width: f32,
-    height: f32,
+    params: CreateParams,
     on_create: anytype,
 ) gui.Error!void {
     const window = resps.getCore(impl);
     if (window.hWnd != null)
         return gui.Error.Usage; // window already exists
 
-    const hWnd = try createWindowRaw(title);
+    const hWnd = try createWindowRaw(params.title);
     const dpr = dpi.getDprFor(hWnd);
     window.dpr = dpr;
     window.hWnd = hWnd;
@@ -123,7 +127,7 @@ pub fn create(
             window.dpr = null;
         }
 
-        try window.configureRawWindow(width, height);
+        try window.configureRawWindow(&params);
 
         // TODO: change after Issue #4625 is addressed
         switch (comptime on_create.len) {
@@ -143,13 +147,12 @@ pub fn create(
 
 fn configureRawWindow(
     self: *@This(),
-    width: f32,
-    height: f32,
+    params: *const CreateParams,
 ) gui.Error!void {
     const physical_width: i32 =
-        @intFromFloat(dpi.physicalFromLogical(self.dpr.?, width));
+        @intFromFloat(dpi.physicalFromLogical(self.dpr.?, params.width));
     const physical_height: i32 =
-        @intFromFloat(dpi.physicalFromLogical(self.dpr.?, height));
+        @intFromFloat(dpi.physicalFromLogical(self.dpr.?, params.height));
 
     if (SetWindowPos(
         self.hWnd.?,

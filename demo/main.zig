@@ -92,18 +92,27 @@ const Window = struct {
         return zt4i.gui.Window.create(
             @This(),
             self,
-            app_title,
             .default,
-            width,
-            height,
-            .{ &onCreate, .{self} },
+            .{
+                .title = app_title,
+                .width = width,
+                .height = height,
+            },
+            .{ onCreate, .{self} },
         );
     }
 
+    // This function is named as one of the responders, but does not
+    // belong to them, it is passed manually to zt4i.gui.Window.create().
+    // Generally it should be the symmetric part of onDestroy, but containing
+    // the initializations which are deinitialized in onDestroy. onDestroy()
+    // is not called if onCreate() fails.
     pub fn onCreate(self: *@This()) zt4i.gui.Error!void {
         try self.timer.setupWithWindow(&self.core, 1.0);
     }
 
+    // onDestroy() is not called if window creation fails before
+    // calling onCreate().
     pub fn onDestroy(self: *@This()) void {
         self.timer.releaseWithWindow(&self.core);
         zt4i.gui.stopMessageLoop();
