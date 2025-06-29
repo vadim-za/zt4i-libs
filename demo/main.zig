@@ -96,6 +96,7 @@ const Window = struct {
             .default,
             width,
             height,
+            .{ &onCreate, .{self} },
         );
     }
 

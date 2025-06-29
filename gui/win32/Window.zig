@@ -103,6 +103,7 @@ pub fn create(
     comptime resps: Responders(Impl),
     width: f32,
     height: f32,
+    on_create: anytype, // change after Issue #4625 is addressed
 ) gui.Error!void {
     const window = resps.getCore(impl);
     if (window.hWnd != null)
@@ -133,7 +134,12 @@ pub fn create(
     ) == 0)
         return gui.Error.OsApi;
 
-    try resps.onCreate(impl);
+    //try resps.onCreate(impl);
+    switch (comptime on_create.len) {
+        0 => {},
+        2 => try @call(.auto, on_create[0], on_create[1]),
+        else => @compileError("Wrong 'on_create' argument"),
+    }
 
     class.subclass(hWnd, wndproc.make(Impl, resps), impl);
 
