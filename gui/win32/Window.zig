@@ -211,7 +211,7 @@ pub fn redraw(self: *@This(), now: bool) void {
     }
 }
 
-const dr_methods = @import("window//device_resource_methods.zig");
+const dr_methods = @import("window/device_resource_methods.zig");
 pub const addDeviceResource = dr_methods.addDeviceResource;
 pub const removeDeviceResource = dr_methods.removeDeviceResource;
 pub const removeAllDeviceResources = dr_methods.removeAllDeviceResources;
