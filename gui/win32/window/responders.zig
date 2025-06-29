@@ -17,9 +17,8 @@ pub fn Responders(Impl: type) type {
         pub const Results = ResultsForImpl;
 
         getCore: *const fn (impl: *Impl) *Window,
-        onCreate: *const fn (impl: *Impl) gui.Error!void = override("onCreate"),
-        onDestroy: *const fn (impl: *Impl) void = override("onDestroy"),
         onClose: *const fn (impl: *Impl) Results.OnClose = override("onClose"),
+        onDestroy: *const fn (impl: *Impl) void = override("onDestroy"),
         onPaint: *const fn (
             impl: *Impl,
             dc: *graphics.DrawContext,
@@ -61,17 +60,13 @@ pub fn Responders(Impl: type) type {
 
 fn Defaults(Impl: type, Results: type) type {
     return struct {
-        fn onCreate(impl: *Impl) gui.Error!void {
+        fn onClose(impl: *Impl) Results.OnClose {
             _ = impl;
+            return .destroy_window;
         }
 
         fn onDestroy(impl: *Impl) void {
             _ = impl;
-        }
-
-        fn onClose(impl: *Impl) Results.OnClose {
-            _ = impl;
-            return .destroy_window;
         }
 
         fn onPaint(impl: *Impl, dc: *graphics.DrawContext) void {

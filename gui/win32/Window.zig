@@ -134,7 +134,6 @@ pub fn create(
     ) == 0)
         return gui.Error.OsApi;
 
-    //try resps.onCreate(impl);
     switch (comptime on_create.len) {
         0 => {},
         2 => try @call(.auto, on_create[0], on_create[1]),
