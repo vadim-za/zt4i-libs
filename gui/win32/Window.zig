@@ -103,7 +103,7 @@ pub fn create(
     comptime resps: Responders(Impl),
     width: f32,
     height: f32,
-    on_create: anytype, // change after Issue #4625 is addressed
+    on_create: anytype,
 ) gui.Error!void {
     const window = resps.getCore(impl);
     if (window.hWnd != null)
@@ -113,18 +113,46 @@ pub fn create(
     const dpr = dpi.getDprFor(hWnd);
     window.dpr = dpr;
     window.hWnd = hWnd;
-    errdefer {
-        _ = DestroyWindow(hWnd);
-        window.hWnd = null;
-        window.dpr = null;
+
+    {
+        // This errdefer is correct only until we subclass the window,
+        // so put it inside a block.
+        errdefer {
+            _ = DestroyWindow(hWnd);
+            window.hWnd = null;
+            window.dpr = null;
+        }
+
+        try window.configureRawWindow(width, height);
+
+        // TODO: change after Issue #4625 is addressed
+        switch (comptime on_create.len) {
+            0 => {},
+            // The return type of on_create[0] must match the one
+            // of Window.create, or at least be compatible to it.
+            2 => try @call(.auto, on_create[0], on_create[1]),
+            else => @compileError("Wrong 'on_create' argument"),
+        }
     }
 
+    class.subclass(hWnd, wndproc.make(Impl, resps), impl);
+
+    _ = ShowWindow(hWnd, .SHOW); // return value does not matter
+    _ = UpdateWindow(hWnd); // ignore return value
+}
+
+fn configureRawWindow(
+    self: *@This(),
+    width: f32,
+    height: f32,
+) gui.Error!void {
     const physical_width: i32 =
-        @intFromFloat(dpi.physicalFromLogical(dpr, width));
+        @intFromFloat(dpi.physicalFromLogical(self.dpr.?, width));
     const physical_height: i32 =
-        @intFromFloat(dpi.physicalFromLogical(dpr, height));
+        @intFromFloat(dpi.physicalFromLogical(self.dpr.?, height));
+
     if (SetWindowPos(
-        hWnd,
+        self.hWnd.?,
         null,
         0,
         0,
@@ -133,17 +161,6 @@ pub fn create(
         .{ .NOMOVE = true, .NOZORDER = true },
     ) == 0)
         return gui.Error.OsApi;
-
-    switch (comptime on_create.len) {
-        0 => {},
-        2 => try @call(.auto, on_create[0], on_create[1]),
-        else => @compileError("Wrong 'on_create' argument"),
-    }
-
-    class.subclass(hWnd, wndproc.make(Impl, resps), impl);
-
-    _ = ShowWindow(hWnd, .SHOW); // return value does not matter
-    _ = UpdateWindow(hWnd); // ignore return value
 }
 
 fn createWindowRaw(title: []const u8) gui.Error!os.HWND {
