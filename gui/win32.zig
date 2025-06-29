@@ -8,7 +8,7 @@ pub const Window = @import("win32/Window.zig");
 pub const graphics = @import("win32/graphics.zig");
 pub const mouse = @import("win32/mouse.zig");
 pub const keys = @import("win32/keys.zig");
-pub const Timer = @import("win32/timer.zig").Timer;
+pub const Timer = @import("win32/timers.zig").Timer;
 
 // --------------------------------------------------------------
 
