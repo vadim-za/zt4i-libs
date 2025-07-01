@@ -87,10 +87,18 @@ const Window = struct {
             defer ctx.deinit();
 
             var popup_creator = try ctx.createPopup();
-            errdefer popup_creator.abort();
-            var popup = popup_creator.editor();
-            try popup.addCommand("item 1", 1);
-            try popup.addCommand("item 2", 2);
+            {
+                errdefer popup_creator.abort();
+                var popup = popup_creator.editor();
+                try popup.addCommand("item 1", 1);
+                var sub_creator = try popup.addSub("Submenu");
+                {
+                    errdefer sub_creator.abort();
+                    var sub = sub_creator.editor();
+                    try sub.addCommand("item 2", 2);
+                }
+                try sub_creator.close();
+            }
             self.popup_menu = try popup_creator.close();
         }
     }

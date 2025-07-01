@@ -278,6 +278,19 @@ pub const Editor = struct {
             text16,
         ) == os.FALSE) return gui.Error.OsApi;
     }
+
+    // 'text' must stay valid until SubCreator is closed or aborted
+    pub fn addSub(
+        self: *@This(),
+        text: []const u8,
+    ) gui.Error!SubCreator {
+        return if (CreatePopupMenu()) |hMenu| .{
+            .context = self.context,
+            .hMenu = hMenu,
+            .hParentMenu = self.hMenu,
+            .text = text,
+        } else gui.Error.OsApi;
+    }
 };
 
 fn destroyMenuExpectSuccess(hMenu: os.HMENU) void {
