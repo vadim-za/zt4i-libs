@@ -9,13 +9,27 @@ pub fn Wtf16Str(comptime buf16_len: usize) type {
     const buf_size = (buf16_len + 1) * @sizeOf(u16);
 
     return struct {
-        str16: [:0]const u16,
+        str16: ?[:0]const u16,
         sfba: std.heap.StackFallbackAllocator(buf_size),
         alloc: std.mem.Allocator,
 
         pub fn initU8(self: *@This(), str8: []const u8) gui.Error!void {
+            self.init();
+            try self.setU8(str8);
+        }
+
+        pub fn init(self: *@This()) void {
             self.sfba = std.heap.stackFallback(buf_size, winmain.allocator());
             self.alloc = self.sfba.get();
+            self.str16 = null;
+        }
+
+        pub fn deinit(self: *@This()) void {
+            self.reset();
+        }
+
+        pub fn setU8(self: *@This(), str8: []const u8) gui.Error!void {
+            self.reset();
 
             self.str16 = std.unicode.wtf8ToWtf16LeAllocZ(
                 self.alloc,
@@ -26,16 +40,19 @@ pub fn Wtf16Str(comptime buf16_len: usize) type {
             };
         }
 
-        pub fn deinit(self: *const @This()) void {
-            self.alloc.free(self.str16);
+        pub fn reset(self: *@This()) void {
+            if (self.str16) |str16| {
+                self.alloc.free(str16);
+                self.str16 = null;
+            }
         }
 
         pub fn slice(self: *const @This()) [:0]const u16 {
-            return self.str16;
+            return self.str16.?;
         }
 
         pub fn ptr(self: *const @This()) [*:0]const u16 {
-            return self.str16.ptr;
+            return self.str16.?.ptr;
         }
     };
 }

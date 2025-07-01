@@ -58,6 +58,7 @@ const Window = struct {
             self.window.core.redraw(false);
         }
     }),
+    popup_menu: zt4i.gui.menus.Popup = .{},
 
     const Results = zt4i.gui.Window.Responders(@This()).Results;
 
@@ -79,6 +80,18 @@ const Window = struct {
         }
 
         self.font = try .init("Verdana", 15);
+
+        {
+            var ctx: zt4i.gui.menus.EditorContext = undefined;
+            ctx.init();
+            defer ctx.deinit();
+
+            var popup_creator = try ctx.createPopup();
+            errdefer popup_creator.abort();
+            var popup = popup_creator.editor();
+            try popup.addCommand("abc", 1);
+            self.popup_menu = try popup_creator.close();
+        }
     }
 
     fn deinit(self: *@This()) void {
@@ -86,6 +99,7 @@ const Window = struct {
         self.core.deinit();
         self.path.deinit();
         self.font.deinit();
+        self.popup_menu.deinit();
     }
 
     fn create(self: *@This(), width: f32, height: f32) zt4i.gui.Error!void {

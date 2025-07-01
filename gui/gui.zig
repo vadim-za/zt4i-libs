@@ -55,6 +55,7 @@ pub const Rectangle = graphics.Rectangle;
 
 pub const mouse = platform.mouse;
 pub const keys = platform.keys;
+pub const menus = platform.menus;
 
 pub const Timer = platform.Timer;
 
