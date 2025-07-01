@@ -33,15 +33,6 @@ extern "user32" fn ModifyMenuW(
     uIDNewItem: usize,
     lpNewItem: ?os.LPCWSTR,
 ) callconv(.winapi) os.BOOL;
-extern "user32" fn TrackPopupMenu(
-    hMenu: os.HMENU,
-    uFlags: os.UINT,
-    x: c_int,
-    y: c_int,
-    nReserved: c_int,
-    hWnd: os.HWND,
-    prcRect: ?*os.RECT,
-) callconv(.winapi) c_int;
 extern "user32" fn GetMenu(
     hWnd: os.HWND,
 ) callconv(.winapi) ?os.HMENU;
@@ -53,6 +44,38 @@ extern "user32" fn SetMenu(
 pub const MF_GRAYED: os.UINT = 0x1;
 pub const MF_CHECKED: os.UINT = 0x8;
 pub const MF_POPUP: os.UINT = 0x10;
+
+extern "user32" fn GetCursorPos(*os.POINT) callconv(.winapi) os.BOOL;
+extern "user32" fn TrackPopupMenu(
+    hMenu: os.HMENU,
+    uFlags: os.UINT,
+    x: c_int,
+    y: c_int,
+    nReserved: c_int,
+    hWnd: os.HWND,
+    prcRect: ?*const os.RECT,
+) callconv(.winapi) c_int;
+
+pub const TPM_NONOTIFY: os.UINT = 0x80;
+pub const TPM_RETURNCMD: os.UINT = 0x100;
+
+// ----------------------------------------------------------------
+
+const os_item_base_id = 1;
+
+fn toOsItemId(id: anytype) u32 {
+    const raw_id: u32 = switch (@typeInfo(@TypeOf(id))) {
+        .int, .comptime_int => @intCast(id),
+        .@"enum" => @intFromEnum(id), // enum literals must be explicitly type-qualified
+        else => unreachable,
+    };
+    const os_id: u31 = @intCast(os_item_base_id + raw_id); // must fit into 31 bits
+    return os_id;
+}
+
+pub fn fromOsItemId(os_id: u32) u32 {
+    return @intCast(os_id - os_item_base_id);
+}
 
 // ----------------------------------------------------------------
 
@@ -77,6 +100,28 @@ pub const Popup = struct {
             destroyMenuExpectSuccess(hMenu);
             self.hMenu = null;
         }
+    }
+
+    pub fn runWithinWindow(
+        self: *@This(),
+        window: *gui.Window,
+    ) gui.Error!?u32 {
+        var pt: os.POINT = undefined;
+        if (GetCursorPos(&pt) == os.FALSE)
+            return gui.Error.OsApi;
+
+        const nResult = TrackPopupMenu(
+            self.hMenu.?,
+            TPM_NONOTIFY | TPM_RETURNCMD,
+            pt.x,
+            pt.y,
+            0,
+            window.hWnd.?,
+            null,
+        );
+        if (nResult > 0)
+            return fromOsItemId(@intCast(nResult));
+        return null;
     }
 };
 
@@ -199,18 +244,6 @@ pub const ItemFlags = packed struct {
 pub const Editor = struct {
     context: *EditorContext,
     hMenu: os.HMENU,
-
-    const base_id = 1;
-
-    fn toOsItemId(id: anytype) u32 {
-        const raw_id: u32 = switch (@typeInfo(@TypeOf(id))) {
-            .int, .comptime_int => @intCast(id),
-            .@"enum" => @intFromEnum(id), // enum literals must be explicitly type-qualified
-            else => unreachable,
-        };
-        const os_id: u31 = @intCast(base_id + raw_id); // must fit into 31 bits
-        return os_id;
-    }
 
     pub fn addCommand(
         self: *@This(),

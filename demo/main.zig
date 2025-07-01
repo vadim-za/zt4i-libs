@@ -89,7 +89,8 @@ const Window = struct {
             var popup_creator = try ctx.createPopup();
             errdefer popup_creator.abort();
             var popup = popup_creator.editor();
-            try popup.addCommand("abc", 1);
+            try popup.addCommand("item 1", 1);
+            try popup.addCommand("item 2", 2);
             self.popup_menu = try popup_creator.close();
         }
     }
@@ -122,13 +123,13 @@ const Window = struct {
     // the initializations which are deinitialized in onDestroy. onDestroy()
     // is not called if onCreate() fails.
     pub fn onCreate(self: *@This()) zt4i.gui.Error!void {
-        try self.timer.setupWithWindow(&self.core, 1.0);
+        try self.timer.setupWithinWindow(&self.core, 1.0);
     }
 
     // onDestroy() is not called if window creation fails before
     // calling onCreate().
     pub fn onDestroy(self: *@This()) void {
-        self.timer.releaseWithWindow(&self.core);
+        self.timer.releaseWithinWindow(&self.core);
         zt4i.gui.mloop.stop();
     }
 
@@ -200,12 +201,17 @@ const Window = struct {
                 return .processed;
             },
             .up => {
-                _ = zt4i.gui.mbox.show(
+                if (self.popup_menu.runWithinWindow(
                     &self.core,
-                    "Caption",
-                    "Text",
-                    .ok,
-                ) catch {};
+                ) catch null) |id| switch (id) {
+                    1 => _ = zt4i.gui.mbox.show(
+                        &self.core,
+                        "Caption",
+                        "Text",
+                        .ok,
+                    ) catch {},
+                    else => {},
+                };
                 return .processed;
             },
         }

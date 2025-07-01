@@ -27,7 +27,7 @@ const TIMERPROC = fn (
 const TimerCore = struct {
     nIDEvent: usize = 0,
 
-    fn setupWithWindow(
+    fn setupWithinWindow(
         self: *@This(),
         window: *gui.Window,
         timeout: f32,
@@ -54,7 +54,7 @@ const TimerCore = struct {
         self.nIDEvent = nIDEvent;
     }
 
-    fn releaseWithWindow(self: *@This(), window: *gui.Window) void {
+    fn releaseWithinWindow(self: *@This(), window: *gui.Window) void {
         if (!self.active()) {
             std.debug.assert(false);
             return;
@@ -74,12 +74,12 @@ pub fn Timer(Payload: type) type {
         core: TimerCore = .{},
         payload: Payload, // public field
 
-        pub fn setupWithWindow(
+        pub fn setupWithinWindow(
             self: *@This(),
             window: *gui.Window,
             timeout: f32,
         ) gui.Error!void {
-            return self.core.setupWithWindow(
+            return self.core.setupWithinWindow(
                 window,
                 timeout,
                 self,
@@ -87,8 +87,8 @@ pub fn Timer(Payload: type) type {
             );
         }
 
-        pub fn releaseWithWindow(self: *@This(), window: *gui.Window) void {
-            self.core.releaseWithWindow(window);
+        pub fn releaseWithinWindow(self: *@This(), window: *gui.Window) void {
+            self.core.releaseWithinWindow(window);
         }
 
         pub fn active(self: *const @This()) bool {
