@@ -56,6 +56,7 @@ extern "user32" fn TrackPopupMenu(
     prcRect: ?*const os.RECT,
 ) callconv(.winapi) c_int;
 
+pub const TPM_RIGHTBUTTON: os.UINT = 2;
 pub const TPM_NONOTIFY: os.UINT = 0x80;
 pub const TPM_RETURNCMD: os.UINT = 0x100;
 
@@ -112,7 +113,7 @@ pub const Popup = struct {
 
         const nResult = TrackPopupMenu(
             self.hMenu.?,
-            TPM_NONOTIFY | TPM_RETURNCMD,
+            TPM_NONOTIFY | TPM_RETURNCMD | TPM_RIGHTBUTTON,
             pt.x,
             pt.y,
             0,

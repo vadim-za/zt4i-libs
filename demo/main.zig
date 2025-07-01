@@ -194,26 +194,30 @@ const Window = struct {
         event: *const zt4i.gui.mouse.Event,
     ) ?Results.OnMouse {
         switch (event.action.type) {
-            .down => return .capture,
+            .down => switch (event.action.button.?) {
+                .left => return .capture,
+                .right => {
+                    if (self.popup_menu.runWithinWindow(
+                        &self.core,
+                    ) catch null) |id| switch (id) {
+                        1 => _ = zt4i.gui.mbox.show(
+                            &self.core,
+                            "Caption",
+                            "Text",
+                            .ok,
+                        ) catch {},
+                        else => {},
+                    };
+                    return .dont_capture;
+                },
+                else => return .dont_capture,
+            },
             .move => {
                 self.xy = event.pos;
                 self.core.redraw(false);
                 return .processed;
             },
-            .up => {
-                if (self.popup_menu.runWithinWindow(
-                    &self.core,
-                ) catch null) |id| switch (id) {
-                    1 => _ = zt4i.gui.mbox.show(
-                        &self.core,
-                        "Caption",
-                        "Text",
-                        .ok,
-                    ) catch {},
-                    else => {},
-                };
-                return .processed;
-            },
+            .up => return .processed,
         }
     }
 
