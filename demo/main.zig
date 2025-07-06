@@ -58,7 +58,7 @@ const Window = struct {
             self.window.core.redraw(false);
         }
     }),
-    popup_menu: zt4i.gui.menus.Popup = .{},
+    popup_menu: zt4i.gui.menus.Popup(u32) = .{},
 
     const Results = zt4i.gui.Window.Responders(@This()).Results;
 
@@ -82,24 +82,18 @@ const Window = struct {
         self.font = try .init("Verdana", 15);
 
         {
-            var ctx: zt4i.gui.menus.EditorContext = undefined;
+            var ctx: zt4i.gui.menus.EditContext(100) = undefined;
             ctx.init();
             defer ctx.deinit();
 
-            var popup_creator = try ctx.createPopup();
-            {
-                errdefer popup_creator.abort();
-                var popup = popup_creator.editor();
-                try popup.addCommand("item 1", 1);
-                var sub_creator = try popup.addSub("Submenu");
-                {
-                    errdefer sub_creator.abort();
-                    var sub = sub_creator.editor();
-                    try sub.addCommand("item 2", 2);
-                }
-                try sub_creator.close();
-            }
-            self.popup_menu = try popup_creator.close();
+            var popup = try self.popup_menu.create(&ctx);
+            (try popup.addCommand("item 1")).meta.* = 1;
+
+            // var sub_menu: zt4i.gui.menus.Sub(u32) = undefined;
+            // // Actually we could pass null as the second parameter
+            // // since we don't really need sub_menu.
+            // var sub = try popup.addSub("Submenu", &sub_menu);
+            // (try sub.addCommand("item 2")).meta.* = 2;
         }
     }
 
@@ -108,7 +102,7 @@ const Window = struct {
         self.core.deinit();
         self.path.deinit();
         self.font.deinit();
-        self.popup_menu.deinit();
+        self.popup_menu.destroy();
     }
 
     fn create(self: *@This(), width: f32, height: f32) zt4i.gui.Error!void {
@@ -207,7 +201,7 @@ const Window = struct {
                 .right => {
                     if (self.popup_menu.runWithinWindow(
                         &self.core,
-                    ) catch null) |id| switch (id) {
+                    ) catch null) |cmd| switch (cmd.meta.*) {
                         1 => _ = zt4i.gui.mbox.show(
                             &self.core,
                             "Caption",
