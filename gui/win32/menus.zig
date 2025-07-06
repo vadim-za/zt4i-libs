@@ -1,7 +1,3 @@
-const metadata = @import("menus/metadata.zig");
-pub const CommandId = metadata.CommandId;
-pub const SelectedCommand = metadata.SelectedCommand;
-
 const context = @import("menus/context.zig");
 pub const EditContext = context.EditContext;
 

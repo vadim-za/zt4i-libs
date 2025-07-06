@@ -16,24 +16,22 @@ extern "user32" fn AppendMenuW(
 
 // ----------------------------------------------------------------
 
-pub fn Editor(CommandMetadata: type) type {
+pub fn Editor(Command: type) type {
     return struct {
         ctx: context.Any,
         hMenu: os.HMENU,
-        root_meta: *RootMeta,
+        commands: *Commands,
 
-        const RootMeta = metadata.Collection(CommandMetadata);
-
-        pub const Command = RootMeta.Command;
+        const Commands = metadata.Collection(Command);
 
         pub fn addCommand(
             self: *@This(),
             text: []const u8,
-        ) gui.Error!Command {
-            const command = try self.root_meta.addCommand();
-            errdefer self.root_meta.popCommand(command.id);
+        ) gui.Error!*Command {
+            const command = try self.commands.add();
+            errdefer self.commands.popLast();
 
-            const uItemID = self.root_meta.osFromId(command.id);
+            const uItemID = self.commands.osIdOf(command);
 
             const text16 = try self.ctx.convertU8(text);
             if (AppendMenuW(

@@ -30,14 +30,13 @@ pub const TPM_RETURNCMD: os.UINT = 0x100;
 
 // ----------------------------------------------------------------
 
-pub fn Popup(CommandMetadata: type) type {
+pub fn Popup(Command: type) type {
     return struct {
         hMenu: ?os.HMENU = null,
-        metadata: RootMetadata = undefined,
+        commands: Commands = undefined,
 
-        const RootMetadata = metadata.Collection(CommandMetadata);
-        pub const Command = RootMetadata.Command;
-        pub const Editor = editor.Editor(CommandMetadata);
+        const Commands = metadata.Collection(Command);
+        pub const Editor = editor.Editor(Command);
 
         pub fn create(
             self: *@This(),
@@ -46,16 +45,17 @@ pub fn Popup(CommandMetadata: type) type {
             if (self.hMenu != null)
                 return gui.Error.Usage;
 
-            const hMenu = CreatePopupMenu() orelse
-                return gui.Error.OsApi;
+            try self.commands.init();
+            errdefer self.commands.deinit();
 
+            const hMenu: os.HMENU = CreatePopupMenu() orelse
+                return gui.Error.OsApi;
             self.hMenu = hMenu;
-            self.metadata = .{};
 
             return .{
                 .ctx = context.Any.from(edit_context_ptr),
                 .hMenu = hMenu,
-                .root_meta = &self.metadata,
+                .commands = &self.commands,
             };
         }
 
@@ -66,13 +66,13 @@ pub fn Popup(CommandMetadata: type) type {
                 @panic("Failed to destroy menu");
 
             self.hMenu = null;
-            self.metadata.deinit();
+            self.commands.deinit();
         }
 
-        pub fn runWithinWindow(
+        pub fn run(
             self: *@This(),
             window: *gui.Window,
-        ) gui.Error!?Command {
+        ) gui.Error!?*Command {
             var pt: os.POINT = undefined;
             if (GetCursorPos(&pt) == os.FALSE)
                 return gui.Error.OsApi;
@@ -88,7 +88,7 @@ pub fn Popup(CommandMetadata: type) type {
             );
 
             if (nResult > 0)
-                return self.metadata.getCommandByOsId(@intCast(nResult));
+                return self.commands.commandFromOsId(@intCast(nResult));
 
             // Windows API docs are not too precise on whether the last
             // error code is set to zero upon user cancelling the menu.

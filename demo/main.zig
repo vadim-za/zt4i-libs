@@ -87,7 +87,7 @@ const Window = struct {
             defer ctx.deinit();
 
             var popup = try self.popup_menu.create(&ctx);
-            (try popup.addCommand("item 1")).meta.* = 1;
+            (try popup.addCommand("item 1")).* = 1;
 
             // var sub_menu: zt4i.gui.menus.Sub(u32) = undefined;
             // // Actually we could pass null as the second parameter
@@ -199,9 +199,9 @@ const Window = struct {
             .down => switch (event.action.button.?) {
                 .left => return .capture,
                 .right => {
-                    if (self.popup_menu.runWithinWindow(
+                    if (self.popup_menu.run(
                         &self.core,
-                    ) catch null) |cmd| switch (cmd.meta.*) {
+                    ) catch null) |cmd| switch (cmd.*) {
                         1 => _ = zt4i.gui.mbox.show(
                             &self.core,
                             "Caption",
