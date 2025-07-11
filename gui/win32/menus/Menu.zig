@@ -210,7 +210,7 @@ pub fn addSubmenu(
     return &item.variant.submenu;
 }
 
-pub fn addItem(
+fn addItem(
     self: *@This(),
     comptime variant_field: []const u8,
     text: ?[]const u8,
@@ -328,9 +328,11 @@ test "All" {
     const hMenu = CreatePopupMenu().?;
     defer debug.expect(DestroyMenu(hMenu) != os.FALSE);
 
-    const menu = @This(){
+    var menu = @This(){
         .arena = &arena,
         .hMenu = hMenu,
     };
-    _ = menu; // autofix
+
+    _ = try menu.addCommand("Command 1", .{ .visible = false });
+    _ = try menu.addCommand("Command 2", .{ .enabled = false });
 }
