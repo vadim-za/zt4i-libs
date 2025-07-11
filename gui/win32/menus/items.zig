@@ -5,14 +5,14 @@ const os = std.os.windows;
 
 pub const Item = struct {
     pos: Position,
-    visible_pos: Position, // can be not up to date
+    visible_pos: Position, // may be not up to date
     text16: ?[:0]const u16,
     uIDItem: usize,
     variant: Variant,
 
     pub fn isVisible(self: *const @This()) bool {
         return switch (self.variant) {
-            inline else => |v| !v.flags.hidden,
+            inline else => |v| v.flags.visible,
         };
     }
 
@@ -51,14 +51,14 @@ pub const Command = struct {
     flags: Flags, // do not change this field directly!
 
     pub const Flags = packed struct {
-        hidden: bool = false,
-        grayed: bool = false,
+        visible: bool = true,
+        enabled: bool = true,
         checked: bool = false,
 
         pub fn toAll(self: @This()) AllFlags {
             return .{
-                .hidden = self.hidden,
-                .grayed = self.grayed,
+                .visible = self.visible,
+                .enabled = self.enabled,
                 .checked = self.checked,
             };
         }
@@ -69,11 +69,11 @@ pub const Separator = struct {
     flags: Flags, // do not change this field directly!
 
     pub const Flags = packed struct {
-        hidden: bool = false,
+        visible: bool = true,
 
         pub fn toAll(self: @This()) AllFlags {
             return .{
-                .hidden = self.hidden,
+                .visible = self.visible,
             };
         }
     };
@@ -85,20 +85,20 @@ pub const Submenu = struct {
     flags: Flags, // do not change this field directly!
 
     pub const Flags = packed struct {
-        hidden: bool = false,
-        grayed: bool = false,
+        visible: bool = true,
+        enabled: bool = true,
 
         pub fn toAll(self: @This()) AllFlags {
             return .{
-                .hidden = self.hidden,
-                .grayed = self.grayed,
+                .visible = self.visible,
+                .enabled = self.enabled,
             };
         }
     };
 };
 
 pub const AllFlags = packed struct {
-    hidden: bool = false,
-    grayed: bool = false,
+    visible: bool = true,
+    enabled: bool = true,
     checked: bool = false,
 };

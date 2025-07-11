@@ -148,10 +148,10 @@ fn addItem(
     };
     self.items.append(node);
 
-    if (!flags.hidden) {
+    if (flags.visible) {
         const all_flags = flags.toAll();
         const uFlags: os.UINT =
-            (if (all_flags.grayed) MF_GRAYED else 0) |
+            (if (all_flags.enabled) 0 else MF_GRAYED) |
             (if (all_flags.checked) MF_CHECKED else 0);
 
         if (AppendMenuW(
@@ -236,6 +236,6 @@ test "All" {
         .hMenu = hMenu,
     };
 
-    _ = try contents.addCommand("Command 1", .{ .hidden = true });
-    _ = try contents.addCommand("Command 2", .{ .grayed = true });
+    _ = try contents.addCommand("Command 1", .{ .visible = false });
+    _ = try contents.addCommand("Command 2", .{ .enabled = false });
 }
