@@ -19,6 +19,7 @@ pub const WM_PAINT: os.UINT = 0xF;
 pub const WM_CLOSE: os.UINT = 0x10;
 const WM_DISPLAYCHANGE: os.UINT = 0x7E;
 const WM_KEYDOWN: os.UINT = 0x100;
+const WM_COMMAND: os.UINT = 0x111;
 
 pub extern "user32" fn BeginPaint(
     hWnd: os.HWND,
@@ -75,6 +76,7 @@ pub fn ReceivedMessage(
                 WM_DESTROY => self.onDestroy(),
                 WM_PAINT, WM_DISPLAYCHANGE => self.onPaint(),
                 WM_CLOSE => self.onClose(),
+                WM_COMMAND => self.onCommand(),
                 else => .call_default,
             };
         }
@@ -132,6 +134,11 @@ pub fn ReceivedMessage(
                 .destroy_window => window.destroy(),
                 .dont_destroy_window => {},
             }
+            return .zero;
+        }
+
+        fn onCommand(self: *const @This()) Result {
+            _ = self;
             return .zero;
         }
 

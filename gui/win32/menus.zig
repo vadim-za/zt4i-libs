@@ -7,6 +7,9 @@ pub const Editor = editor.Editor;
 const popup = @import("menus/popup.zig");
 pub const Popup = popup.Popup;
 
+const bar = @import("menus/bar.zig");
+pub const Bar = bar.Bar;
+
 comptime {
     const std = @import("std");
     _ = std.testing.refAllDecls(@import("menus/Contents.zig"));

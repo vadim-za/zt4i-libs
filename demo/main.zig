@@ -59,6 +59,7 @@ const Window = struct {
         }
     }),
     popup_menu: zt4i.gui.menus.Popup(u32) = .{},
+    menu_bar: zt4i.gui.menus.Bar(u32) = .{},
 
     const Results = zt4i.gui.Window.Responders(@This()).Results;
 
@@ -86,7 +87,8 @@ const Window = struct {
             ctx.init();
             defer ctx.deinit();
 
-            var popup = try self.popup_menu.create(&ctx);
+            //var popup = try self.popup_menu.create(&ctx);
+            var popup = try self.menu_bar.create(&ctx);
             (try popup.addCommand("item 1")).* = 1;
 
             // var sub_menu: zt4i.gui.menus.Sub(u32) = undefined;
@@ -103,6 +105,7 @@ const Window = struct {
         self.path.deinit();
         self.font.deinit();
         self.popup_menu.destroy();
+        self.menu_bar.discard();
     }
 
     fn create(self: *@This(), width: f32, height: f32) zt4i.gui.Error!void {
@@ -125,6 +128,7 @@ const Window = struct {
     // the initializations which are deinitialized in onDestroy. onDestroy()
     // is not called if onCreate() fails.
     pub fn onCreate(self: *@This()) zt4i.gui.Error!void {
+        self.menu_bar.attachTo(&self.core);
         try self.timer.setupWithinWindow(&self.core, 1.0);
     }
 
