@@ -9,5 +9,5 @@ pub const Popup = popup.Popup;
 
 comptime {
     const std = @import("std");
-    _ = std.testing.refAllDecls(@import("menus/Menu.zig"));
+    _ = std.testing.refAllDecls(@import("menus/Contents.zig"));
 }

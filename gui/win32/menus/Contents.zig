@@ -1,6 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const gui = @import("../../gui.zig");
+const item_types = @import("items.zig");
 const debug = @import("../debug.zig");
 
 const os = std.os.windows;
@@ -50,111 +51,13 @@ first_dirty_node: ?*ItemsList.Node = null,
 
 const Self = @This();
 
-const ItemsList = std.DoublyLinkedList(Item);
-
-const Item = struct {
-    pos: Position,
-    visible_pos: Position, // can be not up to date
-    text16: ?[:0]const u16,
-    uIDItem: usize,
-    variant: Variant,
-
-    fn isVisible(self: *const @This()) bool {
-        return switch (self.variant) {
-            inline else => |v| v.flags.visible,
-        };
-    }
-};
-
-const Position = usize;
-
-const Variant = union(enum) {
-    command: Command,
-    separator: Separator,
-    submenu: Submenu,
-};
-
-pub const Command = struct {
-    /// 'cookie' is a public field to be written and read by the user code.
-    cookie: usize = undefined,
-
-    flags: Flags, // do not change this field directly!
-
-    pub const Flags = packed struct {
-        visible: bool = true,
-        enabled: bool = true,
-        checked: bool = false,
-
-        fn toAll(self: @This()) AllFlags {
-            return .{
-                .visible = self.visible,
-                .enabled = self.enabled,
-                .checked = self.checked,
-            };
-        }
-    };
-};
-
-pub const Separator = struct {
-    flags: Flags, // do not change this field directly!
-
-    pub const Flags = packed struct {
-        visible: bool = true,
-
-        fn toAll(self: @This()) AllFlags {
-            return .{
-                .visible = self.visible,
-            };
-        }
-    };
-};
-
-pub const Submenu = struct {
-    menu: *Self = undefined,
-
-    flags: Flags, // do not change this field directly!
-
-    pub const Flags = packed struct {
-        visible: bool = true,
-        enabled: bool = true,
-
-        fn toAll(self: @This()) AllFlags {
-            return .{
-                .visible = self.visible,
-                .enabled = self.enabled,
-            };
-        }
-    };
-};
-
-const AllFlags = packed struct {
-    visible: bool = false,
-    enabled: bool = true,
-    checked: bool = false,
-};
-
-fn toItemPtr(any_item_ptr: anytype) *Item {
-    const ItemType = @TypeOf(any_item_ptr.*);
-
-    const variant_name = switch (ItemType) {
-        Command => "command",
-        Separator => "separator",
-        Submenu => "submenu",
-        else => @compileError("Unknown item type " ++
-            @typeName(ItemType)),
-    };
-
-    const item: *Item =
-        @alignCast(@fieldParentPtr(variant_name, any_item_ptr));
-
-    return item;
-}
+const ItemsList = std.DoublyLinkedList(item_types.Item);
 
 pub fn addCommand(
     self: *@This(),
     text: []const u8,
-    flags: Command.Flags,
-) gui.Error!*Command {
+    flags: item_types.Command.Flags,
+) gui.Error!*item_types.Command {
     const id = self.next_item_id;
     self.next_item_id += 1;
 
@@ -170,8 +73,8 @@ pub fn addCommand(
 
 pub fn addSeparator(
     self: *@This(),
-    flags: Separator.Flags,
-) gui.Error!*Separator {
+    flags: item_types.Separator.Flags,
+) gui.Error!*item_types.Separator {
     const item = try self.addItem(
         "separator",
         null,
@@ -185,8 +88,8 @@ pub fn addSeparator(
 pub fn addSubmenu(
     self: *@This(),
     text: []const u8,
-    flags: Submenu.Flags,
-) gui.Error!*Submenu {
+    flags: item_types.Submenu.Flags,
+) gui.Error!*item_types.Submenu {
     const hMenu = CreatePopupMenu() orelse
         return gui.Error.OsApi;
     errdefer if (DestroyMenu(hMenu) == os.FALSE)
@@ -201,12 +104,12 @@ pub fn addSubmenu(
     // No errdefer needed here, as we're using arena allocator
 
     const alloc = self.arena.allocator();
-    const menu = try alloc.create(@This());
-    menu.* = .{
+    const submenu_contents = try alloc.create(@This());
+    submenu_contents.* = .{
         .hMenu = hMenu,
         .arena = self.arena,
     };
-    item.variant.submenu.menu = menu;
+    item.variant.submenu.contents = submenu_contents;
     return &item.variant.submenu;
 }
 
@@ -216,7 +119,7 @@ fn addItem(
     text: ?[]const u8,
     uIDNewItem: usize,
     flags: anytype,
-) gui.Error!*Item {
+) gui.Error!*item_types.Item {
     const alloc = self.arena.allocator();
     const node = try alloc.create(ItemsList.Node);
 
@@ -239,16 +142,16 @@ fn addItem(
         .visible_pos = undefined,
         .text16 = text16,
         .uIDItem = uIDNewItem,
-        .variant = @unionInit(Variant, variant_field, .{
+        .variant = @unionInit(item_types.Variant, variant_field, .{
             .flags = flags,
         }),
     };
     self.items.append(node);
 
-    if (flags.visible) {
+    if (!flags.hidden) {
         const all_flags = flags.toAll();
         const uFlags: os.UINT =
-            (if (all_flags.enabled) 0 else MF_GRAYED) |
+            (if (all_flags.grayed) MF_GRAYED else 0) |
             (if (all_flags.checked) MF_CHECKED else 0);
 
         if (AppendMenuW(
@@ -328,11 +231,11 @@ test "All" {
     const hMenu = CreatePopupMenu().?;
     defer debug.expect(DestroyMenu(hMenu) != os.FALSE);
 
-    var menu = @This(){
+    var contents = @This(){
         .arena = &arena,
         .hMenu = hMenu,
     };
 
-    _ = try menu.addCommand("Command 1", .{ .visible = false });
-    _ = try menu.addCommand("Command 2", .{ .enabled = false });
+    _ = try contents.addCommand("Command 1", .{ .hidden = true });
+    _ = try contents.addCommand("Command 2", .{ .grayed = true });
 }
