@@ -87,10 +87,11 @@ const Window = struct {
             // (try bar.addCommand("item 1", 1)).* = 1;
 
             const popup = try self.popup_menu.create(null);
-            const item1 = try popup.addCommand(.last, "item 1", 1, .{});
-            const item2 = try popup.addCommand(.after(item1), "item 2", 2, .{});
-            const anchor1 = try popup.addAnchor(.before(item2));
+            const command1 = try popup.addCommand(.last, "item 1", 1, .{});
+            const command2 = try popup.addCommand(.after(command1), "item 2", 2, .{});
+            const anchor1 = try popup.addAnchor(.before(command2));
             _ = try popup.addCommand(.after(anchor1), "item 3", 0, .{});
+            _ = try popup.addCommand(.after(command2), "item 4", 0, .{});
 
             // var sub_menu: zt4i.gui.menus.Sub(u32) = undefined;
             // // Actually we could pass null as the second parameter
