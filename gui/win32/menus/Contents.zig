@@ -156,7 +156,7 @@ pub fn addAnchor(
 
 fn insertItem(
     self: *@This(),
-    where: ?item_types.Where,
+    where: item_types.Where,
     comptime variant_tag: std.meta.Tag(item_types.Variant),
     text: ?[]const u8,
     uIDNewItem: usize,
@@ -180,17 +180,17 @@ fn insertItem(
         ),
     };
 
-    const insert_before: ?*ItemsList.Node =
-        if (where) |w| switch (w.ordered) {
-            .before => if (w.reference_item) |ref|
-                nodeFromItem(@constCast(ref))
-            else
-                self.items.last,
-            .after => if (w.reference_item) |ref|
-                nodeFromItem(@constCast(ref)).next
-            else
-                self.items.first,
-        } else null;
+    // 'null' means 'append'
+    const insert_before: ?*ItemsList.Node = switch (where.ordered) {
+        .before => if (where.reference_item) |ref|
+            nodeFromItem(@constCast(ref))
+        else
+            self.items.last,
+        .after => if (where.reference_item) |ref|
+            nodeFromItem(@constCast(ref)).next
+        else
+            self.items.first,
+    };
 
     if (insert_before) |ib|
         self.items.insertBefore(ib, node)
