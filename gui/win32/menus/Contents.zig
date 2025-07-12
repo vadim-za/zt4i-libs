@@ -42,6 +42,34 @@ extern "user32" fn DeleteMenu(
     uFlags: os.UINT,
 ) callconv(.winapi) os.BOOL;
 
+const MENUITEMINFOW = extern struct {
+    cbSize: os.UINT = @sizeOf(@This()),
+    fMask: os.UINT = 0,
+    fType: os.UINT = 0,
+    fState: os.UINT = 0,
+    wID: os.UINT = 0,
+    hSubMenu: ?os.HMENU = null,
+    hbmpChecked: ?*anyopaque = null, // HBITMAP
+    hbmpUnchecked: ?*anyopaque = null, // HBITMAP
+    dwItemData: usize = 0,
+    dwTypeData: ?os.LPWSTR = null,
+    cch: os.UINT = 0,
+    hbmpItem: ?*anyopaque = null, // HBITMAP
+};
+
+const MIIM_STATE: os.UINT = 1;
+const MIIM_STRING: os.UINT = 0x40;
+
+const MFS_CHECKED: os.UINT = 8;
+const MFS_GRAYED: os.UINT = 3;
+
+extern "user32" fn SetMenuItemInfoW(
+    hMenu: os.HMENU,
+    item: os.UINT,
+    fByPosition: os.BOOL,
+    lpmii: *MENUITEMINFOW,
+) callconv(.winapi) os.BOOL;
+
 // ----------------------------------------------------------------
 
 hMenu: os.HMENU,
@@ -263,6 +291,48 @@ pub fn deleteItem(self: *@This(), any_item_ptr: anytype) void {
         self.invalidateVisiblePositionsFrom(nn);
 
     self.items_alloc.destroy(node);
+}
+
+pub fn modifyItem(
+    self: *@This(),
+    any_item_ptr: anytype,
+    text: ?[]const u8,
+    flags: ?@TypeOf(any_item_ptr.*).Flags,
+) gui.Error!void {
+    const item = item_types.Item.constFromAny(any_item_ptr);
+    const node = nodeFromItem(@constCast(item));
+
+    if (item.isVisible()) {
+        const pos = self.getVisiblePos(node);
+
+        const text16: ?[*:0]const u16 = if (text) |t|
+            (try self.context.convertU8(t)).ptr
+        else
+            null;
+
+        const all_flags: ?item_types.AllFlags =
+            if (flags) |f| f.toAll() else null;
+        const fState: os.UINT = if (all_flags) |f|
+            (if (f.enabled) 0 else MFS_GRAYED) |
+                (if (f.checked) MFS_CHECKED else 0)
+        else
+            0;
+
+        var mii = MENUITEMINFOW{
+            .fMask = (if (text16 != null) MIIM_STRING else 0) |
+                (if (all_flags != null) MIIM_STATE else 0),
+            .fState = fState,
+            .dwTypeData = @constCast(text16),
+        };
+
+        if (SetMenuItemInfoW(
+            self.hMenu,
+            @intCast(pos),
+            os.TRUE,
+            &mii,
+        ) == os.FALSE)
+            debug.debugModePanic("Modifying menu item failed");
+    }
 }
 
 /// May be called only if node.data.isVisible() is true
