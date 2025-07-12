@@ -150,7 +150,7 @@ const Window = struct {
     }
 
     // onDestroy() is not called if window creation fails before
-    // calling onCreate().
+    // or during calling onCreate().
     pub fn onDestroy(self: *@This()) void {
         self.timer.releaseWithinWindow(&self.core);
         self.menu_bar.detachFrom(&self.core);
