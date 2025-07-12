@@ -1,16 +1,13 @@
-const context = @import("menus/context.zig");
-pub const EditContext = context.EditContext;
+pub const Contents = @import("menus/Contents.zig");
+pub const Popup = @import("menus/Popup.zig");
 
-const editor = @import("menus/editor.zig");
-pub const Editor = editor.Editor;
-
-const popup = @import("menus/popup.zig");
-pub const Popup = popup.Popup;
-
-const bar = @import("menus/bar.zig");
-pub const Bar = bar.Bar;
+const items = @import("menus/items.zig");
+pub const Command = items.Command;
+pub const Separator = items.Separator;
+pub const Submenu = items.Submenu;
+pub const Anchor = items.Anchor;
 
 comptime {
     const std = @import("std");
-    _ = std.testing.refAllDecls(@import("menus/Contents.zig"));
+    _ = std.testing.refAllDecls(@This());
 }

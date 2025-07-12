@@ -1,10 +1,10 @@
 const std = @import("std");
-const builtin = @import("builtin");
 const gui = @import("../../gui.zig");
-const metadata = @import("metadata.zig");
-const editor = @import("editor.zig");
-const context = @import("context.zig");
-const menus = @import("../menus.zig");
+const item_types = @import("items.zig");
+const Contents = @import("Contents.zig");
+const Context = @import("Context.zig");
+const debug = @import("../debug.zig");
+const command_ids = @import("command_ids.zig");
 
 const os = std.os.windows;
 
@@ -30,72 +30,79 @@ pub const TPM_RETURNCMD: os.UINT = 0x100;
 
 // ----------------------------------------------------------------
 
-pub fn Popup(Command: type) type {
-    return struct {
-        hMenu: ?os.HMENU = null,
-        commands: Commands = undefined,
+context: Context = undefined,
+hMenu: ?os.HMENU = null,
 
-        const Commands = metadata.Collection(Command);
-        pub const Editor = editor.Editor(Command);
+/// This field may be accessed publicly for menu modification
+contents: Contents = undefined,
 
-        pub fn create(
-            self: *@This(),
-            edit_context_ptr: anytype,
-        ) gui.Error!Editor {
-            if (self.hMenu != null)
-                return gui.Error.Usage;
+pub fn create(
+    self: *@This(),
+    items_alloc: ?std.mem.Allocator,
+) gui.Error!*Contents {
+    if (self.hMenu != null)
+        return gui.Error.Usage;
 
-            try self.commands.init();
-            errdefer self.commands.deinit();
+    try self.context.init();
+    errdefer self.context.deinit();
 
-            const hMenu: os.HMENU = CreatePopupMenu() orelse
-                return gui.Error.OsApi;
-            self.hMenu = hMenu;
-
-            return .{
-                .ctx = context.Any.from(edit_context_ptr),
-                .hMenu = hMenu,
-                .commands = &self.commands,
-            };
-        }
-
-        pub fn destroy(self: *@This()) void {
-            const hMenu = self.hMenu orelse return;
-
-            if (DestroyMenu(hMenu) == os.FALSE and builtin.mode == .Debug)
-                @panic("Failed to destroy menu");
-
-            self.hMenu = null;
-            self.commands.deinit();
-        }
-
-        pub fn run(
-            self: *@This(),
-            window: *gui.Window,
-        ) gui.Error!?*Command {
-            var pt: os.POINT = undefined;
-            if (GetCursorPos(&pt) == os.FALSE)
-                return gui.Error.OsApi;
-
-            const nResult = TrackPopupMenu(
-                self.hMenu.?,
-                TPM_NONOTIFY | TPM_RETURNCMD | TPM_RIGHTBUTTON,
-                pt.x,
-                pt.y,
-                0,
-                window.hWnd.?,
-                null,
-            );
-
-            if (nResult > 0)
-                return self.commands.commandFromOsId(@intCast(nResult));
-
-            // Windows API docs are not too precise on whether the last
-            // error code is set to zero upon user cancelling the menu.
-            // So we cannot distinguish between the zero result implying
-            // a cancelled menu and an error. Thus we simply return null,
-            // implying a cancelled menu.
-            return null;
-        }
+    const hMenu: os.HMENU = CreatePopupMenu() orelse
+        return gui.Error.OsApi;
+    self.hMenu = hMenu;
+    self.contents = .{
+        .hMenu = hMenu,
+        .context = &self.context,
+        .items_alloc = items_alloc orelse gui.allocator(),
     };
+
+    return &self.contents;
+}
+
+/// Can be called repeatedly
+pub fn destroy(self: *@This()) void {
+    if (self.hMenu) |hMenu| {
+        if (DestroyMenu(hMenu) == os.FALSE)
+            debug.debugModePanic("Failed to destroy menu");
+
+        self.discard();
+    }
+}
+
+/// Can be called repeatedly
+pub fn discard(self: *@This()) void {
+    if (self.hMenu != null) {
+        self.hMenu = null;
+        self.contents.deinit();
+        self.context.deinit();
+    }
+}
+
+// Returns command id.
+pub fn run(
+    self: *@This(),
+    window: *gui.Window,
+) gui.Error!?usize {
+    var pt: os.POINT = undefined;
+    if (GetCursorPos(&pt) == os.FALSE)
+        return gui.Error.OsApi;
+
+    const nResult = TrackPopupMenu(
+        self.hMenu.?,
+        TPM_NONOTIFY | TPM_RETURNCMD | TPM_RIGHTBUTTON,
+        pt.x,
+        pt.y,
+        0,
+        window.hWnd.?,
+        null,
+    );
+
+    if (nResult > 0)
+        return command_ids.fromOsId(@intCast(nResult));
+
+    // Windows API docs are not too precise on whether the last
+    // error code is set to zero upon user cancelling the menu.
+    // So we cannot distinguish between the zero result implying
+    // a cancelled menu and an error. Thus we simply return null,
+    // implying a cancelled menu.
+    return null;
 }

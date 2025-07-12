@@ -58,8 +58,8 @@ const Window = struct {
             self.window.core.redraw(false);
         }
     }),
-    popup_menu: zt4i.gui.menus.Popup(u32) = .{},
-    menu_bar: zt4i.gui.menus.Bar(u32) = .{},
+    popup_menu: zt4i.gui.menus.Popup = .{},
+    //menu_bar: zt4i.gui.menus.Bar = .{},
 
     const Results = zt4i.gui.Window.Responders(@This()).Results;
 
@@ -83,13 +83,11 @@ const Window = struct {
         self.font = try .init("Verdana", 15);
 
         {
-            var ctx: zt4i.gui.menus.EditContext(100) = undefined;
-            ctx.init();
-            defer ctx.deinit();
+            // var bar = try self.menu_bar.create(&ctx);
+            // (try bar.addCommand("item 1", 1)).* = 1;
 
-            //var popup = try self.popup_menu.create(&ctx);
-            var popup = try self.menu_bar.create(&ctx);
-            (try popup.addCommand("item 1")).* = 1;
+            const popup = try self.popup_menu.create(null);
+            _ = try popup.addCommand("item 1", 65537, .{});
 
             // var sub_menu: zt4i.gui.menus.Sub(u32) = undefined;
             // // Actually we could pass null as the second parameter
@@ -105,7 +103,7 @@ const Window = struct {
         self.path.deinit();
         self.font.deinit();
         self.popup_menu.destroy();
-        self.menu_bar.discard();
+        //self.menu_bar.discard();
     }
 
     fn create(self: *@This(), width: f32, height: f32) zt4i.gui.Error!void {
@@ -128,7 +126,7 @@ const Window = struct {
     // the initializations which are deinitialized in onDestroy. onDestroy()
     // is not called if onCreate() fails.
     pub fn onCreate(self: *@This()) zt4i.gui.Error!void {
-        self.menu_bar.attachTo(&self.core);
+        //self.menu_bar.attachTo(&self.core);
         try self.timer.setupWithinWindow(&self.core, 1.0);
     }
 
@@ -205,8 +203,8 @@ const Window = struct {
                 .right => {
                     if (self.popup_menu.run(
                         &self.core,
-                    ) catch null) |cmd| switch (cmd.*) {
-                        1 => _ = zt4i.gui.mbox.show(
+                    ) catch null) |cmd| switch (cmd) {
+                        0 => _ = zt4i.gui.mbox.show(
                             &self.core,
                             "Caption",
                             "Text",

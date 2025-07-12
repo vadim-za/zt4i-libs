@@ -3,6 +3,8 @@ const builtin = @import("builtin");
 const gui = @import("../../gui.zig");
 const item_types = @import("items.zig");
 const debug = @import("../debug.zig");
+const Context = @import("Context.zig");
+const command_ids = @import("command_ids.zig");
 
 const os = std.os.windows;
 
@@ -38,33 +40,53 @@ const MF_BYPOSITION: os.UINT = 0x400;
 
 hMenu: os.HMENU,
 
-arena: *std.heap.ArenaAllocator,
+context: *Context,
+items_alloc: std.mem.Allocator,
 
 items: ItemsList = .{},
 
-// 0 is reserved, values above 16 bits are incompatible to WM_COMMAND
-next_item_id: u16 = 1,
-
-// Nodes after this one do not have up to date 'visible_pos' field.
-// If null, then none of the nodes have up to date `visible pos' field.
+// This and the following nodes do not have up to date 'visible_pos' field.
+// If null, then all nodes are up to date.
 first_dirty_node: ?*ItemsList.Node = null,
 
 const Self = @This();
 
 const ItemsList = std.DoublyLinkedList(item_types.Item);
 
+/// Can be called repeatedly
+pub fn deinit(self: *@This()) void {
+    while (self.items.pop()) |node| {
+        const item = &node.data;
+        item.deinit();
+        self.items_alloc.destroy(node);
+    }
+}
+
+// The max_id is defined in command_ids.zig
+
+/// Allowed 'id' range is 0..60000 (not including the upper bound).
+/// The range is limited due to OS limitations and potentially may
+/// become even smaller, so try to use as small id values as possible.
+///
+/// The formal type of 'id' is usize, so that the caller doesn't need
+/// to use @intCast(), instead addCommand will return gui.Error.Usage
+/// for out-of-range ids.
+///
+/// Be careful of reusing the id values in menu modifications, there
+/// may be subtle asynchronisity in menu notifications sent from the OS,
+/// so (however unlikely) you potentially might receive a command
+/// notification from a command which has been deleted and recreated
+/// with the same id but new semantics.
 pub fn addCommand(
     self: *@This(),
     text: []const u8,
+    id: usize,
     flags: item_types.Command.Flags,
-) gui.Error!*item_types.Command {
-    const id = self.next_item_id;
-    self.next_item_id += 1;
-
+) gui.Error!*const item_types.Command {
     const item = try self.addItem(
-        "command",
+        .command,
         text,
-        id,
+        command_ids.toOsId(id) orelse return gui.Error.Usage,
         flags,
     );
 
@@ -73,13 +95,12 @@ pub fn addCommand(
 
 pub fn addSeparator(
     self: *@This(),
-    flags: item_types.Separator.Flags,
-) gui.Error!*item_types.Separator {
+) gui.Error!*const item_types.Separator {
     const item = try self.addItem(
-        "separator",
+        .separator,
         null,
         0,
-        flags,
+        .{},
     );
 
     return &item.variant.separator;
@@ -89,108 +110,125 @@ pub fn addSubmenu(
     self: *@This(),
     text: []const u8,
     flags: item_types.Submenu.Flags,
-) gui.Error!*item_types.Submenu {
+    items_alloc: ?std.mem.Allocator,
+) gui.Error!*const item_types.Submenu {
     const hMenu = CreatePopupMenu() orelse
         return gui.Error.OsApi;
     errdefer if (DestroyMenu(hMenu) == os.FALSE)
         debug.safeModePanic("Error destroying menu");
 
+    const submenu_contents = try self.items_alloc.create(@This());
+    errdefer self.items_alloc.destroy(submenu_contents);
+
     const item = try self.addItem(
-        "submenu",
+        .submenu,
         text,
         @intFromPtr(hMenu),
         flags,
     );
-    // No errdefer needed here, as we're using arena allocator
 
-    const alloc = self.arena.allocator();
-    const submenu_contents = try alloc.create(@This());
     submenu_contents.* = .{
         .hMenu = hMenu,
-        .arena = self.arena,
+        .context = self.context,
+        .items_alloc = items_alloc orelse self.items_alloc,
     };
     item.variant.submenu.contents = submenu_contents;
+
     return &item.variant.submenu;
+}
+
+pub fn addAnchor(
+    self: *@This(),
+) gui.Error!*const item_types.Anchor {
+    const item = try self.addItem(
+        .anchor,
+        null,
+        0,
+        .{},
+    );
+
+    return &item.variant.anchor;
 }
 
 fn addItem(
     self: *@This(),
-    comptime variant_field: []const u8,
+    comptime variant_tag: std.meta.Tag(item_types.Variant),
     text: ?[]const u8,
     uIDNewItem: usize,
-    flags: anytype,
+    flags: @FieldType(item_types.Variant, @tagName(variant_tag)).Flags,
 ) gui.Error!*item_types.Item {
-    const alloc = self.arena.allocator();
-    const node = try alloc.create(ItemsList.Node);
+    const node = try self.items_alloc.create(ItemsList.Node);
+    errdefer self.items_alloc.destroy(node);
 
-    const text16 = if (text) |t|
-        (std.unicode.wtf8ToWtf16LeAllocZ(
-            alloc,
-            t,
-        ) catch |err| switch (err) {
-            error.InvalidWtf8 => return gui.Error.Usage,
-            error.OutOfMemory => |e| return e,
-        })
-    else
-        std.unicode.utf8ToUtf16LeStringLiteral("");
-
-    const pos = self.items.len;
+    const index = self.items.len;
 
     const item = &node.data;
     item.* = .{
-        .pos = pos,
+        .index = index,
         .visible_pos = undefined,
-        .text16 = text16,
-        .uIDItem = uIDNewItem,
-        .variant = @unionInit(item_types.Variant, variant_field, .{
-            .flags = flags,
-        }),
+        .variant = @unionInit(
+            item_types.Variant,
+            @tagName(variant_tag),
+            .{
+                .flags = flags,
+            },
+        ),
     };
     self.items.append(node);
 
-    if (flags.visible) {
+    if (item.isVisible()) {
         const all_flags = flags.toAll();
         const uFlags: os.UINT =
             (if (all_flags.enabled) 0 else MF_GRAYED) |
             (if (all_flags.checked) MF_CHECKED else 0);
+        const text16 = if (text) |t|
+            try self.context.convertU8(t)
+        else
+            std.unicode.utf8ToUtf16LeStringLiteral("");
 
         if (AppendMenuW(
             self.hMenu,
             uFlags,
             uIDNewItem,
-            text16,
+            text16.ptr,
         ) == os.FALSE)
             return gui.Error.OsApi;
 
-        self.updateVisiblePositionsTo(node);
+        self.updateVisiblePositions(node);
     }
 
     return item;
 }
 
+/// Invalidates all visible positions starting from and
+/// including 'from_node'
 fn invalidateVisiblePositionsFrom(
     self: *@This(),
-    from_node: *ItemsList.Node, // including this node
+    from_node: *ItemsList.Node,
 ) void {
     if (self.first_dirty_node) |first_dirty| {
-        if (from_node.data.pos < first_dirty.data.pos)
+        if (from_node.data.index < first_dirty.data.index)
             self.first_dirty_node = from_node;
     } else {
         self.first_dirty_node = from_node;
     }
 }
 
-fn updateVisiblePositionsTo(
+/// Updates all visible positions up to and including
+/// 'up_to_node'. Invalidates all following positions.
+fn updateVisiblePositions(
     self: *@This(),
-    to_node: *ItemsList.Node, // including this node
+    up_to_node: *ItemsList.Node,
 ) void {
-    self.invalidateVisiblePositionsFrom(to_node);
+    // We also want to recompute the visible_pos for up_to_node.
+    self.invalidateVisiblePositionsFrom(up_to_node);
 
     // First backtrack to the last known visible_pos
-    var visible_pos = if (self.findPrecedingVisibleNode(to_node)) |n|
-        n.data.visible_pos + 1
-    else
-        0;
+    var visible_pos =
+        if (self.findPrecedingUpToDateVisibleNode(up_to_node)) |n|
+            n.data.visible_pos + 1
+        else
+            0;
 
     // Now go forward updating
     var node = self.first_dirty_node.?;
@@ -203,39 +241,54 @@ fn updateVisiblePositionsTo(
             visible_pos += 1;
         }
 
-        if (node == to_node) break;
+        if (node == up_to_node) break;
     }
 
-    self.first_dirty_node = to_node.next;
+    self.first_dirty_node = up_to_node.next;
 }
 
-fn findPrecedingVisibleNode(
+fn findPrecedingUpToDateVisibleNode(
     self: *const @This(),
-    from_node: *ItemsList.Node,
+    node: *ItemsList.Node,
 ) ?*ItemsList.Node {
-    _ = self;
-
-    var node = from_node.prev;
-    while (node) |n| : (node = n.prev) {
-        const item = &n.data;
-        if (item.isVisible())
-            return n;
+    var it_node = node;
+    if (self.first_dirty_node) |first_dirty| {
+        if (it_node.data.index > first_dirty.data.index)
+            it_node = first_dirty;
     }
 
-    return null;
+    while (true) {
+        it_node = it_node.prev orelse
+            return null;
+        const item = &it_node.data;
+        if (item.isVisible())
+            return it_node;
+    }
 }
 
 test "All" {
+    const winmain = @import("../winmain.zig");
+    winmain.test_startup.init();
+    defer winmain.test_startup.deinit();
+
+    var context: Context = undefined;
+    try context.init();
+    defer context.deinit();
+
     var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
     defer arena.deinit();
+
     const hMenu = CreatePopupMenu().?;
     defer debug.expect(DestroyMenu(hMenu) != os.FALSE);
 
     var contents = @This(){
-        .arena = &arena,
         .hMenu = hMenu,
+        .context = &context,
+        .items_alloc = arena.allocator(),
     };
 
-    _ = try contents.addCommand("Command 1", .{ .visible = false });
-    _ = try contents.addCommand("Command 2", .{ .enabled = false });
+    _ = try contents.addAnchor();
+    _ = try contents.addCommand("Command 1", 0, .{});
+    _ = try contents.addSeparator();
+    _ = try contents.addCommand("Command 2", 1, .{ .enabled = false });
 }

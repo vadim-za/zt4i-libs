@@ -6,6 +6,7 @@ const winmain = @import("winmain.zig");
 
 // Buffer length is in u16 characters, not including terminating 0
 pub fn Wtf16Str(comptime buf16_len: usize) type {
+    // buf_size is guaranteed to be non-zero, even if buf16_len == 0
     const buf_size = (buf16_len + 1) * @sizeOf(u16);
 
     return struct {

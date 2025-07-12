@@ -4,30 +4,31 @@ const Contents = @import("Contents.zig");
 const os = std.os.windows;
 
 pub const Item = struct {
-    pos: Position,
-    visible_pos: Position, // may be not up to date
-    text16: ?[:0]const u16,
-    uIDItem: usize,
+    index: usize, // 0-based, includes anchors
+    visible_pos: usize, // does not include anchors, may be not up to date
     variant: Variant,
 
     pub fn isVisible(self: *const @This()) bool {
-        return switch (self.variant) {
-            inline else => |v| v.flags.visible,
-        };
+        return self.variant != .anchor;
     }
 
     pub fn fromAny(any_variant_ptr: anytype) *@This() {
         const variant = Variant.fromAny(any_variant_ptr);
         return @alignCast(@fieldParentPtr("variant", variant));
     }
-};
 
-pub const Position = usize;
+    pub fn deinit(self: *@This()) void {
+        switch (self.variant) {
+            inline else => |*v| v.deinit(),
+        }
+    }
+};
 
 pub const Variant = union(enum) {
     command: Command,
     separator: Separator,
     submenu: Submenu,
+    anchor: Anchor,
 
     pub fn fromAny(any_variant_ptr: anytype) *@This() {
         const VariantType = @TypeOf(any_variant_ptr.*);
@@ -36,6 +37,7 @@ pub const Variant = union(enum) {
             Command => "command",
             Separator => "separator",
             Submenu => "submenu",
+            Anchor => "anchor",
             else => @compileError("Unknown item type " ++
                 @typeName(VariantType)),
         };
@@ -45,60 +47,74 @@ pub const Variant = union(enum) {
 };
 
 pub const Command = struct {
-    /// 'cookie' is a public field to be written and read by the user code.
-    cookie: usize = undefined,
-
-    flags: Flags, // do not change this field directly!
+    /// You can read this field but do not change it directly!
+    flags: Flags,
 
     pub const Flags = packed struct {
-        visible: bool = true,
         enabled: bool = true,
         checked: bool = false,
 
         pub fn toAll(self: @This()) AllFlags {
             return .{
-                .visible = self.visible,
                 .enabled = self.enabled,
                 .checked = self.checked,
             };
         }
     };
+
+    pub fn deinit(_: *@This()) void {}
 };
 
 pub const Separator = struct {
-    flags: Flags, // do not change this field directly!
+    /// You can read this field but do not change it directly!
+    flags: Flags,
 
     pub const Flags = packed struct {
-        visible: bool = true,
-
         pub fn toAll(self: @This()) AllFlags {
-            return .{
-                .visible = self.visible,
-            };
+            _ = self;
+            return .{};
         }
     };
+
+    pub fn deinit(_: *@This()) void {}
 };
 
 pub const Submenu = struct {
     contents: *Contents = undefined,
 
-    flags: Flags, // do not change this field directly!
+    /// You can read this field but do not change it directly!
+    flags: Flags,
 
     pub const Flags = packed struct {
-        visible: bool = true,
         enabled: bool = true,
 
         pub fn toAll(self: @This()) AllFlags {
             return .{
-                .visible = self.visible,
                 .enabled = self.enabled,
             };
         }
     };
+
+    pub fn deinit(self: *@This()) void {
+        self.contents.deinit();
+    }
+};
+
+pub const Anchor = struct {
+    /// You can read this field but do not change it directly!
+    flags: Flags,
+
+    pub const Flags = packed struct {
+        pub fn toAll(self: @This()) AllFlags {
+            _ = self;
+            return .{};
+        }
+    };
+
+    pub fn deinit(_: *@This()) void {}
 };
 
 pub const AllFlags = packed struct {
-    visible: bool = true,
     enabled: bool = true,
     checked: bool = false,
 };
