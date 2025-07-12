@@ -83,7 +83,8 @@ pub fn addCommand(
     id: usize,
     flags: item_types.Command.Flags,
 ) gui.Error!*const item_types.Command {
-    const item = try self.addItem(
+    const item = try self.insertItem(
+        .last,
         .command,
         text,
         command_ids.toOsId(id) orelse return gui.Error.Usage,
@@ -96,7 +97,8 @@ pub fn addCommand(
 pub fn addSeparator(
     self: *@This(),
 ) gui.Error!*const item_types.Separator {
-    const item = try self.addItem(
+    const item = try self.insertItem(
+        .last,
         .separator,
         null,
         0,
@@ -120,7 +122,8 @@ pub fn addSubmenu(
     const submenu_contents = try self.items_alloc.create(@This());
     errdefer self.items_alloc.destroy(submenu_contents);
 
-    const item = try self.addItem(
+    const item = try self.insertItem(
+        .last,
         .submenu,
         text,
         @intFromPtr(hMenu),
@@ -141,6 +144,7 @@ pub fn addAnchor(
     self: *@This(),
 ) gui.Error!*const item_types.Anchor {
     const item = try self.addItem(
+        .last,
         .anchor,
         null,
         0,
@@ -150,8 +154,9 @@ pub fn addAnchor(
     return &item.variant.anchor;
 }
 
-fn addItem(
+fn insertItem(
     self: *@This(),
+    where: ?item_types.Where,
     comptime variant_tag: std.meta.Tag(item_types.Variant),
     text: ?[]const u8,
     uIDNewItem: usize,
@@ -170,11 +175,28 @@ fn addItem(
             item_types.Variant,
             @tagName(variant_tag),
             .{
-                .flags = flags,
+                .flags = flags, // do we need to store the flags?
             },
         ),
     };
-    self.items.append(node);
+
+    const insert_before: ?*ItemsList.Node =
+        if (where) |w| switch (w.ordered) {
+            .before => if (w.reference_item) |ref|
+                nodeFromItem(@constCast(ref))
+            else
+                self.items.last,
+            .after => if (w.reference_item) |ref|
+                nodeFromItem(@constCast(ref)).next
+            else
+                self.items.first,
+        } else null;
+
+    if (insert_before) |ib|
+        self.items.insertBefore(ib, node)
+    else
+        self.items.append(node);
+    errdefer self.items.remove(node);
 
     if (item.isVisible()) {
         const all_flags = flags.toAll();
@@ -186,18 +208,41 @@ fn addItem(
         else
             std.unicode.utf8ToUtf16LeStringLiteral("");
 
-        if (AppendMenuW(
-            self.hMenu,
-            uFlags,
-            uIDNewItem,
-            text16.ptr,
-        ) == os.FALSE)
-            return gui.Error.OsApi;
+        if (insert_before) |ib| {
+            if (InsertMenuW(
+                self.hMenu,
+                @intCast(self.getVisiblePos(ib)),
+                uFlags | MF_BYPOSITION,
+                uIDNewItem,
+                text16.ptr,
+            ) == os.FALSE)
+                return gui.Error.OsApi;
+        } else {
+            if (AppendMenuW(
+                self.hMenu,
+                uFlags,
+                uIDNewItem,
+                text16.ptr,
+            ) == os.FALSE)
+                return gui.Error.OsApi;
+        }
 
         self.updateVisiblePositions(node);
     }
 
     return item;
+}
+
+fn getVisiblePos(
+    self: *@This(),
+    node: *ItemsList.Node,
+) usize {
+    if (self.first_dirty_node) |first_dirty| {
+        if (node.data.index >= first_dirty.data.index)
+            self.updateVisiblePositions(node);
+    }
+
+    return node.data.index;
 }
 
 /// Invalidates all visible positions starting from and
@@ -264,6 +309,10 @@ fn findPrecedingUpToDateVisibleNode(
         if (item.isVisible())
             return it_node;
     }
+}
+
+fn nodeFromItem(item: *item_types.Item) *ItemsList.Node {
+    return @alignCast(@fieldParentPtr("data", item));
 }
 
 test "All" {

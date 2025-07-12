@@ -118,3 +118,38 @@ pub const AllFlags = packed struct {
     enabled: bool = true,
     checked: bool = false,
 };
+
+pub const Where = struct {
+    ordered: Ordered,
+    reference_item: ?*const Item,
+
+    const Ordered = enum { before, after };
+
+    fn initRelativeToItem(
+        ordered: Ordered,
+        any_item_ptr: anytype,
+    ) @This() {
+        return .{
+            .ordered = ordered,
+            .item = Item.fromAny(any_item_ptr),
+        };
+    }
+
+    pub fn before(any_item_ptr: anytype) @This() {
+        return .initRelativeToItem(.before, any_item_ptr);
+    }
+
+    pub fn after(any_item_ptr: anytype) @This() {
+        return .initRelativeToItem(.after, any_item_ptr);
+    }
+
+    pub const first = @This(){
+        .ordered = .after,
+        .reference_item = null,
+    };
+
+    pub const last = @This(){
+        .ordered = .before,
+        .reference_item = null,
+    };
+};
