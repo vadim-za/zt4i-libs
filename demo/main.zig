@@ -87,7 +87,7 @@ const Window = struct {
             // (try bar.addCommand("item 1", 1)).* = 1;
 
             const popup = try self.popup_menu.create(null);
-            _ = try popup.addCommand("item 1", 65537, .{});
+            _ = try popup.addCommand("item 1", 0, .{});
 
             // var sub_menu: zt4i.gui.menus.Sub(u32) = undefined;
             // // Actually we could pass null as the second parameter
