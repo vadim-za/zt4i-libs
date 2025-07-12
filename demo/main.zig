@@ -87,7 +87,9 @@ const Window = struct {
             errdefer self.menu_bar.destroy();
 
             const bar = &self.menu_bar.contents;
-            _ = try bar.addCommand(.last, "item 1", 20);
+
+            const file_menu = &(try bar.addSubmenu(.last, "File", null)).contents;
+            _ = try file_menu.addCommand(.last, "Open...", 20);
         }
 
         {
