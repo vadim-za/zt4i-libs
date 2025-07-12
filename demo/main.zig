@@ -90,11 +90,11 @@ const Window = struct {
             const command1 = try popup.addCommand(.last, "item 1", 1, .{});
             const command2 = try popup.addCommand(.after(command1), "item 2", 2, .{});
             const anchor1 = try popup.addAnchor(.before(command2));
-            _ = try popup.addCommand(.after(anchor1), "item 3", 0, .{}); // .enabled = false });
+            const command3 = try popup.addCommand(.after(anchor1), "item 3", 0, .{}); // .enabled = false });
             _ = try popup.addCommand(.after(command2), "item 4", 0, .{}); // .checked = true });
-            //popup.deleteItem(command2);
-            try popup.modifyItem(command2, null, .{ .checked = true });
-            try popup.modifyItem(command1, "abc", null);
+            popup.deleteItem(command2);
+            try popup.modifyItem(command1, null, .{ .checked = true });
+            try popup.modifyItem(command3, "abc", null);
 
             // var sub_menu: zt4i.gui.menus.Sub(u32) = undefined;
             // // Actually we could pass null as the second parameter
