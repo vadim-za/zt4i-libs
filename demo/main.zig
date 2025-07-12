@@ -93,8 +93,8 @@ const Window = struct {
             const anchor1 = try popup.addAnchor(.before(command2));
             const command3 = try popup.addCommand(.after(anchor1), "item 3", 0);
             const command4 = try popup.addCommand(.after(command2), "item 4", 0);
-            _ = command4; // autofix
             popup.deleteItem(command2);
+            _ = try popup.addCommand(.before(command4), "sub", 0);
             try popup.modifyItem(command1, null, .{ .checked = true });
             try popup.modifyItem(command3, "abc", null);
 

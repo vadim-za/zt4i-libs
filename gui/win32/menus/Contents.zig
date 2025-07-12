@@ -79,9 +79,9 @@ items_alloc: std.mem.Allocator,
 
 items: ItemsList = .{},
 
-// This and the following nodes do not have up to date 'visible_pos' field.
-// If null, then all nodes are up to date.
-first_dirty_node: ?*ItemsList.Node = null,
+// Nodes up to this one inclusively have up to date 'index' and
+// 'visible_pos' fields. If null, then all nodes are not up to date.
+last_nondirty_node: ?*ItemsList.Node = null,
 
 const Self = @This();
 
@@ -189,15 +189,32 @@ fn insertItem(
     text: ?[]const u8,
     uIDNewItem: usize,
 ) gui.Error!*item_types.Item {
+    // 'null' means 'prepend'
+    const insert_after: ?*ItemsList.Node = switch (where.ordered) {
+        .before => if (where.reference_item) |ref|
+            nodeFromItem(ref).prev
+        else
+            self.items.last,
+        .after => if (where.reference_item) |ref|
+            nodeFromItem(ref)
+        else
+            null,
+    };
+
+    const index, const visible_pos = if (insert_after) |ia| ia: {
+        // Safe to call updateDirtyNodes(ia), since we didn't modify
+        // the items list yet.
+        self.updateDirtyNodes(ia);
+        break :ia .{ ia.data.index + 1, ia.data.nextVisiblePos() };
+    } else .{ 0, 0 };
+
     const node = try self.items_alloc.create(ItemsList.Node);
     errdefer self.items_alloc.destroy(node);
-
-    const index = self.items.len;
 
     const item = &node.data;
     item.* = .{
         .index = index,
-        .visible_pos = undefined,
+        .visible_pos = visible_pos,
         .variant = @unionInit(
             item_types.Variant,
             @tagName(variant_tag),
@@ -205,23 +222,16 @@ fn insertItem(
         ),
     };
 
-    // 'null' means 'append'
-    const insert_before: ?*ItemsList.Node = switch (where.ordered) {
-        .before => if (where.reference_item) |ref|
-            nodeFromItem(@constCast(ref))
-        else
-            self.items.last,
-        .after => if (where.reference_item) |ref|
-            nodeFromItem(@constCast(ref)).next
-        else
-            self.items.first,
-    };
-
-    if (insert_before) |ib|
-        self.items.insertBefore(ib, node)
+    if (insert_after) |ia|
+        self.items.insertAfter(ia, node)
     else
-        self.items.append(node);
+        self.items.prepend(node);
     errdefer self.items.remove(node);
+
+    // The nodes preceding 'node' are up-to-date due to the
+    // updateDirtyNodes() call earlier above. The 'node' has
+    // been set up to date manually.
+    self.last_nondirty_node = node;
 
     if (item.isVisible()) {
         const text16 = if (text) |t|
@@ -229,17 +239,7 @@ fn insertItem(
         else
             std.unicode.utf8ToUtf16LeStringLiteral("");
 
-        if (insert_before) |ib| {
-            const pos = self.getVisiblePos(ib);
-            if (InsertMenuW(
-                self.hMenu,
-                @intCast(pos),
-                MF_BYPOSITION,
-                uIDNewItem,
-                text16.ptr,
-            ) == os.FALSE)
-                return gui.Error.OsApi;
-        } else {
+        if (node == self.items.last) {
             if (AppendMenuW(
                 self.hMenu,
                 0,
@@ -247,9 +247,16 @@ fn insertItem(
                 text16.ptr,
             ) == os.FALSE)
                 return gui.Error.OsApi;
+        } else {
+            if (InsertMenuW(
+                self.hMenu,
+                @intCast(visible_pos),
+                MF_BYPOSITION,
+                uIDNewItem,
+                text16.ptr,
+            ) == os.FALSE)
+                return gui.Error.OsApi;
         }
-
-        self.updateVisiblePositions(node);
     }
 
     return item;
@@ -259,8 +266,13 @@ pub fn deleteItem(self: *@This(), any_item_ptr: anytype) void {
     const item = item_types.Item.fromAny(any_item_ptr);
     const node = nodeFromItem(item);
 
+    // Safe to call updateDirtyNodes(node), since
+    // we didn't modify the items list yet.
+    self.updateDirtyNodes(node);
+
     if (item.isVisible()) {
-        const pos = self.getVisiblePos(node);
+        const pos = node.data.visible_pos;
+
         if (DeleteMenu(
             self.hMenu,
             @intCast(pos),
@@ -269,11 +281,12 @@ pub fn deleteItem(self: *@This(), any_item_ptr: anytype) void {
             debug.debugModePanic("Deleting menu item failed");
     }
 
-    const next_node = node.next;
-    self.items.remove(node);
-    if (next_node) |nn|
-        self.invalidateVisiblePositionsFrom(nn);
+    // The nodes preceding the 'node' (inclusively) are up-to-date
+    // due to the updateDirtyNodes() call earlier above.
+    // So we can simply set the last nondirty node to node.prev.
+    self.last_nondirty_node = node.prev;
 
+    self.items.remove(node);
     self.items_alloc.destroy(node);
 }
 
@@ -287,7 +300,10 @@ pub fn modifyItem(
     const node = nodeFromItem(item);
 
     if (item.isVisible()) {
-        const pos = self.getVisiblePos(node);
+        // Safe to call updateDirtyNodes(node), since
+        // we didn't modify the items list yet.
+        self.updateDirtyNodes(node);
+        const pos = node.data.visible_pos;
 
         const text16: ?[*:0]const u16 = if (text) |t|
             (try self.context.convertU8(t)).ptr
@@ -319,86 +335,46 @@ pub fn modifyItem(
     }
 }
 
-/// May be called only if node.data.isVisible() is true
-fn getVisiblePos(
-    self: *@This(),
-    node: *ItemsList.Node,
-) usize {
-    if (std.debug.runtime_safety)
-        std.debug.assert(node.data.isVisible());
-
-    if (self.first_dirty_node) |first_dirty| {
-        if (node.data.index >= first_dirty.data.index)
-            self.updateVisiblePositions(node);
-    }
-
-    return node.data.visible_pos;
-}
-
-/// Invalidates all visible positions starting from and
-/// including 'from_node'
-fn invalidateVisiblePositionsFrom(
-    self: *@This(),
-    from_node: *ItemsList.Node,
-) void {
-    if (self.first_dirty_node) |first_dirty| {
-        if (from_node.data.index < first_dirty.data.index)
-            self.first_dirty_node = from_node;
-    } else {
-        self.first_dirty_node = from_node;
-    }
-}
-
-/// Updates all visible positions up to and including
-/// 'up_to_node'. Invalidates all following positions.
-fn updateVisiblePositions(
+/// May be called only if the list hasn't been manipulated
+/// since the last time `first_dirty_node' field has been updated.
+/// Updates all nodes up to and including 'up_to_node'.
+fn updateDirtyNodes(
     self: *@This(),
     up_to_node: *ItemsList.Node,
 ) void {
-    // We also want to recompute the visible_pos for up_to_node.
-    self.invalidateVisiblePositionsFrom(up_to_node);
+    var node, var index, var visible_pos =
+        if (self.last_nondirty_node) |lnn| lnn: {
+            if (up_to_node.data.index > lnn.data.index)
+                break :lnn .{
+                    lnn.next,
+                    lnn.data.index + 1,
+                    lnn.data.nextVisiblePos(),
+                }
+            else
+                return;
+        } else .{ self.items.first, 0, 0 };
 
-    // First backtrack to the last known visible_pos
-    var visible_pos =
-        if (self.findPrecedingUpToDateVisibleNode(up_to_node)) |n|
-            n.data.visible_pos + 1
-        else
-            0;
+    // Actually we could simply do while(true), since the loop
+    // is supposed to break on comparison against 'up_to_node'.
+    // But we still check node defensively against null.
+    while (node) |n| {
+        const item = &n.data;
 
-    // Now go forward updating
-    var node = self.first_dirty_node.?;
-    while (true) : (node = node.next.?) {
-        const item = &node.data;
+        item.index = index;
+        item.visible_pos = visible_pos;
 
-        item.visible_pos = undefined;
-        if (item.isVisible()) {
-            item.visible_pos = visible_pos;
-            visible_pos += 1;
-        }
+        // Since we checked that 'up_to_node' does not occur earlier
+        // in the list than 'first_dirty_node', we expect that the
+        // loop terminates here.
+        if (n == up_to_node) break;
 
-        if (node == up_to_node) break;
+        node = n.next;
+        index += 1;
+        visible_pos = item.nextVisiblePos();
     }
 
-    self.first_dirty_node = up_to_node.next;
-}
-
-fn findPrecedingUpToDateVisibleNode(
-    self: *const @This(),
-    node: *ItemsList.Node,
-) ?*ItemsList.Node {
-    var it_node = node;
-    if (self.first_dirty_node) |first_dirty| {
-        if (it_node.data.index > first_dirty.data.index)
-            it_node = first_dirty;
-    }
-
-    while (true) {
-        it_node = it_node.prev orelse
-            return null;
-        const item = &it_node.data;
-        if (item.isVisible())
-            return it_node;
-    }
+    // Use '.?' to cause panic if we didn't encounter 'up_to_node'
+    self.last_nondirty_node = node.?;
 }
 
 fn nodeFromItem(item: *item_types.Item) *ItemsList.Node {

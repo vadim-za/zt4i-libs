@@ -4,12 +4,20 @@ const Contents = @import("Contents.zig");
 const os = std.os.windows;
 
 pub const Item = struct {
-    index: usize, // 0-based, includes anchors
-    visible_pos: usize, // does not include anchors, may be not up to date
+    // 'index' and 'visible_pos' may be not up to date
+    index: usize, // 0-based, increments over all items
+    visible_pos: usize, // 0-based, does not increment over anchors
     variant: Variant,
 
     pub fn isVisible(self: *const @This()) bool {
         return self.variant != .anchor;
+    }
+
+    pub fn nextVisiblePos(self: *const @This()) usize {
+        return if (self.isVisible())
+            self.visible_pos + 1
+        else
+            self.visible_pos;
     }
 
     pub fn fromAny(any_variant_ptr: anytype) *@This() {
