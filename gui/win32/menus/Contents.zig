@@ -116,14 +116,12 @@ pub fn addCommand(
     where: item_types.Where,
     text: []const u8,
     id: usize,
-    flags: item_types.Command.Flags,
 ) gui.Error!*item_types.Command {
     const item = try self.insertItem(
         where,
         .command,
         text,
         command_ids.toOsId(id) orelse return gui.Error.Usage,
-        flags,
     );
 
     return &item.variant.command;
@@ -138,7 +136,6 @@ pub fn addSeparator(
         .separator,
         null,
         0,
-        .{},
     );
 
     return &item.variant.separator;
@@ -148,7 +145,6 @@ pub fn addSubmenu(
     self: *@This(),
     where: item_types.Where,
     text: []const u8,
-    flags: item_types.Submenu.Flags,
     items_alloc: ?std.mem.Allocator,
 ) gui.Error!*item_types.Submenu {
     const hMenu = CreatePopupMenu() orelse
@@ -161,7 +157,6 @@ pub fn addSubmenu(
         .submenu,
         text,
         @intFromPtr(hMenu),
-        flags,
     );
 
     item.variant.submenu.contents = .{
@@ -182,7 +177,6 @@ pub fn addAnchor(
         .anchor,
         null,
         0,
-        .{},
     );
 
     return &item.variant.anchor;
@@ -194,7 +188,6 @@ fn insertItem(
     comptime variant_tag: std.meta.Tag(item_types.Variant),
     text: ?[]const u8,
     uIDNewItem: usize,
-    flags: @FieldType(item_types.Variant, @tagName(variant_tag)).Flags,
 ) gui.Error!*item_types.Item {
     const node = try self.items_alloc.create(ItemsList.Node);
     errdefer self.items_alloc.destroy(node);
@@ -231,10 +224,6 @@ fn insertItem(
     errdefer self.items.remove(node);
 
     if (item.isVisible()) {
-        const all_flags = flags.toAll();
-        const uFlags: os.UINT =
-            (if (all_flags.enabled) 0 else MF_GRAYED) |
-            (if (all_flags.checked) MF_CHECKED else 0);
         const text16 = if (text) |t|
             try self.context.convertU8(t)
         else
@@ -245,7 +234,7 @@ fn insertItem(
             if (InsertMenuW(
                 self.hMenu,
                 @intCast(pos),
-                uFlags | MF_BYPOSITION,
+                MF_BYPOSITION,
                 uIDNewItem,
                 text16.ptr,
             ) == os.FALSE)
@@ -253,7 +242,7 @@ fn insertItem(
         } else {
             if (AppendMenuW(
                 self.hMenu,
-                uFlags,
+                0,
                 uIDNewItem,
                 text16.ptr,
             ) == os.FALSE)
@@ -438,7 +427,7 @@ test "All" {
     };
 
     _ = try contents.addAnchor();
-    _ = try contents.addCommand("Command 1", 0, .{});
+    _ = try contents.addCommand("Command 1", 0);
     _ = try contents.addSeparator();
-    _ = try contents.addCommand("Command 2", 1, .{ .enabled = false });
+    _ = try contents.addCommand("Command 2", 1);
 }

@@ -88,18 +88,18 @@ const Window = struct {
 
             try self.popup_menu.create(null);
             const popup = &self.popup_menu.contents;
-            const command1 = try popup.addCommand(.last, "item 1", 1, .{});
-            const command2 = try popup.addCommand(.after(command1), "item 2", 2, .{});
+            const command1 = try popup.addCommand(.last, "item 1", 1);
+            const command2 = try popup.addCommand(.after(command1), "item 2", 2);
             const anchor1 = try popup.addAnchor(.before(command2));
-            const command3 = try popup.addCommand(.after(anchor1), "item 3", 0, .{}); // .enabled = false });
-            const command4 = try popup.addCommand(.after(command2), "item 4", 0, .{}); // .checked = true });
+            const command3 = try popup.addCommand(.after(anchor1), "item 3", 0);
+            const command4 = try popup.addCommand(.after(command2), "item 4", 0);
             _ = command4; // autofix
             popup.deleteItem(command2);
             try popup.modifyItem(command1, null, .{ .checked = true });
             try popup.modifyItem(command3, "abc", null);
 
-            // var submenu = &(try popup.addSubmenu(.before(command4), "Submenu", .{}, null)).contents;
-            // _ = try submenu.addCommand(.last, "subitem 1", 10, .{});
+            // var submenu = &(try popup.addSubmenu(.before(command4), "Submenu", null)).contents;
+            // _ = try submenu.addCommand(.last, "subitem 1", 10);
         }
     }
 
