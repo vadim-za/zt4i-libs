@@ -391,6 +391,8 @@ test "All" {
     winmain.test_startup.init();
     defer winmain.test_startup.deinit();
 
+    // TODO: some proper testing
+
     var context: Context = undefined;
     try context.init();
     defer context.deinit();
