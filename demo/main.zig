@@ -98,8 +98,12 @@ const Window = struct {
             try popup.modifyItem(command1, null, .{ .checked = true });
             try popup.modifyItem(command3, "abc", null);
 
-            var submenu = &(try popup.addSubmenu(.before(command4), "Submenu", null)).contents;
-            _ = try submenu.addCommand(.last, "subitem 1", 10);
+            const submenu1 = try popup.addSubmenu(.before(command4), "Submenu", null);
+            {
+                var submenu = &submenu1.contents;
+                _ = try submenu.addCommand(.last, "subitem 1", 10);
+            }
+            try popup.modifyItem(submenu1, "Submenu mod", null);
         }
     }
 
