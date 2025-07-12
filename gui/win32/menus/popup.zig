@@ -39,7 +39,7 @@ contents: Contents = undefined,
 pub fn create(
     self: *@This(),
     items_alloc: ?std.mem.Allocator,
-) gui.Error!*Contents {
+) gui.Error!void {
     if (self.hMenu != null)
         return gui.Error.Usage;
 
@@ -54,8 +54,6 @@ pub fn create(
         .context = &self.context,
         .items_alloc = items_alloc orelse gui.allocator(),
     };
-
-    return &self.contents;
 }
 
 /// Can be called repeatedly

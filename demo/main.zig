@@ -86,21 +86,20 @@ const Window = struct {
             // var bar = try self.menu_bar.create(&ctx);
             // (try bar.addCommand("item 1", 1)).* = 1;
 
-            const popup = try self.popup_menu.create(null);
+            try self.popup_menu.create(null);
+            const popup = &self.popup_menu.contents;
             const command1 = try popup.addCommand(.last, "item 1", 1, .{});
             const command2 = try popup.addCommand(.after(command1), "item 2", 2, .{});
             const anchor1 = try popup.addAnchor(.before(command2));
             const command3 = try popup.addCommand(.after(anchor1), "item 3", 0, .{}); // .enabled = false });
-            _ = try popup.addCommand(.after(command2), "item 4", 0, .{}); // .checked = true });
+            const command4 = try popup.addCommand(.after(command2), "item 4", 0, .{}); // .checked = true });
+            _ = command4; // autofix
             popup.deleteItem(command2);
             try popup.modifyItem(command1, null, .{ .checked = true });
             try popup.modifyItem(command3, "abc", null);
 
-            // var sub_menu: zt4i.gui.menus.Sub(u32) = undefined;
-            // // Actually we could pass null as the second parameter
-            // // since we don't really need sub_menu.
-            // var sub = try popup.addSub("Submenu", &sub_menu);
-            // (try sub.addCommand("item 2")).meta.* = 2;
+            // var submenu = &(try popup.addSubmenu(.before(command4), "Submenu", .{}, null)).contents;
+            // _ = try submenu.addCommand(.last, "subitem 1", 10, .{});
         }
     }
 

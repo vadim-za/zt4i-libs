@@ -117,7 +117,7 @@ pub fn addCommand(
     text: []const u8,
     id: usize,
     flags: item_types.Command.Flags,
-) gui.Error!*const item_types.Command {
+) gui.Error!*item_types.Command {
     const item = try self.insertItem(
         where,
         .command,
@@ -132,7 +132,7 @@ pub fn addCommand(
 pub fn addSeparator(
     self: *@This(),
     where: item_types.Where,
-) gui.Error!*const item_types.Separator {
+) gui.Error!*item_types.Separator {
     const item = try self.insertItem(
         where,
         .separator,
@@ -150,14 +150,11 @@ pub fn addSubmenu(
     text: []const u8,
     flags: item_types.Submenu.Flags,
     items_alloc: ?std.mem.Allocator,
-) gui.Error!*const item_types.Submenu {
+) gui.Error!*item_types.Submenu {
     const hMenu = CreatePopupMenu() orelse
         return gui.Error.OsApi;
     errdefer if (DestroyMenu(hMenu) == os.FALSE)
         debug.safeModePanic("Error destroying menu");
-
-    const submenu_contents = try self.items_alloc.create(@This());
-    errdefer self.items_alloc.destroy(submenu_contents);
 
     const item = try self.insertItem(
         where,
@@ -167,12 +164,11 @@ pub fn addSubmenu(
         flags,
     );
 
-    submenu_contents.* = .{
+    item.variant.submenu.contents = .{
         .hMenu = hMenu,
         .context = self.context,
         .items_alloc = items_alloc orelse self.items_alloc,
     };
-    item.variant.submenu.contents = submenu_contents;
 
     return &item.variant.submenu;
 }
@@ -180,7 +176,7 @@ pub fn addSubmenu(
 pub fn addAnchor(
     self: *@This(),
     where: item_types.Where,
-) gui.Error!*const item_types.Anchor {
+) gui.Error!*item_types.Anchor {
     const item = try self.insertItem(
         where,
         .anchor,
@@ -247,9 +243,10 @@ fn insertItem(
             std.unicode.utf8ToUtf16LeStringLiteral("");
 
         if (insert_before) |ib| {
+            const pos = self.getVisiblePos(ib);
             if (InsertMenuW(
                 self.hMenu,
-                @intCast(self.getVisiblePos(ib)),
+                @intCast(pos),
                 uFlags | MF_BYPOSITION,
                 uIDNewItem,
                 text16.ptr,

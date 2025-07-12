@@ -95,7 +95,7 @@ pub const Separator = struct {
 };
 
 pub const Submenu = struct {
-    contents: *Contents = undefined,
+    contents: Contents = undefined,
 
     /// You can read this field but do not change it directly!
     flags: Flags,
