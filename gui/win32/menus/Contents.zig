@@ -36,6 +36,12 @@ const MF_SEPARATOR: os.UINT = 0x800;
 const MF_BYCOMMAND: os.UINT = 0;
 const MF_BYPOSITION: os.UINT = 0x400;
 
+extern "user32" fn DeleteMenu(
+    hMenu: os.HMENU,
+    uPosition: os.UINT,
+    uFlags: os.UINT,
+) callconv(.winapi) os.BOOL;
+
 // ----------------------------------------------------------------
 
 hMenu: os.HMENU,
@@ -237,16 +243,42 @@ fn insertItem(
     return item;
 }
 
+pub fn deleteItem(self: *@This(), any_item_ptr: anytype) void {
+    const item = item_types.Item.constFromAny(any_item_ptr);
+    const node = nodeFromItem(@constCast(item));
+
+    if (item.isVisible()) {
+        const pos = self.getVisiblePos(node);
+        if (DeleteMenu(
+            self.hMenu,
+            @intCast(pos),
+            MF_BYPOSITION,
+        ) == os.FALSE)
+            debug.debugModePanic("Deleting menu item failed");
+    }
+
+    const next_node = node.next;
+    self.items.remove(node);
+    if (next_node) |nn|
+        self.invalidateVisiblePositionsFrom(nn);
+
+    self.items_alloc.destroy(node);
+}
+
+/// May be called only if node.data.isVisible() is true
 fn getVisiblePos(
     self: *@This(),
     node: *ItemsList.Node,
 ) usize {
+    if (std.debug.runtime_safety)
+        std.debug.assert(node.data.isVisible());
+
     if (self.first_dirty_node) |first_dirty| {
         if (node.data.index >= first_dirty.data.index)
             self.updateVisiblePositions(node);
     }
 
-    return node.data.index;
+    return node.data.visible_pos;
 }
 
 /// Invalidates all visible positions starting from and

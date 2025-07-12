@@ -92,6 +92,7 @@ const Window = struct {
             const anchor1 = try popup.addAnchor(.before(command2));
             _ = try popup.addCommand(.after(anchor1), "item 3", 0, .{});
             _ = try popup.addCommand(.after(command2), "item 4", 0, .{});
+            popup.deleteItem(command2);
 
             // var sub_menu: zt4i.gui.menus.Sub(u32) = undefined;
             // // Actually we could pass null as the second parameter
