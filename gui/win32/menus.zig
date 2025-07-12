@@ -1,5 +1,6 @@
 pub const Contents = @import("menus/Contents.zig");
 pub const Popup = @import("menus/Popup.zig");
+pub const Bar = @import("menus/Bar.zig");
 
 const items = @import("menus/items.zig");
 pub const Command = items.Command;

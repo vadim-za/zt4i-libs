@@ -85,6 +85,7 @@ pub const Separator = struct {
 };
 
 pub const Submenu = struct {
+    /// This field may be accessed publicly for menu modification
     contents: Contents = undefined,
 
     pub const Flags = packed struct {

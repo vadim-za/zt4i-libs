@@ -30,24 +30,22 @@ pub const TPM_RETURNCMD: os.UINT = 0x100;
 
 // ----------------------------------------------------------------
 
-context: Context = undefined,
-hMenu: ?os.HMENU = null,
+context: Context,
+hMenu: os.HMENU,
 
 /// This field may be accessed publicly for menu modification
-contents: Contents = undefined,
+contents: Contents,
 
 pub fn create(
     self: *@This(),
     items_alloc: ?std.mem.Allocator,
 ) gui.Error!void {
-    if (self.hMenu != null)
-        return gui.Error.Usage;
-
     try self.context.init();
     errdefer self.context.deinit();
 
     const hMenu: os.HMENU = CreatePopupMenu() orelse
         return gui.Error.OsApi;
+
     self.hMenu = hMenu;
     self.contents = .{
         .hMenu = hMenu,
@@ -56,23 +54,12 @@ pub fn create(
     };
 }
 
-/// Can be called repeatedly
 pub fn destroy(self: *@This()) void {
-    if (self.hMenu) |hMenu| {
-        if (DestroyMenu(hMenu) == os.FALSE)
-            debug.debugModePanic("Failed to destroy menu");
+    if (DestroyMenu(self.hMenu) == os.FALSE)
+        debug.debugModePanic("Failed to destroy menu");
 
-        self.discard();
-    }
-}
-
-/// Can be called repeatedly
-pub fn discard(self: *@This()) void {
-    if (self.hMenu != null) {
-        self.hMenu = null;
-        self.contents.deinit();
-        self.context.deinit();
-    }
+    self.contents.deinit();
+    self.context.deinit();
 }
 
 // Returns command id.
@@ -85,7 +72,7 @@ pub fn run(
         return gui.Error.OsApi;
 
     const nResult = TrackPopupMenu(
-        self.hMenu.?,
+        self.hMenu,
         TPM_NONOTIFY | TPM_RETURNCMD | TPM_RIGHTBUTTON,
         pt.x,
         pt.y,

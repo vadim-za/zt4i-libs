@@ -10,6 +10,7 @@ const unicode = @import("unicode.zig");
 const wndproc = @import("window/wndproc.zig");
 const d2d1 = @import("d2d1.zig");
 const DeviceResources = @import("graphics/DeviceResources.zig");
+const menus = @import("menus.zig");
 
 const os = std.os.windows;
 
@@ -18,6 +19,7 @@ pub const Responders = responders.Responders;
 hWnd: ?os.HWND = null,
 dpr: ?f32 = null,
 device_resources: DeviceResources = .{},
+menu_bar: ?*menus.Bar = null,
 
 // ----------------------------------------------------------------
 

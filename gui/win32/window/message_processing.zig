@@ -9,6 +9,7 @@ const d2d1 = @import("../d2d1.zig");
 const graphics = @import("../graphics.zig");
 const mouse_util = @import("mouse_util.zig");
 const keys_util = @import("keys_util.zig");
+const debug = @import("../debug.zig");
 
 const os = std.os.windows;
 
@@ -85,6 +86,10 @@ pub fn ReceivedMessage(
             const window = self.core.window;
 
             resps.onDestroy(self.impl);
+
+            // Menu, if any, must have been discarded in onDestroy responder
+            debug.expect(window.menu_bar == null);
+
             class.subclass(window.hWnd.?, null, null);
             window.device_resources.releaseResources();
             window.hWnd = null;

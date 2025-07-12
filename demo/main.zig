@@ -58,8 +58,8 @@ const Window = struct {
             self.window.core.redraw(false);
         }
     }),
-    popup_menu: zt4i.gui.menus.Popup = .{},
-    //menu_bar: zt4i.gui.menus.Bar = .{},
+    popup_menu: zt4i.gui.menus.Popup = undefined,
+    menu_bar: zt4i.gui.menus.Bar = undefined,
 
     const Results = zt4i.gui.Window.Responders(@This()).Results;
 
@@ -83,10 +83,17 @@ const Window = struct {
         self.font = try .init("Verdana", 15);
 
         {
-            // var bar = try self.menu_bar.create(&ctx);
-            // (try bar.addCommand("item 1", 1)).* = 1;
+            try self.menu_bar.create(null);
+            errdefer self.menu_bar.destroy();
 
+            const bar = &self.menu_bar.contents;
+            _ = try bar.addCommand(.last, "item 1", 20);
+        }
+
+        {
             try self.popup_menu.create(null);
+            errdefer self.popup_menu.destroy();
+
             const popup = &self.popup_menu.contents;
             const command1 = try popup.addCommand(.last, "item 1", 1);
             const command2 = try popup.addCommand(.after(command1), "item 2", 2);
@@ -113,7 +120,7 @@ const Window = struct {
         self.path.deinit();
         self.font.deinit();
         self.popup_menu.destroy();
-        //self.menu_bar.discard();
+        self.menu_bar.destroy();
     }
 
     fn create(self: *@This(), width: f32, height: f32) zt4i.gui.Error!void {
@@ -136,7 +143,9 @@ const Window = struct {
     // the initializations which are deinitialized in onDestroy. onDestroy()
     // is not called if onCreate() fails.
     pub fn onCreate(self: *@This()) zt4i.gui.Error!void {
-        //self.menu_bar.attachTo(&self.core);
+        try self.menu_bar.attachTo(&self.core);
+        errdefer self.menu_bar.detachFrom(&self.core);
+
         try self.timer.setupWithinWindow(&self.core, 1.0);
     }
 
@@ -144,6 +153,7 @@ const Window = struct {
     // calling onCreate().
     pub fn onDestroy(self: *@This()) void {
         self.timer.releaseWithinWindow(&self.core);
+        self.menu_bar.detachFrom(&self.core);
         zt4i.gui.mloop.stop();
     }
 
