@@ -17,11 +17,6 @@ pub const Item = struct {
         return @alignCast(@fieldParentPtr("variant", variant));
     }
 
-    pub fn constFromAny(any_variant_ptr: anytype) *const @This() {
-        const variant = Variant.constFromAny(any_variant_ptr);
-        return @alignCast(@fieldParentPtr("variant", variant));
-    }
-
     pub fn deinit(self: *@This()) void {
         switch (self.variant) {
             inline else => |*v| v.deinit(),
@@ -36,13 +31,6 @@ pub const Variant = union(enum) {
     anchor: Anchor,
 
     pub fn fromAny(any_variant_ptr: anytype) *@This() {
-        return @alignCast(@fieldParentPtr(
-            variantName(@TypeOf(any_variant_ptr.*)),
-            any_variant_ptr,
-        ));
-    }
-
-    pub fn constFromAny(any_variant_ptr: anytype) *const @This() {
         return @alignCast(@fieldParentPtr(
             variantName(@TypeOf(any_variant_ptr.*)),
             any_variant_ptr,
@@ -136,7 +124,7 @@ pub const AllFlags = packed struct {
 
 pub const Where = struct {
     ordered: Ordered,
-    reference_item: ?*const Item,
+    reference_item: ?*Item,
 
     const Ordered = enum { before, after };
 
@@ -146,7 +134,7 @@ pub const Where = struct {
     ) @This() {
         return .{
             .ordered = ordered,
-            .reference_item = Item.constFromAny(any_item_ptr),
+            .reference_item = Item.fromAny(any_item_ptr),
         };
     }
 

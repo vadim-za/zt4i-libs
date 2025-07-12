@@ -269,8 +269,8 @@ fn insertItem(
 }
 
 pub fn deleteItem(self: *@This(), any_item_ptr: anytype) void {
-    const item = item_types.Item.constFromAny(any_item_ptr);
-    const node = nodeFromItem(@constCast(item));
+    const item = item_types.Item.fromAny(any_item_ptr);
+    const node = nodeFromItem(item);
 
     if (item.isVisible()) {
         const pos = self.getVisiblePos(node);
@@ -296,8 +296,8 @@ pub fn modifyItem(
     text: ?[]const u8,
     flags: ?@TypeOf(any_item_ptr.*).Flags,
 ) gui.Error!void {
-    const item = item_types.Item.constFromAny(any_item_ptr);
-    const node = nodeFromItem(@constCast(item));
+    const item = item_types.Item.fromAny(any_item_ptr);
+    const node = nodeFromItem(item);
 
     if (item.isVisible()) {
         const pos = self.getVisiblePos(node);
