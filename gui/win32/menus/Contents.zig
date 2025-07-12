@@ -239,10 +239,15 @@ fn insertItem(
         else
             std.unicode.utf8ToUtf16LeStringLiteral("");
 
+        const uFlags: os.UINT = if (variant_tag == .submenu)
+            MF_POPUP
+        else
+            0;
+
         if (node == self.items.last) {
             if (AppendMenuW(
                 self.hMenu,
-                0,
+                uFlags,
                 uIDNewItem,
                 text16.ptr,
             ) == os.FALSE)
@@ -251,7 +256,7 @@ fn insertItem(
             if (InsertMenuW(
                 self.hMenu,
                 @intCast(visible_pos),
-                MF_BYPOSITION,
+                uFlags | MF_BYPOSITION,
                 uIDNewItem,
                 text16.ptr,
             ) == os.FALSE)
