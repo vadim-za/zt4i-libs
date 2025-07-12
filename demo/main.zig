@@ -107,7 +107,7 @@ const Window = struct {
 
             const submenu1 = try popup.addSubmenu(.before(command4), "Submenu", null);
             {
-                var submenu = &submenu1.contents;
+                const submenu = &submenu1.contents;
                 _ = try submenu.addCommand(.last, "subitem 1", 10);
             }
             try popup.modifyItem(submenu1, "Submenu mod", null);
