@@ -87,8 +87,10 @@ const Window = struct {
             // (try bar.addCommand("item 1", 1)).* = 1;
 
             const popup = try self.popup_menu.create(null);
-            const item1 = try popup.addCommand(.last, "item 1", 0, .{});
-            _ = try popup.addCommand(.before(item1), "item 0", 1, .{});
+            const item1 = try popup.addCommand(.last, "item 1", 1, .{});
+            const item2 = try popup.addCommand(.after(item1), "item 2", 2, .{});
+            const anchor1 = try popup.addAnchor(.before(item2));
+            _ = try popup.addCommand(.after(anchor1), "item 3", 0, .{});
 
             // var sub_menu: zt4i.gui.menus.Sub(u32) = undefined;
             // // Actually we could pass null as the second parameter
@@ -205,7 +207,7 @@ const Window = struct {
                     if (self.popup_menu.run(
                         &self.core,
                     ) catch null) |cmd| switch (cmd) {
-                        0 => _ = zt4i.gui.mbox.show(
+                        1 => _ = zt4i.gui.mbox.show(
                             &self.core,
                             "Caption",
                             "Text",

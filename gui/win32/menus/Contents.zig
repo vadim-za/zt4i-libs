@@ -147,7 +147,7 @@ pub fn addAnchor(
     self: *@This(),
     where: item_types.Where,
 ) gui.Error!*const item_types.Anchor {
-    const item = try self.addItem(
+    const item = try self.insertItem(
         where,
         .anchor,
         null,
