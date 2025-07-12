@@ -208,9 +208,7 @@ fn insertItem(
         .variant = @unionInit(
             item_types.Variant,
             @tagName(variant_tag),
-            .{
-                .flags = flags, // do we need to store the flags?
-            },
+            .{},
         ),
     };
 

@@ -50,9 +50,6 @@ pub const Variant = union(enum) {
 };
 
 pub const Command = struct {
-    /// You can read this field but do not change it directly!
-    flags: Flags,
-
     pub const Flags = packed struct {
         enabled: bool = true,
         checked: bool = false,
@@ -69,9 +66,6 @@ pub const Command = struct {
 };
 
 pub const Separator = struct {
-    /// You can read this field but do not change it directly!
-    flags: Flags,
-
     pub const Flags = packed struct {
         pub fn toAll(self: @This()) AllFlags {
             _ = self;
@@ -84,9 +78,6 @@ pub const Separator = struct {
 
 pub const Submenu = struct {
     contents: Contents = undefined,
-
-    /// You can read this field but do not change it directly!
-    flags: Flags,
 
     pub const Flags = packed struct {
         enabled: bool = true,
@@ -104,9 +95,6 @@ pub const Submenu = struct {
 };
 
 pub const Anchor = struct {
-    /// You can read this field but do not change it directly!
-    flags: Flags,
-
     pub const Flags = packed struct {
         pub fn toAll(self: @This()) AllFlags {
             _ = self;
