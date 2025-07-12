@@ -79,12 +79,13 @@ pub fn deinit(self: *@This()) void {
 /// with the same id but new semantics.
 pub fn addCommand(
     self: *@This(),
+    where: item_types.Where,
     text: []const u8,
     id: usize,
     flags: item_types.Command.Flags,
 ) gui.Error!*const item_types.Command {
     const item = try self.insertItem(
-        .last,
+        where,
         .command,
         text,
         command_ids.toOsId(id) orelse return gui.Error.Usage,
@@ -96,9 +97,10 @@ pub fn addCommand(
 
 pub fn addSeparator(
     self: *@This(),
+    where: item_types.Where,
 ) gui.Error!*const item_types.Separator {
     const item = try self.insertItem(
-        .last,
+        where,
         .separator,
         null,
         0,
@@ -110,6 +112,7 @@ pub fn addSeparator(
 
 pub fn addSubmenu(
     self: *@This(),
+    where: item_types.Where,
     text: []const u8,
     flags: item_types.Submenu.Flags,
     items_alloc: ?std.mem.Allocator,
@@ -123,7 +126,7 @@ pub fn addSubmenu(
     errdefer self.items_alloc.destroy(submenu_contents);
 
     const item = try self.insertItem(
-        .last,
+        where,
         .submenu,
         text,
         @intFromPtr(hMenu),
@@ -142,9 +145,10 @@ pub fn addSubmenu(
 
 pub fn addAnchor(
     self: *@This(),
+    where: item_types.Where,
 ) gui.Error!*const item_types.Anchor {
     const item = try self.addItem(
-        .last,
+        where,
         .anchor,
         null,
         0,
