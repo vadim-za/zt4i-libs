@@ -44,22 +44,11 @@ pub fn create(
     self.window = null;
 }
 
-/// May be called repeatedly or on non-created (but initialized) menu
 pub fn destroy(self: *@This()) void {
     debug.expect(self.window == null);
 
     if (DestroyMenu(self.hMenu) == os.FALSE)
         debug.debugModePanic("Failed to destroy menu");
-
-    self.contents.deinit();
-    self.context.deinit();
-}
-
-pub fn discard(self: *@This()) void {
-    debug.expect(self.window != null);
-
-    debug.expect(self.window.?.menu_bar == self);
-    self.window.?.menu_bar = null;
 
     self.contents.deinit();
     self.context.deinit();
