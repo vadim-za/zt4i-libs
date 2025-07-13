@@ -14,7 +14,7 @@ This application's source code is intended to showcase the usage of the library 
 
 ## Building and using
 
-Building with the `build.zig` (on a Windows x64 platform) should produce a demo application. To use the libraries from another project, you can add it as a dependency.
+Building with the `build.zig` (on a Windows x64 platform) should produce a demo application. To use the libraries by another project, you can add it as a dependency.
 
 Alternatively you could simply manually add the `zt4i.zig` file to your project's build as a module root.
 
