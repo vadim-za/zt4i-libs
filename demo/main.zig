@@ -104,15 +104,15 @@ const Window = struct {
             const command4 = try popup.addCommand(.after(command2), "item 4", 0);
             popup.deleteItem(command2);
             //_ = try popup.addCommand(.before(command4), "sub", 0);
-            try popup.modifyItem(command1, null, .{ .checked = true });
-            try popup.modifyItem(command3, "abc", null);
+            try popup.modifyCommand(command1, null, .{ .checked = true });
+            try popup.modifyCommand(command3, "abc", null);
 
             const submenu1 = try popup.addSubmenu(.before(command4), "Submenu", null);
             {
                 const submenu = &submenu1.contents;
                 _ = try submenu.addCommand(.last, "subitem 1", 10);
             }
-            try popup.modifyItem(submenu1, "Submenu mod", null);
+            try popup.modifySubmenu(submenu1, "Submenu mod", null);
         }
     }
 

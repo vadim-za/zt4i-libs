@@ -295,7 +295,25 @@ pub fn deleteItem(self: *@This(), any_item_ptr: anytype) void {
     self.items_alloc.destroy(node);
 }
 
-pub fn modifyItem(
+pub fn modifyCommand(
+    self: *@This(),
+    command: *item_types.Command,
+    text: ?[]const u8,
+    flags: ?item_types.Command.Flags,
+) gui.Error!void {
+    try self.modifyItem(command, text, flags);
+}
+
+pub fn modifySubmenu(
+    self: *@This(),
+    submenu: *item_types.Submenu,
+    text: ?[]const u8,
+    flags: ?item_types.Submenu.Flags,
+) gui.Error!void {
+    try self.modifyItem(submenu, text, flags);
+}
+
+fn modifyItem(
     self: *@This(),
     any_item_ptr: anytype,
     text: ?[]const u8,
