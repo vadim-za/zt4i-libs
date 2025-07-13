@@ -13,6 +13,7 @@ const os = std.os.windows;
 extern "user32" fn CreateMenu() callconv(.winapi) ?os.HMENU;
 extern "user32" fn DestroyMenu(hMenu: os.HMENU) callconv(.winapi) os.BOOL;
 extern "user32" fn SetMenu(hWnd: os.HWND, hMenu: ?os.HMENU) callconv(.winapi) os.BOOL;
+extern "user32" fn DrawMenuBar(hWnd: os.HWND) callconv(.winapi) os.BOOL;
 
 // ----------------------------------------------------------------
 
@@ -55,12 +56,25 @@ pub fn contents(self: *@This()) *Contents {
     return &self.menu_contents;
 }
 
+/// You must call this function after doing top-level modifications
+/// to a menu bar attached to a window.
+pub fn update(self: *@This()) void {
+    if (self.window) |window| {
+        if (DrawMenuBar(window.hWnd.?) == os.FALSE)
+            debug.debugModePanic("Failed to draw menu bar");
+    }
+}
+
 /// A window with an attached menu shouldn't be destroyed.
 /// You must detach the menu attached to the window (if any)
 /// latest in the onDestroy() responder of the window.
 ///
-/// This function detaches any previously attached menu.
+/// If the window has another menu attached, this function detaches it.
+/// The function shouldn't be applied to a menu which is already
+/// attached to a window, you need to detach it manually first.
 pub fn attachTo(self: *@This(), window: *gui.Window) gui.Error!void {
+    debug.expect(self.window == null);
+
     if (SetMenu(window.hWnd.?, self.hMenu) == os.FALSE)
         return gui.Error.OsApi;
 
@@ -72,6 +86,7 @@ pub fn attachTo(self: *@This(), window: *gui.Window) gui.Error!void {
     self.window = window;
 }
 
+/// 'window' must the the one passed to the latest attachTo().
 pub fn detachFrom(self: *@This(), window: *gui.Window) void {
     debug.expect(self.window == window);
     debug.expect(window.menu_bar == self);
