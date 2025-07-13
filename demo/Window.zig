@@ -259,6 +259,7 @@ pub fn onKey(
         const len = std.unicode.utf8Encode(event.char.?, &utf8buf) catch {
             if (std.debug.runtime_safety)
                 @panic("Unicode conversion error in keyboard input");
+            return;
         };
 
         const utf8str = utf8buf[0..len];
