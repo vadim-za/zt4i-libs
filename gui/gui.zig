@@ -6,7 +6,7 @@ const builtin = @import("builtin");
 
 pub const Error = error{
     OsApi, // OS API call returned an error
-    Usage, // PAW incorrectly used
+    Usage, // library's API incorrectly used
     OutOfMemory,
 };
 
