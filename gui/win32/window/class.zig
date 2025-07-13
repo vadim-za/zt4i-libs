@@ -78,7 +78,7 @@ pub fn getClass() [*:0]align(1) const os.WCHAR {
     return @ptrFromInt(classAtom);
 }
 
-pub fn registerClass() gui.Error!void {
+pub fn registerClass(app_icon_id: ?usize) gui.Error!void {
     if (classAtom != 0)
         return;
 
@@ -86,10 +86,16 @@ pub fn registerClass() gui.Error!void {
         .style = CS_DBLCKLS, // | CS_HREDRAW | CS_VREDRAW,
         .lpfnWndProc = defaultWindowProc,
         .hInstance = winmain.thisInstance(),
-        .hIcon = LoadIconW(
-            null,
-            @ptrFromInt(32512), // IDI_APPLICATION
-        ),
+        .hIcon = if (app_icon_id) |id|
+            LoadIconW(
+                winmain.thisInstance(),
+                @ptrFromInt(id),
+            )
+        else
+            LoadIconW(
+                null,
+                @ptrFromInt(32512), // IDI_APPLICATION
+            ),
         .hCursor = LoadCursorW(
             null,
             @ptrFromInt(32512), // IDC_ARROW

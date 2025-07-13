@@ -26,6 +26,7 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
         });
         demo.rc_includes = .none;
+        demo.addWin32ResourceFile(.{ .file = b.path("demo/resources/demo.rc") });
         demo.root_module.addImport("zt4i", zt4i);
         demo.subsystem = .Windows;
         b.installArtifact(demo);

@@ -7,6 +7,7 @@ const app_title = "zt4i-libs demo";
 pub const wWinMain = zt4i.gui.wWinMain(
     app_title,
     appMain,
+    1,
     null,
 );
 

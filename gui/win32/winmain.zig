@@ -18,6 +18,7 @@ const WWinMain = fn (
 pub fn wWinMain(
     comptime app_title: []const u8,
     comptime mainFunc: fn () void,
+    app_icon_id: ?usize,
     Allocator: ?type,
 ) WWinMain {
     return struct {
@@ -30,6 +31,7 @@ pub fn wWinMain(
             return wWinMainImpl(
                 app_title,
                 mainFunc,
+                app_icon_id,
                 Allocator,
                 hInst,
             );
@@ -71,6 +73,7 @@ pub inline fn isPanicMode() bool {
 fn wWinMainImpl(
     comptime app_title: []const u8,
     comptime mainFunc: fn () void,
+    app_icon_id: ?usize,
     Allocator: ?type,
     hInst: ?os.HINSTANCE,
 ) os.INT {
@@ -94,7 +97,7 @@ fn wWinMainImpl(
         return failStartup(app_title, "initialize DirectX");
     defer directx.deinit();
 
-    window_class.registerClass() catch
+    window_class.registerClass(app_icon_id) catch
         return failStartup(app_title, "register window class");
     defer (window_class.unregisterClass() catch {});
 
