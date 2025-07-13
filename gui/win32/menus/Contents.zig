@@ -111,7 +111,7 @@ pub fn deinit(self: *@This()) void {
 /// with the same id but new semantics.
 pub fn addCommand(
     self: *@This(),
-    where: item_types.Where,
+    where: item_types.InsertionLocation,
     text: []const u8,
     id: usize,
 ) gui.Error!*item_types.Command {
@@ -127,7 +127,7 @@ pub fn addCommand(
 
 pub fn addSeparator(
     self: *@This(),
-    where: item_types.Where,
+    where: item_types.InsertionLocation,
 ) gui.Error!*item_types.Separator {
     const item = try self.insertItem(
         where,
@@ -141,7 +141,7 @@ pub fn addSeparator(
 
 pub fn addSubmenu(
     self: *@This(),
-    where: item_types.Where,
+    where: item_types.InsertionLocation,
     text: []const u8,
 ) gui.Error!*item_types.Submenu {
     const submenu_contents =
@@ -171,7 +171,7 @@ pub fn addSubmenu(
 
 pub fn addAnchor(
     self: *@This(),
-    where: item_types.Where,
+    where: item_types.InsertionLocation,
 ) gui.Error!*item_types.Anchor {
     const item = try self.insertItem(
         where,
@@ -185,22 +185,27 @@ pub fn addAnchor(
 
 fn insertItem(
     self: *@This(),
-    where: item_types.Where,
+    where: item_types.InsertionLocation,
     comptime variant_tag: std.meta.Tag(item_types.Variant),
     text: ?[]const u8,
     uIDNewItem: usize,
 ) gui.Error!*item_types.Item {
     // 'null' means 'prepend'
     const insert_after: ?*item_types.ItemsList.Node =
-        switch (where.ordered) {
-            .before => if (where.reference_item) |ref|
+        switch (where) {
+            .before_ => |ref_item| if (ref_item) |ref|
                 self.nodeFromItem(ref).prev
             else
                 self.items.last,
-            .after => if (where.reference_item) |ref|
+            .after_ => |ref_item| if (ref_item) |ref|
                 self.nodeFromItem(ref)
             else
                 null,
+            .replace_ => |old_item| repl: {
+                const prev = self.nodeFromItem(old_item).prev;
+                self.deleteRawItem(old_item);
+                break :repl prev;
+            },
         };
 
     const index, const visible_pos = if (insert_after) |ia| ia: {
@@ -273,7 +278,10 @@ fn insertItem(
 }
 
 pub fn deleteItem(self: *@This(), any_item_ptr: anytype) void {
-    const item = item_types.Item.fromAny(any_item_ptr);
+    self.deleteRawItem(item_types.Item.fromAny(any_item_ptr));
+}
+
+fn deleteRawItem(self: *@This(), item: *item_types.Item) void {
     const node = self.nodeFromItem(item);
 
     // Safe to call updateDirtyNodes(node), since
