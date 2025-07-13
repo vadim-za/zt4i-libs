@@ -49,7 +49,23 @@ pub const Purpose = enum { open, save };
 pub fn run(
     window: ?*Window,
     purpose: Purpose,
+    default_extension: ?[]const u8,
 ) gui.Error!?[:0]u8 {
+    const alloc = gui.allocator();
+
+    const default_extension16 = if (default_extension) |ext|
+        std.unicode.wtf8ToWtf16LeAllocZ(
+            alloc,
+            ext,
+        ) catch |err| return switch (err) {
+            error.OutOfMemory => gui.Error.OutOfMemory,
+            error.InvalidWtf8 => gui.Error.Usage,
+        }
+    else
+        null;
+    defer if (default_extension16) |ext16|
+        alloc.free(ext16);
+
     const MAX_PATH = 260;
     var file_name_buf: [MAX_PATH]u16 = undefined;
     file_name_buf[0] = 0; // no default file name
@@ -62,7 +78,10 @@ pub fn run(
             .open => OFN_FILEMUSTEXIST,
             .save => OFN_OVERWRITEPROMPT,
         },
-        .lpstrDefExt = null,
+        .lpstrDefExt = if (default_extension16) |ext16|
+            ext16.ptr
+        else
+            null,
     };
 
     const os_call_result = switch (purpose) {
@@ -73,7 +92,6 @@ pub fn run(
         return null;
 
     const file_name_span = std.mem.sliceTo(&file_name_buf, 0);
-    const alloc = gui.allocator();
     const result = try std.unicode.wtf16LeToWtf8AllocZ(
         alloc,
         file_name_span,

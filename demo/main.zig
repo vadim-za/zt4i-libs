@@ -114,10 +114,9 @@ const Window = struct {
             const command3 = try popup.addCommand(.after(anchor1), "item 3", 0);
             const command4 = try popup.addCommand(.after(command2), "item 4", 0);
             popup.deleteItem(command2);
-            //_ = try popup.addCommand(.before(command4), "sub", 0);
             try popup.modifyCommand(command4, null, .{ .checked = true });
             try popup.modifyCommand(command3, "abc", null);
-            command1 = try popup.addCommand(.replace(command1), "Test", 1);
+            command1 = try popup.addCommand(.replace(command1), "Open...", 1);
 
             const submenu1 = try popup.addSubmenu(.before(command4), "Submenu");
             {
@@ -263,15 +262,10 @@ const Window = struct {
                     if (self.popup_menu.run(
                         &self.core,
                     ) catch null) |cmd| switch (cmd) {
-                        // 1 => _ = zt4i.gui.mbox.show(
-                        //     &self.core,
-                        //     "Caption",
-                        //     "Text",
-                        //     .ok,
-                        // ) catch {},
                         1 => if (zt4i.gui.file_dialog.run(
                             &self.core,
                             .open,
+                            "txt",
                         ) catch null) |file_name| {
                             _ = zt4i.gui.mbox.show(
                                 &self.core,
