@@ -20,6 +20,5 @@ pub fn fromOsId(os_id: usize) ?usize {
             return id;
     }
 
-    debug.debugModePanic("Unexpected menu command ID");
     return null;
 }

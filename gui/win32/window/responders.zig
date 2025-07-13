@@ -24,7 +24,11 @@ pub fn Responders(Impl: type) type {
             impl: *Impl,
             dc: *graphics.DrawContext,
         ) void = override("onPaint"),
-        onMenuBarOpen: *const fn (imp: *Impl) void = override("onMenuBarOpen"),
+        onMenuBarOpen: *const fn (impl: *Impl) void = override("onMenuBarOpen"),
+        onCommand: *const fn (
+            impl: *Impl,
+            id: usize,
+        ) ?void = override("onCommand"),
         onMouse: *const fn (
             impl: *Impl,
             event: *const gui.mouse.Event,
@@ -78,6 +82,12 @@ fn Defaults(Impl: type, Results: type) type {
 
         fn onMenuBarOpen(impl: *Impl) void {
             _ = impl;
+        }
+
+        fn onCommand(impl: *Impl, id: usize) ?void {
+            _ = impl;
+            _ = id;
+            return null;
         }
 
         fn onMouse(

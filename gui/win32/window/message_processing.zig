@@ -10,6 +10,7 @@ const graphics = @import("../graphics.zig");
 const mouse_util = @import("mouse_util.zig");
 const keys_util = @import("keys_util.zig");
 const debug = @import("../debug.zig");
+const menu_command_ids = @import("../menus/command_ids.zig");
 
 const os = std.os.windows;
 
@@ -145,8 +146,15 @@ pub fn ReceivedMessage(
         }
 
         fn onCommand(self: *const @This()) Result {
-            _ = self;
-            return .zero;
+            if ((self.core.wParam >> 16) & 0xFFFF == 0) {
+                if (menu_command_ids.fromOsId(
+                    self.core.wParam & 0xFFFF,
+                )) |id| {
+                    if (resps.onCommand(self.impl, id)) |_|
+                        return .zero;
+                }
+            }
+            return .call_default;
         }
 
         fn onInitMenu(self: *const @This()) Result {
@@ -176,12 +184,12 @@ pub fn ReceivedMessage(
             const event, const is_char =
                 keys_util.eventFromMsg(&self.core) orelse return null;
 
-            if (is_char)
+            if (is_char) {
                 return self.handleChar(
                     &event,
                     @as(u16, @truncate(self.core.wParam)),
-                )
-            else {
+                );
+            } else {
                 return if (resps.onKey(self.impl, &event)) |_|
                     .zero
                 else

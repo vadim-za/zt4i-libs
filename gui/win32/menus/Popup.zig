@@ -82,8 +82,12 @@ pub fn run(
         null,
     );
 
-    if (nResult > 0)
-        return command_ids.fromOsId(@intCast(nResult));
+    if (nResult > 0) {
+        if (command_ids.fromOsId(@intCast(nResult))) |id|
+            return id
+        else
+            debug.debugModePanic("Unexpected menu command ID");
+    }
 
     // Windows API docs are not too precise on whether the last
     // error code is set to zero upon user cancelling the menu.

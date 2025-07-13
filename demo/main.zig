@@ -174,6 +174,15 @@ const Window = struct {
         self.undo_menu.modifyCommand(self.undo_command, text, null) catch {};
     }
 
+    pub fn onCommand(self: *@This(), id: usize) ?void {
+        if (id == 20) {
+            var buf: [100]u8 = undefined;
+            const text = std.fmt.bufPrint(&buf, "Undo {}", .{self.counter}) catch unreachable;
+            _ = zt4i.gui.mbox.show(&self.core, "Command", text, .ok) catch {};
+            return {};
+        }
+    }
+
     pub fn onPaint(self: *@This(), dc: *zt4i.gui.DrawContext) void {
         dc.clear(&.initRgb(0, 0, 1));
 
