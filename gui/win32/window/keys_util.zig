@@ -26,15 +26,6 @@ pub fn modifiersStateSync() gui.keys.Modifiers {
     });
 }
 
-fn guiVKeyFromWParam(wParam: os.WPARAM) ?u8 {
-    // TODO: Gui Virtual Key codes
-    return switch (wParam) {
-        '0'...'9', 'A'...'Z' => @intCast(wParam),
-        0x08, 0x09, 0x0D, 0x20 => @intCast(wParam),
-        else => null,
-    };
-}
-
 pub fn eventFromMsg(msg: *const MessageCore) ?struct {
     gui.keys.Event,
     bool, // is_char
@@ -73,7 +64,8 @@ pub fn eventFromMsg(msg: *const MessageCore) ?struct {
 
     switch (msg.uMsg) {
         WM_KEYDOWN, WM_KEYUP => {
-            event.vkey = guiVKeyFromWParam(msg.wParam);
+            if (msg.wParam < 0x100)
+                event.vkey = @intCast(msg.wParam);
             return .{ event, false };
         },
         else => {
