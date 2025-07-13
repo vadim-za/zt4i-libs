@@ -28,6 +28,11 @@ undo_menu: *zt4i.gui.menus.Contents = undefined,
 undo_command: *zt4i.gui.menus.Command = undefined,
 counter: usize = 0,
 
+// With larger menus it's probably better to use an array stack
+// of command handling closures.
+// See comments to zt4i.gui.menus.Contents.addCommand()
+const open_file_command_id = 1;
+
 const Results = zt4i.gui.Window.Responders(@This()).Results;
 
 pub fn init(self: *@This()) !void {
@@ -70,6 +75,9 @@ pub fn init(self: *@This()) !void {
         try self.popup_menu.create();
         errdefer self.popup_menu.destroy();
 
+        // The menu modification normally should occur before running
+        // the popup menu, or (for menu bars) in window's onMenuBarOpen.
+        // We just do it here for the sake of demonstrating the API.
         const popup = self.popup_menu.contents();
         var command1 = try popup.addCommand(.first, "item 1", 0);
         const separator1 = try popup.addSeparator(.last);
@@ -80,7 +88,11 @@ pub fn init(self: *@This()) !void {
         popup.deleteItem(command2);
         try popup.modifyCommand(command4, null, .{ .checked = true });
         try popup.modifyCommand(command3, "abc", null);
-        command1 = try popup.addCommand(.replace(command1), "Open...", 1);
+        command1 = try popup.addCommand(
+            .replace(command1),
+            "Open...",
+            open_file_command_id,
+        );
 
         const submenu1 = try popup.addSubmenu(.before(command4), "Submenu");
         {
@@ -104,7 +116,7 @@ pub fn create(self: *@This(), width: f32, height: f32) zt4i.gui.Error!void {
     return zt4i.gui.Window.create(
         @This(),
         self,
-        .default,
+        .default, // Use default responders API
         .{
             .title = main.app_title,
             .width = width,
@@ -178,6 +190,7 @@ pub fn onPaint(self: *@This(), dc: *zt4i.gui.DrawContext) void {
     //dc.fillPath(&self.path, red_brush);
     dc.drawPath(&self.path, red_brush, 2);
 
+    // Showcase the local origin feature
     {
         const old_origin = dc.moveOriginBy(&.{ .x = 400, .y = 200 });
         defer _ = dc.setOrigin(old_origin);
@@ -223,24 +236,7 @@ pub fn onMouse(
         .down => switch (event.action.button.?) {
             .left => return .capture,
             .right => {
-                if (self.popup_menu.run(
-                    &self.core,
-                ) catch null) |cmd| switch (cmd) {
-                    1 => if (zt4i.gui.file_dialog.run(
-                        &self.core,
-                        .open,
-                        "txt",
-                    ) catch null) |file_name| {
-                        _ = zt4i.gui.mbox.show(
-                            &self.core,
-                            "Open File",
-                            file_name,
-                            .ok,
-                        ) catch {};
-                        zt4i.gui.allocator().free(file_name);
-                    },
-                    else => {},
-                };
+                self.rightButtonMenu();
                 return .dont_capture;
             },
             else => return .dont_capture,
@@ -275,5 +271,31 @@ pub fn onKey(
 
         return {};
     }
+
     return null;
+}
+
+fn rightButtonMenu(self: *@This()) void {
+    if (self.popup_menu.run(
+        &self.core,
+    ) catch null) |cmd| switch (cmd) {
+        open_file_command_id => self.runFileDialog(),
+        else => {},
+    };
+}
+
+fn runFileDialog(self: *@This()) void {
+    if (zt4i.gui.file_dialog.run(
+        &self.core,
+        .open,
+        "txt",
+    ) catch null) |file_name| {
+        _ = zt4i.gui.mbox.show(
+            &self.core,
+            "Open File",
+            file_name,
+            .ok,
+        ) catch {};
+        zt4i.gui.allocator().free(file_name);
+    }
 }
