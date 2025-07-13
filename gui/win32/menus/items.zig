@@ -11,6 +11,8 @@ pub const Item = struct {
     visible_pos: usize, // 0-based, does not increment over anchors
     variant: Variant,
 
+    owner: if (std.debug.runtime_safety) *Contents else void,
+
     pub fn isVisible(self: *const @This()) bool {
         return self.variant != .anchor;
     }

@@ -194,11 +194,11 @@ fn insertItem(
     const insert_after: ?*item_types.ItemsList.Node =
         switch (where.ordered) {
             .before => if (where.reference_item) |ref|
-                nodeFromItem(ref).prev
+                self.nodeFromItem(ref).prev
             else
                 self.items.last,
             .after => if (where.reference_item) |ref|
-                nodeFromItem(ref)
+                self.nodeFromItem(ref)
             else
                 null,
         };
@@ -224,6 +224,7 @@ fn insertItem(
             @tagName(variant_tag),
             .{},
         ),
+        .owner = if (std.debug.runtime_safety) self,
     };
 
     if (insert_after) |ia|
@@ -273,7 +274,7 @@ fn insertItem(
 
 pub fn deleteItem(self: *@This(), any_item_ptr: anytype) void {
     const item = item_types.Item.fromAny(any_item_ptr);
-    const node = nodeFromItem(item);
+    const node = self.nodeFromItem(item);
 
     // Safe to call updateDirtyNodes(node), since
     // we didn't modify the items list yet.
@@ -324,7 +325,7 @@ fn modifyItem(
     flags: ?@TypeOf(any_item_ptr.*).Flags,
 ) gui.Error!void {
     const item = item_types.Item.fromAny(any_item_ptr);
-    const node = nodeFromItem(item);
+    const node = self.nodeFromItem(item);
 
     if (item.isVisible()) {
         // Safe to call updateDirtyNodes(node), since
@@ -404,7 +405,12 @@ fn updateDirtyNodes(
     self.last_nondirty_node = node.?;
 }
 
-fn nodeFromItem(item: *item_types.Item) *item_types.ItemsList.Node {
+fn nodeFromItem(
+    self: *@This(),
+    item: *item_types.Item,
+) *item_types.ItemsList.Node {
+    if (std.debug.runtime_safety)
+        std.debug.assert(item.owner == self);
     return @alignCast(@fieldParentPtr("data", item));
 }
 
