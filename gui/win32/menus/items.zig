@@ -3,6 +3,8 @@ const Contents = @import("Contents.zig");
 
 const os = std.os.windows;
 
+pub const ItemsList = std.DoublyLinkedList(Item);
+
 pub const Item = struct {
     // 'index' and 'visible_pos' may be not up to date
     index: usize, // 0-based, increments over all items
@@ -86,7 +88,7 @@ pub const Separator = struct {
 
 pub const Submenu = struct {
     /// This field may be accessed publicly for menu modification
-    contents: Contents = undefined,
+    contents: *Contents = undefined,
 
     pub const Flags = packed struct {
         enabled: bool = true,

@@ -20,7 +20,7 @@ pub fn Wtf16Str(comptime buf16_len: usize) type {
         }
 
         pub fn init(self: *@This()) void {
-            self.sfba = std.heap.stackFallback(buf_size, winmain.allocator());
+            self.sfba = std.heap.stackFallback(buf_size, gui.allocator());
             self.alloc = self.sfba.get();
             self.str16 = null;
         }

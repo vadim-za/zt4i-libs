@@ -83,17 +83,17 @@ const Window = struct {
         self.font = try .init("Verdana", 15);
 
         {
-            try self.menu_bar.create(null);
+            try self.menu_bar.create();
             errdefer self.menu_bar.destroy();
 
             const bar = &self.menu_bar.contents;
 
-            const file_menu = &(try bar.addSubmenu(.last, "File", null)).contents;
+            const file_menu = (try bar.addSubmenu(.last, "File")).contents;
             _ = try file_menu.addCommand(.last, "Open...", 20);
         }
 
         {
-            try self.popup_menu.create(null);
+            try self.popup_menu.create();
             errdefer self.popup_menu.destroy();
 
             const popup = &self.popup_menu.contents;
@@ -107,9 +107,9 @@ const Window = struct {
             try popup.modifyCommand(command1, null, .{ .checked = true });
             try popup.modifyCommand(command3, "abc", null);
 
-            const submenu1 = try popup.addSubmenu(.before(command4), "Submenu", null);
+            const submenu1 = try popup.addSubmenu(.before(command4), "Submenu");
             {
-                const submenu = &submenu1.contents;
+                const submenu = submenu1.contents;
                 _ = try submenu.addCommand(.last, "subitem 1", 10);
             }
             try popup.modifySubmenu(submenu1, "Submenu mod", null);

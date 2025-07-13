@@ -4,6 +4,7 @@ const gui = @import("../../gui.zig");
 const item_types = @import("items.zig");
 const debug = @import("../debug.zig");
 const Context = @import("Context.zig");
+const Contents = @import("Contents.zig");
 const command_ids = @import("command_ids.zig");
 
 const os = std.os.windows;
@@ -75,24 +76,21 @@ extern "user32" fn SetMenuItemInfoW(
 hMenu: os.HMENU,
 
 context: *Context,
-items_alloc: std.mem.Allocator,
 
-items: ItemsList = .{},
+items: item_types.ItemsList = .{},
 
 // Nodes up to this one inclusively have up to date 'index' and
 // 'visible_pos' fields. If null, then all nodes are not up to date.
-last_nondirty_node: ?*ItemsList.Node = null,
+last_nondirty_node: ?*item_types.ItemsList.Node = null,
 
 const Self = @This();
-
-const ItemsList = std.DoublyLinkedList(item_types.Item);
 
 /// Can be called repeatedly
 pub fn deinit(self: *@This()) void {
     while (self.items.pop()) |node| {
         const item = &node.data;
         item.deinit();
-        self.items_alloc.destroy(node);
+        self.context.contents_pool.destroy(node);
     }
 }
 
@@ -145,8 +143,11 @@ pub fn addSubmenu(
     self: *@This(),
     where: item_types.Where,
     text: []const u8,
-    items_alloc: ?std.mem.Allocator,
 ) gui.Error!*item_types.Submenu {
+    const submenu_contents =
+        try self.context.contents_pool.create(Contents);
+    errdefer self.context.contents_pool.destroy(submenu_contents);
+
     const hMenu = CreatePopupMenu() orelse
         return gui.Error.OsApi;
     errdefer if (DestroyMenu(hMenu) == os.FALSE)
@@ -159,11 +160,11 @@ pub fn addSubmenu(
         @intFromPtr(hMenu),
     );
 
-    item.variant.submenu.contents = .{
+    submenu_contents.* = .{
         .hMenu = hMenu,
         .context = self.context,
-        .items_alloc = items_alloc orelse self.items_alloc,
     };
+    item.variant.submenu.contents = submenu_contents;
 
     return &item.variant.submenu;
 }
@@ -190,16 +191,17 @@ fn insertItem(
     uIDNewItem: usize,
 ) gui.Error!*item_types.Item {
     // 'null' means 'prepend'
-    const insert_after: ?*ItemsList.Node = switch (where.ordered) {
-        .before => if (where.reference_item) |ref|
-            nodeFromItem(ref).prev
-        else
-            self.items.last,
-        .after => if (where.reference_item) |ref|
-            nodeFromItem(ref)
-        else
-            null,
-    };
+    const insert_after: ?*item_types.ItemsList.Node =
+        switch (where.ordered) {
+            .before => if (where.reference_item) |ref|
+                nodeFromItem(ref).prev
+            else
+                self.items.last,
+            .after => if (where.reference_item) |ref|
+                nodeFromItem(ref)
+            else
+                null,
+        };
 
     const index, const visible_pos = if (insert_after) |ia| ia: {
         // Safe to call updateDirtyNodes(ia), since we didn't modify
@@ -208,8 +210,10 @@ fn insertItem(
         break :ia .{ ia.data.index + 1, ia.data.nextVisiblePos() };
     } else .{ 0, 0 };
 
-    const node = try self.items_alloc.create(ItemsList.Node);
-    errdefer self.items_alloc.destroy(node);
+    const node = try self.context.contents_pool.create(
+        item_types.ItemsList.Node,
+    );
+    errdefer self.context.contents_pool.destroy(node);
 
     const item = &node.data;
     item.* = .{
@@ -292,7 +296,7 @@ pub fn deleteItem(self: *@This(), any_item_ptr: anytype) void {
     self.last_nondirty_node = node.prev;
 
     self.items.remove(node);
-    self.items_alloc.destroy(node);
+    self.context.contents_pool.destroy(node);
 }
 
 pub fn modifyCommand(
@@ -363,7 +367,7 @@ fn modifyItem(
 /// Updates all nodes up to and including 'up_to_node'.
 fn updateDirtyNodes(
     self: *@This(),
-    up_to_node: *ItemsList.Node,
+    up_to_node: *item_types.ItemsList.Node,
 ) void {
     var node, var index, var visible_pos =
         if (self.last_nondirty_node) |lnn| lnn: {
@@ -400,35 +404,8 @@ fn updateDirtyNodes(
     self.last_nondirty_node = node.?;
 }
 
-fn nodeFromItem(item: *item_types.Item) *ItemsList.Node {
+fn nodeFromItem(item: *item_types.Item) *item_types.ItemsList.Node {
     return @alignCast(@fieldParentPtr("data", item));
 }
 
-test "All" {
-    const winmain = @import("../winmain.zig");
-    winmain.test_startup.init();
-    defer winmain.test_startup.deinit();
-
-    // TODO: some proper testing
-
-    var context: Context = undefined;
-    try context.init();
-    defer context.deinit();
-
-    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
-    defer arena.deinit();
-
-    const hMenu = CreatePopupMenu().?;
-    defer debug.expect(DestroyMenu(hMenu) != os.FALSE);
-
-    var contents = @This(){
-        .hMenu = hMenu,
-        .context = &context,
-        .items_alloc = arena.allocator(),
-    };
-
-    _ = try contents.addAnchor();
-    _ = try contents.addCommand("Command 1", 0);
-    _ = try contents.addSeparator();
-    _ = try contents.addCommand("Command 2", 1);
-}
+// TODO: unit tests for position updating

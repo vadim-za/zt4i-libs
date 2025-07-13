@@ -1,14 +1,18 @@
 const std = @import("std");
 const unicode = @import("../unicode.zig");
 const gui = @import("../../gui.zig");
+const ContentsPool = @import("ContentsPool.zig");
 
 wtf16str: unicode.Wtf16Str(0),
+contents_pool: ContentsPool,
 
 pub fn init(self: *@This()) gui.Error!void {
     self.wtf16str.init();
+    self.contents_pool.init(gui.allocator());
 }
 
 pub fn deinit(self: *@This()) void {
+    self.contents_pool.deinit();
     self.wtf16str.deinit();
 }
 

@@ -38,7 +38,6 @@ contents: Contents,
 
 pub fn create(
     self: *@This(),
-    items_alloc: ?std.mem.Allocator,
 ) gui.Error!void {
     try self.context.init();
     errdefer self.context.deinit();
@@ -50,7 +49,6 @@ pub fn create(
     self.contents = .{
         .hMenu = hMenu,
         .context = &self.context,
-        .items_alloc = items_alloc orelse gui.allocator(),
     };
 }
 
