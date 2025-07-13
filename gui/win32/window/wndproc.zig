@@ -3,6 +3,7 @@ const winmain = @import("../winmain.zig");
 const ReceivedMessage = @import("message_processing.zig").ReceivedMessage;
 const class = @import("class.zig");
 const Responders = @import("responders.zig").Responders;
+const debug = @import("../debug.zig");
 
 const os = std.os.windows;
 
@@ -47,8 +48,7 @@ fn Container(
                     .return_value => |value| return value,
                     .call_default => {}, // fall through
                 }
-            } else if (std.debug.runtime_safety)
-                @panic("Window handle mismatch");
+            } else debug.safeModePanic("Window handle mismatch");
 
             return class.defaultWindowProc(hWnd, uMsg, wParam, lParam);
         }

@@ -1,4 +1,5 @@
 const std = @import("std");
+const debug = @import("debug.zig");
 
 const use_dbga = std.debug.runtime_safety;
 
@@ -15,8 +16,7 @@ pub fn deinit(self: *@This()) void {
     if (use_dbga) {
         switch (self.dbga.deinit()) {
             .ok => {},
-            .leak => if (std.debug.runtime_safety)
-                @panic("Memory leak detected"),
+            .leak => debug.safeModePanic("Memory leak detected"),
         }
     }
 }

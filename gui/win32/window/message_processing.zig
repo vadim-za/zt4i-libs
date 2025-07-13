@@ -112,8 +112,9 @@ pub fn ReceivedMessage(
                     window.hWnd.?,
                 ) catch {
                     // having no render target or resources is fatal
-                    if (builtin.mode == .Debug)
-                        @panic("Failed to create window device resources");
+                    debug.debugModePanic(
+                        "Failed to create window device resources",
+                    );
                     return .zero;
                 };
 

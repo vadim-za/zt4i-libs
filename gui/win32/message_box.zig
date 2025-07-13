@@ -1,9 +1,10 @@
 const std = @import("std");
-const os = std.os.windows;
-
 const gui = @import("../gui.zig");
 const unicode = @import("unicode.zig");
 const winmain = @import("winmain.zig");
+const debug = @import("debug.zig");
+
+const os = std.os.windows;
 
 // ----------------------------------------------------------------
 
@@ -129,5 +130,5 @@ pub fn showPanic(
         std.unicode.wtf8ToWtf16LeStringLiteral(caption),
         text16,
         .ok,
-    ) catch @panic("Failed to display panic message");
+    ) catch debug.safeModePanic("Failed to display panic message");
 }

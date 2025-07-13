@@ -11,6 +11,7 @@ const wndproc = @import("window/wndproc.zig");
 const d2d1 = @import("d2d1.zig");
 const DeviceResources = @import("graphics/DeviceResources.zig");
 const menus = @import("menus.zig");
+const debug = @import("debug.zig");
 
 const os = std.os.windows;
 
@@ -194,10 +195,8 @@ fn createWindowRaw(title: []const u8) gui.Error!os.HWND {
 pub fn destroy(self: *@This()) void {
     const hWnd = self.hWnd orelse return;
 
-    if (DestroyWindow(hWnd) == os.FALSE) {
-        if (builtin.mode == .Debug)
-            @panic("Window destruction error");
-    }
+    if (DestroyWindow(hWnd) == os.FALSE)
+        debug.debugModePanic("Window destruction error");
 }
 
 extern "user32" fn InvalidateRect(
