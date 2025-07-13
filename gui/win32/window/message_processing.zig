@@ -21,6 +21,7 @@ pub const WM_CLOSE: os.UINT = 0x10;
 const WM_DISPLAYCHANGE: os.UINT = 0x7E;
 const WM_KEYDOWN: os.UINT = 0x100;
 const WM_COMMAND: os.UINT = 0x111;
+const WM_INITMENU: os.UINT = 0x116;
 
 pub extern "user32" fn BeginPaint(
     hWnd: os.HWND,
@@ -78,6 +79,7 @@ pub fn ReceivedMessage(
                 WM_PAINT, WM_DISPLAYCHANGE => self.onPaint(),
                 WM_CLOSE => self.onClose(),
                 WM_COMMAND => self.onCommand(),
+                WM_INITMENU => self.onInitMenu(),
                 else => .call_default,
             };
         }
@@ -144,6 +146,11 @@ pub fn ReceivedMessage(
 
         fn onCommand(self: *const @This()) Result {
             _ = self;
+            return .zero;
+        }
+
+        fn onInitMenu(self: *const @This()) Result {
+            resps.onMenuBarOpen(self.impl);
             return .zero;
         }
 

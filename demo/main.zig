@@ -60,6 +60,9 @@ const Window = struct {
     }),
     popup_menu: zt4i.gui.menus.Popup = undefined,
     menu_bar: zt4i.gui.menus.Bar = undefined,
+    undo_menu: *zt4i.gui.menus.Contents = undefined,
+    undo_command: *zt4i.gui.menus.Command = undefined,
+    counter: usize = 0,
 
     const Results = zt4i.gui.Window.Responders(@This()).Results;
 
@@ -88,8 +91,8 @@ const Window = struct {
 
             const bar = self.menu_bar.contents();
 
-            const file_menu = (try bar.addSubmenu(.last, "File")).contents();
-            _ = try file_menu.addCommand(.last, "Open...", 20);
+            self.undo_menu = (try bar.addSubmenu(.last, "Undo")).contents();
+            self.undo_command = try self.undo_menu.addCommand(.last, "Undo", 20);
         }
 
         {
@@ -162,6 +165,13 @@ const Window = struct {
         self.timer.releaseWithinWindow(&self.core);
         self.menu_bar.detachFrom(&self.core);
         zt4i.gui.mloop.stop();
+    }
+
+    pub fn onMenuBarOpen(self: *@This()) void {
+        self.counter += 1;
+        var buf: [100]u8 = undefined;
+        const text = std.fmt.bufPrint(&buf, "Undo {}", .{self.counter}) catch unreachable;
+        self.undo_menu.modifyCommand(self.undo_command, text, null) catch {};
     }
 
     pub fn onPaint(self: *@This(), dc: *zt4i.gui.DrawContext) void {

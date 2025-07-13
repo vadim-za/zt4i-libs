@@ -17,12 +17,14 @@ pub fn Responders(Impl: type) type {
         pub const Results = ResultsForImpl;
 
         getCore: *const fn (impl: *Impl) *Window,
+
         onClose: *const fn (impl: *Impl) Results.OnClose = override("onClose"),
         onDestroy: *const fn (impl: *Impl) void = override("onDestroy"),
         onPaint: *const fn (
             impl: *Impl,
             dc: *graphics.DrawContext,
         ) void = override("onPaint"),
+        onMenuBarOpen: *const fn (imp: *Impl) void = override("onMenuBarOpen"),
         onMouse: *const fn (
             impl: *Impl,
             event: *const gui.mouse.Event,
@@ -72,6 +74,10 @@ fn Defaults(Impl: type, Results: type) type {
         fn onPaint(impl: *Impl, dc: *graphics.DrawContext) void {
             _ = impl;
             _ = dc;
+        }
+
+        fn onMenuBarOpen(impl: *Impl) void {
+            _ = impl;
         }
 
         fn onMouse(
