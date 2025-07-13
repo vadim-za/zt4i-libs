@@ -10,7 +10,17 @@ The plan is to add further libraries as well as a more realistic demo app in nex
 
 ## Demo application
 
-This application is intended to showcase the usage of the library features and serve as a quick "howto" documentation.
+This application's source code is intended to showcase the usage of the library features and serve as a quick "howto" documentation. Also you might need to read the source to see what the application is actually supposed to do in response to which actions.
+
+## Building and using
+
+Building with the `build.zig` (on a Windows x64 platform) should produce a demo application. To use the libraries from another project, you can add it as a dependency.
+
+Alternatively you could simply manually add the `zt4i.zig` file to your project's build as a module root.
+
+## API stability
+
+The libraries' API is somewhat stable, but not really. The libraries are nowhere close to a 1.0 release, they even don't have versioning yet, and if there were, it probably would have been something like 0.0.1.
 
 ## Usage/contributions
 
