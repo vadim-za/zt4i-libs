@@ -14,7 +14,7 @@ xy: ?zt4i.gui.Point = null,
 timer_flag: bool = false,
 timer: zt4i.gui.Timer(struct {
     window: *Self,
-    pub fn init(window: *Self) @This() {
+    fn init(window: *Self) @This() {
         return .{ .window = window };
     }
     pub fn onTimer(self: *@This()) void {
