@@ -11,6 +11,8 @@ pub const keys = @import("win32/keys.zig");
 pub const menus = @import("win32/menus.zig");
 pub const Timer = @import("win32/timers.zig").Timer;
 
+pub const file_dialog = @import("win32/file_dialog.zig");
+
 // --------------------------------------------------------------
 
 const std = @import("std");

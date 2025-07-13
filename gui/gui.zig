@@ -59,6 +59,8 @@ pub const menus = platform.menus;
 
 pub const Timer = platform.Timer;
 
+pub const file_dialog = platform.file_dialog;
+
 // Conditional platform reexports
 pub const wWinMain =
     if (platform == win32) platform.wWinMain;

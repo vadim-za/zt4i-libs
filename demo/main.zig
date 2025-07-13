@@ -263,12 +263,24 @@ const Window = struct {
                     if (self.popup_menu.run(
                         &self.core,
                     ) catch null) |cmd| switch (cmd) {
-                        1 => _ = zt4i.gui.mbox.show(
+                        // 1 => _ = zt4i.gui.mbox.show(
+                        //     &self.core,
+                        //     "Caption",
+                        //     "Text",
+                        //     .ok,
+                        // ) catch {},
+                        1 => if (zt4i.gui.file_dialog.run(
                             &self.core,
-                            "Caption",
-                            "Text",
-                            .ok,
-                        ) catch {},
+                            .open,
+                        ) catch null) |file_name| {
+                            _ = zt4i.gui.mbox.show(
+                                &self.core,
+                                "Open File",
+                                file_name,
+                                .ok,
+                            ) catch {};
+                            zt4i.gui.allocator().free(file_name);
+                        },
                         else => {},
                     };
                     return .dont_capture;
