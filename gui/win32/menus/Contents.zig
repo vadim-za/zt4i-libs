@@ -183,6 +183,8 @@ pub fn addAnchor(
     return &item.variant.anchor;
 }
 
+// NB. If replacing insertion fails, the old item is already removed.
+// See InsertionLocation.replace() for public docs.
 fn insertItem(
     self: *@This(),
     where: item_types.InsertionLocation,
@@ -244,22 +246,23 @@ fn insertItem(
     self.last_nondirty_node = node;
 
     if (item.isVisible()) {
-        const text16 = if (text) |t|
-            try self.context.convertU8(t)
+        const text16: ?[*:0]const u16 = if (text) |t|
+            (try self.context.convertU8(t)).ptr
         else
-            std.unicode.utf8ToUtf16LeStringLiteral("");
+            null;
 
-        const uFlags: os.UINT = if (variant_tag == .submenu)
-            MF_POPUP
-        else
-            0;
+        const uFlags: os.UINT = switch (variant_tag) {
+            .submenu => MF_POPUP,
+            .separator => MF_SEPARATOR,
+            else => 0,
+        };
 
         if (node == self.items.last) {
             if (AppendMenuW(
                 self.hMenu,
                 uFlags,
                 uIDNewItem,
-                text16.ptr,
+                text16,
             ) == os.FALSE)
                 return gui.Error.OsApi;
         } else {
@@ -268,7 +271,7 @@ fn insertItem(
                 @intCast(visible_pos),
                 uFlags | MF_BYPOSITION,
                 uIDNewItem,
-                text16.ptr,
+                text16,
             ) == os.FALSE)
                 return gui.Error.OsApi;
         }

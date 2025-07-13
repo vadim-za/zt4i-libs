@@ -100,15 +100,17 @@ const Window = struct {
             errdefer self.popup_menu.destroy();
 
             const popup = self.popup_menu.contents();
-            const command1 = try popup.addCommand(.last, "item 1", 1);
-            const command2 = try popup.addCommand(.after(command1), "item 2", 2);
+            var command1 = try popup.addCommand(.first, "item 1", 0);
+            const separator1 = try popup.addSeparator(.last);
+            const command2 = try popup.addCommand(.after(separator1), "item 2", 2);
             const anchor1 = try popup.addAnchor(.before(command2));
             const command3 = try popup.addCommand(.after(anchor1), "item 3", 0);
             const command4 = try popup.addCommand(.after(command2), "item 4", 0);
             popup.deleteItem(command2);
             //_ = try popup.addCommand(.before(command4), "sub", 0);
-            try popup.modifyCommand(command1, null, .{ .checked = true });
+            try popup.modifyCommand(command4, null, .{ .checked = true });
             try popup.modifyCommand(command3, "abc", null);
+            command1 = try popup.addCommand(.replace(command1), "Test", 1);
 
             const submenu1 = try popup.addSubmenu(.before(command4), "Submenu");
             {

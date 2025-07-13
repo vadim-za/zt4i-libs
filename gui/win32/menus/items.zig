@@ -142,6 +142,8 @@ pub const InsertionLocation = union(enum) {
         return .{ .after_ = Item.fromAny(any_item_ptr) };
     }
 
+    /// NB. If replacing insertion fails, the old item is already removed
+    /// (see Content.insertItem())
     pub fn replace(any_item_ptr: anytype) @This() {
         return .{ .replace_ = Item.fromAny(any_item_ptr) };
     }
