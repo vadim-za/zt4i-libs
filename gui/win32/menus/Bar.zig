@@ -55,11 +55,16 @@ pub fn contents(self: *@This()) *Contents {
     return &self.menu_contents;
 }
 
+/// A window with an attached menu shouldn't be destroyed.
+/// You must detach the menu attached to the window (if any)
+/// latest in the onDestroy() responder of the window.
+///
+/// This function detaches any previously attached menu.
 pub fn attachTo(self: *@This(), window: *gui.Window) gui.Error!void {
     if (SetMenu(window.hWnd.?, self.hMenu) == os.FALSE)
         return gui.Error.OsApi;
 
-    // Disconnect the previous menu (the user is responsible for destroying it)
+    // Disconnect the previous menu
     if (window.menu_bar) |menu_bar|
         menu_bar.window = null;
     window.menu_bar = self;
