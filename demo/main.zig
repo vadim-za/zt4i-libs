@@ -78,7 +78,14 @@ const Window = struct {
             var sink = try zt4i.gui.Path.begin(.closed, &.{ .x = 300, .y = 200 });
             sink.addLines(&[_]zt4i.gui.Point{
                 .{ .x = 350, .y = 250 },
-                .{ .x = 400, .y = 200 },
+                //.{ .x = 400, .y = 200 },
+            });
+            sink.addBeziers(&[_]zt4i.gui.Path.BezierTo{
+                .{
+                    .to = .{ .x = 400, .y = 200 },
+                    .c_from = .{ .x = 350, .y = 300 },
+                    .c_to = .{ .x = 400, .y = 250 },
+                },
             });
             self.path = try sink.close();
         }

@@ -103,18 +103,15 @@ pub const Sink = struct {
         // TODO: use ISimplifiedGeometrySink.AddBeziers
         for (segments) |*seg|
             self.d2d_sink.addBezier(&.{
-                .point1 = seg.c_from.toD2d(),
-                .point2 = seg.c_to.toD2d(),
-                .point3 = seg.to.toD2d(),
+                .point1 = .fromGui(&seg.c_from),
+                .point2 = .fromGui(&seg.c_to),
+                .point3 = .fromGui(&seg.to),
             });
     }
 };
 
 pub const BezierTo = struct {
     to: Point,
-    c_from: Point,
-    c_to: Point,
-    pub fn init(seg: Bezier) @This() {
-        return .{ .to = seg.pt[3], .c_from = seg.pt[1], .c_to = seg.pt[2] };
-    }
+    c_from: Point, // control point at current point
+    c_to: Point, // cotrol point at 'to'
 };
