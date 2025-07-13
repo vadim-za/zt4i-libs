@@ -127,13 +127,13 @@ pub fn fillEllipse(
     );
 }
 
-pub fn setOrigin(self: *const @This(), new_origin: Point) Point {
-    const prev_origin = self.context.origin;
+pub fn setOrigin(self: *@This(), new_origin: Point) Point {
+    const prev_origin = self.origin;
 
-    var transform = d2d1.identityMatrix();
+    var transform = d2d1.identityMatrix;
     transform[2][0] = new_origin.x;
     transform[2][1] = new_origin.y;
-    self.target.setTransform(transform);
+    self.target.setTransform(&transform);
 
     self.origin = new_origin;
     return prev_origin;
@@ -143,6 +143,6 @@ pub fn getOrigin(self: *const @This()) Point {
     return self.origin;
 }
 
-pub fn moveOriginBy(self: *const @This(), by: Point) Point {
+pub fn moveOriginBy(self: *@This(), by: *const Point) Point {
     return self.setOrigin(self.getOrigin().movedBy(by));
 }

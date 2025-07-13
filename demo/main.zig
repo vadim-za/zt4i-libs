@@ -208,13 +208,17 @@ const Window = struct {
         //dc.fillPath(&self.path, red_brush);
         dc.drawPath(&self.path, red_brush, 2);
 
-        if (self.timer_flag)
-            dc.drawEllipse(
-                &.{ .x = 450, .y = 200 },
-                &.{ .x = 20, .y = 10 },
-                red_brush,
-                1,
-            );
+        {
+            const old_origin = dc.moveOriginBy(&.{ .x = 400, .y = 200 });
+            defer _ = dc.setOrigin(old_origin);
+            if (self.timer_flag)
+                dc.drawEllipse(
+                    &.{ .x = 50, .y = 0 },
+                    &.{ .x = 20, .y = 10 },
+                    red_brush,
+                    1,
+                );
+        }
 
         dc.fillEllipse(
             &.{ .x = 500, .y = 200 },

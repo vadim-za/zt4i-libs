@@ -147,7 +147,10 @@ pub const IRenderTarget = extern struct { // ID2D1RenderTarget
         ) callconv(.winapi) void,
         DrawTextLayout__: *const fn () callconv(.winapi) void,
         DrawGlyphRun__: *const fn () callconv(.winapi) void,
-        SetTransform__: *const fn () callconv(.winapi) void,
+        SetTransform: *const fn (
+            self: *Self,
+            transform: *const d2d1.MATRIX_3X2_F,
+        ) callconv(.winapi) void,
         GetTransform__: *const fn () callconv(.winapi) void,
         SetAntialiasMode__: *const fn () callconv(.winapi) void,
         GetAntialiasMode__: *const fn () callconv(.winapi) void,
@@ -255,7 +258,7 @@ pub const IRenderTarget = extern struct { // ID2D1RenderTarget
         geometry: *d2d1.IGeometry,
         brush: *d2d1.IBrush,
         stroke_width: f32,
-    ) callconv(.winapi) void {
+    ) void {
         self.vtbl.DrawGeometry(self, geometry, brush, stroke_width, null);
     }
 
@@ -263,7 +266,7 @@ pub const IRenderTarget = extern struct { // ID2D1RenderTarget
         self: *@This(),
         geometry: *d2d1.IGeometry,
         brush: *d2d1.IBrush,
-    ) callconv(.winapi) void {
+    ) void {
         self.vtbl.FillGeometry(self, geometry, brush, null);
     }
 
@@ -291,7 +294,7 @@ pub const IRenderTarget = extern struct { // ID2D1RenderTarget
         ellipse: *const d2d1.ELLIPSE,
         brush: *d2d1.IBrush,
         stroke_width: f32,
-    ) callconv(.winapi) void {
+    ) void {
         self.vtbl.DrawEllipse(self, ellipse, brush, stroke_width, null);
     }
 
@@ -299,8 +302,15 @@ pub const IRenderTarget = extern struct { // ID2D1RenderTarget
         self: *@This(),
         ellipse: *const d2d1.ELLIPSE,
         brush: *d2d1.IBrush,
-    ) callconv(.winapi) void {
+    ) void {
         self.vtbl.FillEllipse(self, ellipse, brush);
+    }
+
+    pub fn setTransform(
+        self: *@This(),
+        transform: *const d2d1.MATRIX_3X2_F,
+    ) void {
+        self.vtbl.SetTransform(self, transform);
     }
 };
 
