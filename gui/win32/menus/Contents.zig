@@ -164,7 +164,7 @@ pub fn addSubmenu(
         .hMenu = hMenu,
         .context = self.context,
     };
-    item.variant.submenu.contents = submenu_contents;
+    item.variant.submenu.menu_contents = submenu_contents;
 
     return &item.variant.submenu;
 }

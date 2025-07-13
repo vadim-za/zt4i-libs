@@ -22,8 +22,7 @@ window: ?*Window,
 context: Context,
 hMenu: os.HMENU,
 
-/// This field may be accessed publicly for menu modification
-contents: Contents,
+menu_contents: Contents,
 
 pub fn create(
     self: *@This(),
@@ -35,7 +34,7 @@ pub fn create(
         return gui.Error.OsApi;
 
     self.hMenu = hMenu;
-    self.contents = .{
+    self.menu_contents = .{
         .hMenu = hMenu,
         .context = &self.context,
     };
@@ -48,8 +47,12 @@ pub fn destroy(self: *@This()) void {
     if (DestroyMenu(self.hMenu) == os.FALSE)
         debug.debugModePanic("Failed to destroy menu");
 
-    self.contents.deinit();
+    self.menu_contents.deinit();
     self.context.deinit();
+}
+
+pub fn contents(self: *@This()) *Contents {
+    return &self.menu_contents;
 }
 
 pub fn attachTo(self: *@This(), window: *gui.Window) gui.Error!void {

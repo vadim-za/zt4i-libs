@@ -87,8 +87,7 @@ pub const Separator = struct {
 };
 
 pub const Submenu = struct {
-    /// This field may be accessed publicly for menu modification
-    contents: *Contents = undefined,
+    menu_contents: *Contents = undefined,
 
     pub const Flags = packed struct {
         enabled: bool = true,
@@ -101,7 +100,11 @@ pub const Submenu = struct {
     };
 
     pub fn deinit(self: *@This()) void {
-        self.contents.deinit();
+        self.menu_contents.deinit();
+    }
+
+    pub fn contents(self: *@This()) *Contents {
+        return self.menu_contents;
     }
 };
 
