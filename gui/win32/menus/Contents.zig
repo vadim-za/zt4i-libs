@@ -99,6 +99,8 @@ pub fn deinit(self: *@This()) void {
 /// Allowed 'id' range is 0..60000 (not including the upper bound).
 /// The range is limited due to OS limitations and potentially may
 /// become even smaller, so try to use as small id values as possible.
+/// For larger menus it might be a good idea to organize an array stack
+/// of command handling closures and use array indices as command ids.
 ///
 /// The formal type of 'id' is usize, so that the caller doesn't need
 /// to use @intCast(), instead addCommand will return gui.Error.Usage
