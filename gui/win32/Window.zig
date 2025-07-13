@@ -177,7 +177,8 @@ fn createWindowRaw(title: []const u8) gui.Error!os.HWND {
         0,
         class.getClass(),
         title16.ptr(),
-        WS_OVERLAPPEDWINDOW,
+        // no resize/maximize handling yet, so can't use WS_OVERLAPPEDWINDOW
+        WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
         0,
         0,
         0,
