@@ -4,13 +4,13 @@
 
 The list of libraries:
 
-1. **GUI** - a minimal platform-agnostic UI windowing library. At the moment supports only the Windows x64 platform. No immediate plans to support other platforms in the nearest future, but the API is laid down in a platform-abstract way (although almost certainly it will need to be adjusted in order to efficiently support further platforms).
+1. **GUI** - a minimal platform-agnostic UI windowing library. At the moment supports only the Windows x64 platform. No immediate plans to support other platforms in the nearest future, but the API is laid down in a platform-abstract way (although almost certainly it will need to be adjusted in order to efficiently support further platforms). For the time being can be functionally seen as a (much smaller) parallel to MFC.
 
 The plan is to add further libraries as well as a more realistic demo app in next months. The former are intended to be platform-independent.
 
 ## Demo application
 
-This application's source code is intended to showcase the usage of the library features and serve as a quick "howto" documentation. Also you might need to read the source to see what the application is actually supposed to do in response to which actions.
+This application's source code is intended to showcase the usage of the library features and serve as a quick "howto" documentation. You might need to read the source to see what the application is actually supposed to do in response to which actions.
 
 ## Building and using
 
@@ -20,7 +20,7 @@ Alternatively you could simply manually add the `zt4i.zig` file to your project'
 
 ## API stability
 
-The libraries' API is somewhat stable, but not really. The libraries are nowhere close to a 1.0 release, they even don't have versioning yet, and if there were, it probably would have been something like 0.0.1.
+The libraries' API is somewhat stable, but not really. The libraries are nowhere close to a 1.0 release.
 
 ## Usage/contributions
 
