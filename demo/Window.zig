@@ -119,8 +119,7 @@ pub fn create(self: *@This(), width: f32, height: f32) zt4i.gui.Error!void {
         .default, // Use default responders API
         .{
             .title = main.app_title,
-            .width = width,
-            .height = height,
+            .size = .{ .inner = .{ .x = width, .y = height } },
         },
         .{ onCreate, .{self} },
     );

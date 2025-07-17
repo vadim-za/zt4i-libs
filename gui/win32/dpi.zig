@@ -25,13 +25,14 @@ pub fn setupDpiAwareness() gui.Error!void {
         return gui.Error.OsApi;
 }
 
-pub fn getDprFor(hWnd: os.HWND) f32 {
+pub fn getDpiAndDprFor(hWnd: os.HWND) struct { os.UINT, f32 } {
     var dpi = GetDpiForWindow(hWnd);
 
     if (dpi == 0)
         dpi = 96;
 
-    return @as(f32, @floatFromInt(dpi)) / 96;
+    const dpr = @as(f32, @floatFromInt(dpi)) / 96;
+    return .{ dpi, dpr };
 }
 
 // Physical coordinates are supposed to be i32, but we return

@@ -5,7 +5,7 @@ const gui = @import("../gui.zig");
 const class = @import("window/class.zig");
 const responders = @import("window/responders.zig");
 const winmain = @import("winmain.zig");
-const dpi = @import("dpi.zig");
+const dpi_support = @import("dpi.zig");
 const unicode = @import("unicode.zig");
 const wndproc = @import("window/wndproc.zig");
 const d2d1 = @import("d2d1.zig");
@@ -18,6 +18,7 @@ const os = std.os.windows;
 pub const Responders = responders.Responders;
 
 hWnd: ?os.HWND = null,
+dpi: ?os.UINT = null,
 dpr: ?f32 = null,
 device_resources: DeviceResources = .{},
 menu_bar: ?*menus.Bar = null,
@@ -71,8 +72,11 @@ const SwpFlags = packed struct(os.UINT) {
 };
 
 extern "user32" fn DestroyWindow(hWnd: os.HWND) callconv(.winapi) os.BOOL;
-extern "user32" fn UpdateWindow(os.HWND) callconv(.winapi) os.BOOL;
-extern "user32" fn ShowWindow(os.HWND, CmdShow) callconv(.winapi) os.BOOL;
+extern "user32" fn UpdateWindow(hWnd: os.HWND) callconv(.winapi) os.BOOL;
+extern "user32" fn ShowWindow(
+    hWnd: os.HWND,
+    nCmdShow: CmdShow,
+) callconv(.winapi) os.BOOL;
 
 const CmdShow = enum(c_int) {
     HIDE = 0,
@@ -93,16 +97,34 @@ const CmdShow = enum(c_int) {
     const MAX = .FORCEMINIMIZE;
 };
 
+extern "user32" fn AdjustWindowRectExForDpi(
+    lpRect: *os.RECT,
+    dwStyle: os.DWORD,
+    bMenu: os.BOOL,
+    dwExStyle: os.DWORD,
+    dpi: os.UINT,
+) callconv(.winapi) os.BOOL;
+
+extern "user32" fn InvalidateRect(
+    os.HWND,
+    ?*const os.RECT,
+    bErase: os.BOOL,
+) callconv(.winapi) os.BOOL;
+
 // ----------------------------------------------------------------
 
 pub fn deinit(self: *@This()) void {
     self.device_resources.deinit();
 }
 
+pub const Size = union(enum) {
+    outer: gui.Point,
+    inner: gui.Point,
+};
+
 pub const CreateParams = struct {
     title: []const u8,
-    width: f32,
-    height: f32,
+    size: Size,
 };
 
 pub fn create(
@@ -117,7 +139,8 @@ pub fn create(
         return gui.Error.Usage; // window already exists
 
     const hWnd = try createWindowRaw(params.title);
-    const dpr = dpi.getDprFor(hWnd);
+    const dpi, const dpr = dpi_support.getDpiAndDprFor(hWnd);
+    window.dpi = dpi;
     window.dpr = dpr;
     window.hWnd = hWnd;
 
@@ -127,6 +150,7 @@ pub fn create(
         errdefer {
             _ = DestroyWindow(hWnd);
             window.hWnd = null;
+            window.dpi = null;
             window.dpr = null;
         }
 
@@ -152,22 +176,23 @@ fn configureRawWindow(
     self: *@This(),
     params: *const CreateParams,
 ) gui.Error!void {
-    const physical_width: i32 =
-        @intFromFloat(dpi.physicalFromLogical(self.dpr.?, params.width));
-    const physical_height: i32 =
-        @intFromFloat(dpi.physicalFromLogical(self.dpr.?, params.height));
+    const outer_size = try self.toOuterCreateSize(params.size);
 
     if (SetWindowPos(
         self.hWnd.?,
         null,
         0,
         0,
-        physical_width,
-        physical_height,
+        outer_size.x,
+        outer_size.y,
         .{ .NOMOVE = true, .NOZORDER = true },
     ) == 0)
         return gui.Error.OsApi;
 }
+
+// no resize/maximize handling yet, so can't use WS_OVERLAPPEDWINDOW
+const dwCreateStyle = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
+const dwCreateExStyle = 0;
 
 fn createWindowRaw(title: []const u8) gui.Error!os.HWND {
     var title16: unicode.Wtf16Str(200) = undefined;
@@ -175,11 +200,10 @@ fn createWindowRaw(title: []const u8) gui.Error!os.HWND {
     defer title16.deinit();
 
     return CreateWindowExW(
-        0,
+        dwCreateExStyle,
         class.getClass(),
         title16.ptr(),
-        // no resize/maximize handling yet, so can't use WS_OVERLAPPEDWINDOW
-        WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
+        dwCreateStyle,
         0,
         0,
         0,
@@ -199,12 +223,6 @@ pub fn destroy(self: *@This()) void {
         debug.debugModePanic("Window destruction error");
 }
 
-extern "user32" fn InvalidateRect(
-    os.HWND,
-    ?*const os.RECT,
-    bErase: os.BOOL,
-) callconv(.winapi) os.BOOL;
-
 pub fn redraw(self: *@This(), now: bool) void {
     if (self.hWnd) |hWnd| {
         _ = InvalidateRect(hWnd, null, os.FALSE);
@@ -217,6 +235,54 @@ const dr_methods = @import("window/device_resource_methods.zig");
 pub const addDeviceResource = dr_methods.addDeviceResource;
 pub const removeDeviceResource = dr_methods.removeDeviceResource;
 pub const removeAllDeviceResources = dr_methods.removeAllDeviceResources;
+
+fn toPhysicalSizeTrunc(
+    self: *const @This(),
+    logical_size: gui.Point,
+) os.POINT {
+    return .{
+        .x = @intFromFloat(
+            dpi_support.physicalFromLogical(self.dpr.?, logical_size.x),
+        ),
+        .y = @intFromFloat(
+            dpi_support.physicalFromLogical(self.dpr.?, logical_size.y),
+        ),
+    };
+}
+
+fn toOuterCreateSize(
+    self: *const @This(),
+    create_size: Size,
+) gui.Error!os.POINT {
+    switch (create_size) {
+        .outer => |size| return self.toPhysicalSizeTrunc(size),
+
+        .inner => |size| {
+            const physical_inner = self.toPhysicalSizeTrunc(size);
+
+            var rc: os.RECT = .{
+                .left = 0,
+                .top = 0,
+                .right = physical_inner.x,
+                .bottom = physical_inner.y,
+            };
+
+            if (AdjustWindowRectExForDpi(
+                &rc,
+                dwCreateStyle,
+                @intFromBool(self.menu_bar != null),
+                dwCreateExStyle,
+                self.dpi.?,
+            ) == os.FALSE)
+                return gui.Error.OsApi;
+
+            return .{
+                .x = rc.right - rc.left,
+                .y = rc.bottom - rc.top,
+            };
+        },
+    }
+}
 
 // --------------------------------------------------------------
 
