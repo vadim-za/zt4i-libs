@@ -9,6 +9,8 @@
         "build.zig.zon",
         "zt4i.zig",
         "README.md",
+        "CHANGELOG.md",
+        "LICENSE",
         ".gitignore",
         "rsp",
         "demo",
