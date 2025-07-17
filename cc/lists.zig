@@ -1,6 +1,7 @@
 const lib = @import("lib.zig");
 
 pub const Implementation = @import("lists/impl.zig").Implementation;
+pub const InsertionPos = @import("lists/insertion_pos.zig").InsertionPos;
 
 pub fn List(
     T: type,
@@ -13,11 +14,13 @@ pub fn List(
 // -----------------------------------------------------------------------
 
 test "All" {
-    const T = List(
+    const L = List(
         i32,
         .{ .double_linked = .null_terminated },
         .simple_payload,
     );
-    _ = T;
+    var n: L.Node = undefined;
+    var l: L = .{};
+    l.insertLast(&n);
     @breakpoint();
 }
