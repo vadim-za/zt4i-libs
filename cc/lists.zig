@@ -1,26 +1,22 @@
-pub const ApiPreferences = @import("ApiPreferences.zig");
+const lib = @import("lib.zig");
+
 pub const Implementation = @import("lists/impl.zig").Implementation;
 
 pub fn List(
-    impl: Implementation,
     T: type,
-    Layout: type,
-    api_preferences: ApiPreferences,
+    impl: Implementation,
+    layout: lib.Layout,
 ) type {
-    return impl.namespace().List(T, Layout, api_preferences);
+    return impl.namespace().List(T, layout);
 }
 
 // -----------------------------------------------------------------------
 
 test "All" {
     const T = List(
-        .{ .double_linked = .null_terminated },
         i32,
-        void,
-        .{
-            .init = .value,
-            .init_layout_arg = .auto,
-        },
+        .{ .double_linked = .null_terminated },
+        .simple_payload,
     );
     _ = T;
     @breakpoint();
