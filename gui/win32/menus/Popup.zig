@@ -1,5 +1,5 @@
 const std = @import("std");
-const gui = @import("../../gui.zig");
+const lib = @import("../../lib.zig");
 const item_types = @import("items.zig");
 const Contents = @import("Contents.zig");
 const Context = @import("Context.zig");
@@ -37,12 +37,12 @@ menu_contents: Contents,
 
 pub fn create(
     self: *@This(),
-) gui.Error!void {
+) lib.Error!void {
     try self.context.init();
     errdefer self.context.deinit();
 
     const hMenu: os.HMENU = CreatePopupMenu() orelse
-        return gui.Error.OsApi;
+        return lib.Error.OsApi;
 
     self.hMenu = hMenu;
     self.menu_contents = .{
@@ -66,11 +66,11 @@ pub fn contents(self: *@This()) *Contents {
 // Returns command id.
 pub fn run(
     self: *@This(),
-    window: *gui.Window,
-) gui.Error!?usize {
+    window: *lib.Window,
+) lib.Error!?usize {
     var pt: os.POINT = undefined;
     if (GetCursorPos(&pt) == os.FALSE)
-        return gui.Error.OsApi;
+        return lib.Error.OsApi;
 
     const nResult = TrackPopupMenu(
         self.hMenu,

@@ -1,7 +1,7 @@
 const std = @import("std");
 const os = std.os.windows;
 
-const gui = @import("../gui.zig");
+const lib = @import("../lib.zig");
 const winmain = @import("winmain.zig");
 
 // Buffer length is in u16 characters, not including terminating 0
@@ -14,13 +14,13 @@ pub fn Wtf16Str(comptime buf16_len: usize) type {
         sfba: std.heap.StackFallbackAllocator(buf_size),
         alloc: std.mem.Allocator,
 
-        pub fn initU8(self: *@This(), str8: []const u8) gui.Error!void {
+        pub fn initU8(self: *@This(), str8: []const u8) lib.Error!void {
             self.init();
             try self.setU8(str8);
         }
 
         pub fn init(self: *@This()) void {
-            self.sfba = std.heap.stackFallback(buf_size, gui.allocator());
+            self.sfba = std.heap.stackFallback(buf_size, lib.allocator());
             self.alloc = self.sfba.get();
             self.str16 = null;
         }
@@ -29,15 +29,15 @@ pub fn Wtf16Str(comptime buf16_len: usize) type {
             self.reset();
         }
 
-        pub fn setU8(self: *@This(), str8: []const u8) gui.Error!void {
+        pub fn setU8(self: *@This(), str8: []const u8) lib.Error!void {
             self.reset();
 
             self.str16 = std.unicode.wtf8ToWtf16LeAllocZ(
                 self.alloc,
                 str8,
             ) catch |err| return switch (err) {
-                error.OutOfMemory => gui.Error.OutOfMemory,
-                error.InvalidWtf8 => gui.Error.Usage,
+                error.OutOfMemory => lib.Error.OutOfMemory,
+                error.InvalidWtf8 => lib.Error.Usage,
             };
         }
 
@@ -92,13 +92,13 @@ pub fn BoundedWtf16Str(comptime buf_len: usize) type {
         buf: [buf_len + 1]u16,
         len: usize,
 
-        pub fn initU8(self: *@This(), str8: []const u8) gui.Error!void {
+        pub fn initU8(self: *@This(), str8: []const u8) lib.Error!void {
             const wtf16, _ = wtf8ToWtf16LeTruncateZ(
                 &self.buf,
                 str8,
                 null,
             ) catch |err| return switch (err) {
-                error.InvalidWtf8 => gui.Error.Usage,
+                error.InvalidWtf8 => lib.Error.Usage,
             };
 
             std.debug.assert(wtf16.ptr == &self.buf);

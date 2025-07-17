@@ -1,6 +1,6 @@
 const std = @import("std");
 const builtin = @import("builtin");
-const gui = @import("../../gui.zig");
+const lib = @import("../../lib.zig");
 const item_types = @import("items.zig");
 const debug = @import("../debug.zig");
 const Context = @import("Context.zig");
@@ -103,7 +103,7 @@ pub fn deinit(self: *@This()) void {
 /// of command handling closures and use array indices as command ids.
 ///
 /// The formal type of 'id' is usize, so that the caller doesn't need
-/// to use @intCast(), instead addCommand will return gui.Error.Usage
+/// to use @intCast(), instead addCommand will return lib.Error.Usage
 /// for out-of-range ids.
 ///
 /// Be careful of reusing the id values in menu modifications, there
@@ -116,12 +116,12 @@ pub fn addCommand(
     where: item_types.InsertionLocation,
     text: []const u8,
     id: usize,
-) gui.Error!*item_types.Command {
+) lib.Error!*item_types.Command {
     const item = try self.insertItem(
         where,
         .command,
         text,
-        command_ids.toOsId(id) orelse return gui.Error.Usage,
+        command_ids.toOsId(id) orelse return lib.Error.Usage,
     );
 
     return &item.variant.command;
@@ -130,7 +130,7 @@ pub fn addCommand(
 pub fn addSeparator(
     self: *@This(),
     where: item_types.InsertionLocation,
-) gui.Error!*item_types.Separator {
+) lib.Error!*item_types.Separator {
     const item = try self.insertItem(
         where,
         .separator,
@@ -145,13 +145,13 @@ pub fn addSubmenu(
     self: *@This(),
     where: item_types.InsertionLocation,
     text: []const u8,
-) gui.Error!*item_types.Submenu {
+) lib.Error!*item_types.Submenu {
     const submenu_contents =
         try self.context.contents_pool.create(Contents);
     errdefer self.context.contents_pool.destroy(submenu_contents);
 
     const hMenu = CreatePopupMenu() orelse
-        return gui.Error.OsApi;
+        return lib.Error.OsApi;
     errdefer if (DestroyMenu(hMenu) == os.FALSE)
         debug.safeModePanic("Error destroying menu");
 
@@ -174,7 +174,7 @@ pub fn addSubmenu(
 pub fn addAnchor(
     self: *@This(),
     where: item_types.InsertionLocation,
-) gui.Error!*item_types.Anchor {
+) lib.Error!*item_types.Anchor {
     const item = try self.insertItem(
         where,
         .anchor,
@@ -193,7 +193,7 @@ fn insertItem(
     comptime variant_tag: std.meta.Tag(item_types.Variant),
     text: ?[]const u8,
     uIDNewItem: usize,
-) gui.Error!*item_types.Item {
+) lib.Error!*item_types.Item {
     // 'null' means 'prepend'
     const insert_after: ?*item_types.ItemsList.Node =
         switch (where) {
@@ -266,7 +266,7 @@ fn insertItem(
                 uIDNewItem,
                 text16,
             ) == os.FALSE)
-                return gui.Error.OsApi;
+                return lib.Error.OsApi;
         } else {
             if (InsertMenuW(
                 self.hMenu,
@@ -275,7 +275,7 @@ fn insertItem(
                 uIDNewItem,
                 text16,
             ) == os.FALSE)
-                return gui.Error.OsApi;
+                return lib.Error.OsApi;
         }
     }
 
@@ -318,7 +318,7 @@ pub fn modifyCommand(
     command: *item_types.Command,
     text: ?[]const u8,
     flags: ?item_types.Command.Flags,
-) gui.Error!void {
+) lib.Error!void {
     try self.modifyItem(command, text, flags);
 }
 
@@ -327,7 +327,7 @@ pub fn modifySubmenu(
     submenu: *item_types.Submenu,
     text: ?[]const u8,
     flags: ?item_types.Submenu.Flags,
-) gui.Error!void {
+) lib.Error!void {
     try self.modifyItem(submenu, text, flags);
 }
 
@@ -336,7 +336,7 @@ fn modifyItem(
     any_item_ptr: anytype,
     text: ?[]const u8,
     flags: ?@TypeOf(any_item_ptr.*).Flags,
-) gui.Error!void {
+) lib.Error!void {
     const item = item_types.Item.fromAny(any_item_ptr);
     const node = self.nodeFromItem(item);
 

@@ -1,6 +1,6 @@
 const std = @import("std");
 const builtin = @import("builtin");
-const gui = @import("../../gui.zig");
+const lib = @import("../../lib.zig");
 const Contents = @import("Contents.zig");
 const Context = @import("Context.zig");
 const debug = @import("../debug.zig");
@@ -27,12 +27,12 @@ menu_contents: Contents,
 
 pub fn create(
     self: *@This(),
-) gui.Error!void {
+) lib.Error!void {
     try self.context.init();
     errdefer self.context.deinit();
 
     const hMenu: os.HMENU = CreateMenu() orelse
-        return gui.Error.OsApi;
+        return lib.Error.OsApi;
 
     self.hMenu = hMenu;
     self.menu_contents = .{

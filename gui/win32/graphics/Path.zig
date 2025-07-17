@@ -5,7 +5,7 @@ const graphics = @import("../graphics.zig");
 const directx = @import("../directx.zig");
 const Point = graphics.Point;
 const Bezier = graphics.Bezier;
-const gui = @import("../../gui.zig");
+const lib = @import("../../lib.zig");
 
 const Self = @This();
 
@@ -23,7 +23,7 @@ pub fn deinit(self: *@This()) void {
     }
 }
 
-pub fn begin(mode: Mode, at: *const Point) gui.Error!Sink {
+pub fn begin(mode: Mode, at: *const Point) lib.Error!Sink {
     const d2d_factory = directx.getD2d1Factory();
     const d2d_geometry = try d2d_factory.createPathGeometry();
     errdefer com.release(d2d_geometry);
@@ -34,7 +34,7 @@ pub fn begin(mode: Mode, at: *const Point) gui.Error!Sink {
     const d2d_sink = d2d_geometry_sink.as(d2d1.ISimplifiedGeometrySink);
 
     d2d_sink.beginFigure(
-        &.fromGui(at),
+        &.fromLib(at),
         switch (mode) {
             .open => .HOLLOW,
             .closed => .FILLED,
@@ -70,7 +70,7 @@ pub const Sink = struct {
         com.release(self.d2d_geometry);
     }
 
-    pub fn close(self: *@This()) gui.Error!Self {
+    pub fn close(self: *@This()) lib.Error!Self {
         std.debug.assert(self.is_open);
         self.is_open = false;
 
@@ -96,16 +96,16 @@ pub const Sink = struct {
     pub fn addLines(self: *@This(), points: []const Point) void {
         // TODO: use ISimplifiedGeometrySink.AddLines
         for (points) |*p|
-            self.d2d_sink.addLine(&.fromGui(p));
+            self.d2d_sink.addLine(&.fromLib(p));
     }
 
     pub fn addBeziers(self: *@This(), segments: []const BezierTo) void {
         // TODO: use ISimplifiedGeometrySink.AddBeziers
         for (segments) |*seg|
             self.d2d_sink.addBezier(&.{
-                .point1 = .fromGui(&seg.c_from),
-                .point2 = .fromGui(&seg.c_to),
-                .point3 = .fromGui(&seg.to),
+                .point1 = .fromLib(&seg.c_from),
+                .point2 = .fromLib(&seg.c_to),
+                .point3 = .fromLib(&seg.to),
             });
     }
 };

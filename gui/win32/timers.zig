@@ -1,7 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const winmain = @import("winmain.zig");
-const gui = @import("../gui.zig");
+const lib = @import("../lib.zig");
 
 const os = std.os.windows;
 
@@ -29,13 +29,13 @@ const TimerCore = struct {
 
     fn setupWithinWindow(
         self: *@This(),
-        window: *gui.Window,
+        window: *lib.Window,
         timeout: f32,
         impl: *anyopaque,
         callback: *const TIMERPROC,
-    ) gui.Error!void {
+    ) lib.Error!void {
         if (self.active())
-            return gui.Error.Usage; // timer already set up
+            return lib.Error.Usage; // timer already set up
 
         const nIDEvent: usize = @intFromPtr(impl);
 
@@ -49,12 +49,12 @@ const TimerCore = struct {
             callback,
         );
         if (result == 0)
-            return gui.Error.OsApi;
+            return lib.Error.OsApi;
 
         self.nIDEvent = nIDEvent;
     }
 
-    fn releaseWithinWindow(self: *@This(), window: *gui.Window) void {
+    fn releaseWithinWindow(self: *@This(), window: *lib.Window) void {
         if (!self.active()) {
             std.debug.assert(false);
             return;
@@ -76,9 +76,9 @@ pub fn Timer(Payload: type) type {
 
         pub fn setupWithinWindow(
             self: *@This(),
-            window: *gui.Window,
+            window: *lib.Window,
             timeout: f32,
-        ) gui.Error!void {
+        ) lib.Error!void {
             return self.core.setupWithinWindow(
                 window,
                 timeout,
@@ -87,7 +87,7 @@ pub fn Timer(Payload: type) type {
             );
         }
 
-        pub fn releaseWithinWindow(self: *@This(), window: *gui.Window) void {
+        pub fn releaseWithinWindow(self: *@This(), window: *lib.Window) void {
             self.core.releaseWithinWindow(window);
         }
 

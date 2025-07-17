@@ -1,5 +1,5 @@
 const std = @import("std");
-const gui = @import("../../gui.zig");
+const lib = @import("../../lib.zig");
 const com = @import("../com.zig");
 const d2d1 = @import("../d2d1.zig");
 
@@ -26,7 +26,7 @@ pub const virtuals = struct {
     pub fn create(
         device_resource: *DeviceResource,
         target: *d2d1.IRenderTarget,
-    ) gui.Error!void {
+    ) lib.Error!void {
         const self: *Self = @alignCast(@fieldParentPtr(
             "device_resource",
             device_resource,
@@ -34,7 +34,7 @@ pub const virtuals = struct {
 
         if (self.ibrush == null) {
             self.ibrush =
-                try target.createSolidColorBrush(&.fromGui(&self.color));
+                try target.createSolidColorBrush(&.fromLib(&self.color));
         } else std.debug.assert(false);
     }
 

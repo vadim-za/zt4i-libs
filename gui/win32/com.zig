@@ -1,10 +1,10 @@
 const std = @import("std");
 const os = std.os.windows;
 
-const gui = @import("../gui.zig");
+const lib = @import("../lib.zig");
 
-// com.Error must at least coerce to gui.Error
-pub const Error = gui.Error;
+// com.Error must at least coerce to lib.Error
+pub const Error = lib.Error;
 
 pub fn SUCCEEDED(hr: os.HRESULT) bool {
     return hr >= 0;

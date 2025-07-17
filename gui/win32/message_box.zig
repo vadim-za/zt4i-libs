@@ -1,5 +1,5 @@
 const std = @import("std");
-const gui = @import("../gui.zig");
+const lib = @import("../lib.zig");
 const unicode = @import("unicode.zig");
 const winmain = @import("winmain.zig");
 const debug = @import("debug.zig");
@@ -38,24 +38,24 @@ pub const Result = enum(c_int) {
     no = 7,
 };
 
-fn toResult(os_result: c_int) gui.Error!Result {
+fn toResult(os_result: c_int) lib.Error!Result {
     // Check if OS returned an error.
     if (os_result == 0)
-        return gui.Error.OsApi;
+        return lib.Error.OsApi;
 
     // If OS returns unexpected code, treat this as OS API error.
     return std.meta.intToEnum(
         Result,
         os_result,
-    ) catch gui.Error.OsApi;
+    ) catch lib.Error.OsApi;
 }
 
 pub fn showWtf16(
-    parent_window: ?*gui.Window,
+    parent_window: ?*lib.Window,
     caption: [:0]const u16,
     text: [:0]const u16,
     @"type": Type,
-) gui.Error!Result {
+) lib.Error!Result {
     const os_result = MessageBoxW(
         if (parent_window) |window| window.hWnd else null,
         text,
@@ -68,11 +68,11 @@ pub fn showWtf16(
 // This function coverts strings to WTF16 at comptime
 // and therefore doesn't use allocator.
 pub fn showComptime(
-    parent_window: ?*gui.Window,
+    parent_window: ?*lib.Window,
     comptime caption: []const u8,
     comptime text: []const u8,
     @"type": Type,
-) gui.Error!Result {
+) lib.Error!Result {
     return showWtf16(
         parent_window,
         std.unicode.wtf8ToWtf16LeStringLiteral(caption),
@@ -81,13 +81,13 @@ pub fn showComptime(
     );
 }
 
-// This function uses gui.allocator() to convert strings to WTF16
+// This function uses lib.allocator() to convert strings to WTF16
 pub fn show(
-    parent_window: ?*gui.Window,
+    parent_window: ?*lib.Window,
     caption: []const u8,
     text: []const u8,
     @"type": Type,
-) gui.Error!Result {
+) lib.Error!Result {
     var text16: unicode.Wtf16Str(2000) = undefined;
     try text16.initU8(text);
     defer text16.deinit();

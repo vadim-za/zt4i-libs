@@ -1,5 +1,5 @@
 const std = @import("std");
-const gui = @import("../../gui.zig");
+const lib = @import("../../lib.zig");
 const item_types = @import("items.zig");
 const Contents = @import("Contents.zig");
 
@@ -30,7 +30,7 @@ pub fn deinit(self: *@This()) void {
     self.pool.deinit();
 }
 
-pub fn create(self: *@This(), T: type) gui.Error!*T {
+pub fn create(self: *@This(), T: type) lib.Error!*T {
     const pool_item = try self.pool.create();
 
     // This may create unnecessary code (Zig Issue #24313),

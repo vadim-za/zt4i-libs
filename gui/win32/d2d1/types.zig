@@ -1,7 +1,7 @@
 // dcommon.h and other headers
 const std = @import("std");
 const dxgi = @import("../dxgi.zig");
-const gui = @import("../../gui.zig");
+const lib = @import("../../lib.zig");
 
 const os = std.os.windows;
 const DXGI_FORMAT = dxgi.format.DXGI_FORMAT;
@@ -15,7 +15,7 @@ pub const POINT_2F = extern struct {
     x: os.FLOAT,
     y: os.FLOAT,
 
-    pub fn fromGui(point: *const gui.Point) @This() {
+    pub fn fromLib(point: *const lib.Point) @This() {
         return .{ .x = point.x, .y = point.y };
     }
 };
@@ -26,7 +26,7 @@ pub const RECT_F = extern struct {
     right: os.FLOAT,
     bottom: os.FLOAT,
 
-    pub fn fromGui(rect: *const gui.Rectangle) @This() {
+    pub fn fromLib(rect: *const lib.Rectangle) @This() {
         return .{
             .left = rect.left,
             .top = rect.top,
@@ -62,7 +62,7 @@ pub const COLOR_F = extern struct { // D2D_COLOR_F (d2dbasetypes.h) = D3DCOLORVA
     b: f32,
     a: f32,
 
-    pub fn fromGui(color: *const gui.Color) @This() {
+    pub fn fromLib(color: *const lib.Color) @This() {
         return .{
             .r = color.r,
             .g = color.g,

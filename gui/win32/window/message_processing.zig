@@ -1,7 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 
-const gui = @import("../../gui.zig");
+const lib = @import("../../lib.zig");
 const Window = @import("../Window.zig");
 const class = @import("class.zig");
 const Responders = @import("responders.zig").Responders;
@@ -201,7 +201,7 @@ pub fn ReceivedMessage(
 
         fn handleChar(
             self: *const @This(),
-            event: *const gui.keys.Event,
+            event: *const lib.keys.Event,
             wtf16char: u16,
         ) ?Result {
             if (comptime builtin.cpu.arch.endian() != .little)

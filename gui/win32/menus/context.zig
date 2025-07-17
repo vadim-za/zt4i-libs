@@ -1,14 +1,14 @@
 const std = @import("std");
 const unicode = @import("../unicode.zig");
-const gui = @import("../../gui.zig");
+const lib = @import("../../lib.zig");
 const ContentsPool = @import("ContentsPool.zig");
 
 wtf16str: unicode.Wtf16Str(0),
 contents_pool: ContentsPool,
 
-pub fn init(self: *@This()) gui.Error!void {
+pub fn init(self: *@This()) lib.Error!void {
     self.wtf16str.init();
-    self.contents_pool.init(gui.allocator());
+    self.contents_pool.init(lib.allocator());
 }
 
 pub fn deinit(self: *@This()) void {
@@ -19,7 +19,7 @@ pub fn deinit(self: *@This()) void {
 pub fn convertU8(
     self: *@This(),
     str8: []const u8,
-) gui.Error![:0]const u16 {
+) lib.Error![:0]const u16 {
     try self.wtf16str.setU8(str8);
     return self.wtf16str.slice();
 }

@@ -1,7 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 
-const gui = @import("../gui.zig");
+const lib = @import("../lib.zig");
 const class = @import("window/class.zig");
 const creation = @import("window/creation.zig");
 const responders = @import("window/responders.zig");
@@ -62,8 +62,8 @@ pub fn deinit(self: *@This()) void {
 }
 
 pub const Size = union(enum) {
-    outer: gui.Point,
-    inner: gui.Point,
+    outer: lib.Point,
+    inner: lib.Point,
 };
 
 pub const CreateParams = struct {
@@ -82,10 +82,10 @@ pub fn create(
     comptime resps: Responders(Impl),
     params: CreateParams,
     on_create: anytype,
-) gui.Error!void {
+) lib.Error!void {
     const window = resps.getCore(impl);
     if (window.hWnd != null)
-        return gui.Error.Usage; // window already exists
+        return lib.Error.Usage; // window already exists
 
     const hWnd = try creation.createWindowRaw(params.title);
     window.hWnd = hWnd;

@@ -1,7 +1,7 @@
 const std = @import("std");
 const os = std.os.windows;
 
-const gui = @import("../gui.zig");
+const lib = @import("../lib.zig");
 
 // ----------------------------------------------------------------
 
@@ -18,11 +18,11 @@ extern "user32" fn GetDpiForWindow(hWnd: os.HWND) callconv(.winapi) os.UINT;
 
 // ----------------------------------------------------------------
 
-pub fn setupDpiAwareness() gui.Error!void {
+pub fn setupDpiAwareness() lib.Error!void {
     if (SetProcessDpiAwarenessContext(
         DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2,
     ) == 0)
-        return gui.Error.OsApi;
+        return lib.Error.OsApi;
 }
 
 pub const Dpr = struct {
@@ -55,7 +55,7 @@ pub const Dpr = struct {
     /// f32 and let the caller decide on the rounding details.
     pub fn physicalFromLogicalPt(
         self: *const @This(),
-        pt: gui.Point,
+        pt: lib.Point,
     ) struct { f32, f32 } {
         return .{
             self.physicalFromLogical(pt.x),
@@ -66,7 +66,7 @@ pub const Dpr = struct {
     pub fn logicalFromPhysicalPt(
         self: *const @This(),
         pt: struct { i32, i32 },
-    ) gui.Point {
+    ) lib.Point {
         return .{
             .x = self.logicalFromPhysical(pt[0]),
             .y = self.logicalFromPhysical(pt[1]),

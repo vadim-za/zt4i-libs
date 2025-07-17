@@ -1,5 +1,5 @@
 const std = @import("std");
-const gui = @import("../../gui.zig");
+const lib = @import("../../lib.zig");
 const graphics = @import("../graphics.zig");
 const dpi = @import("../dpi.zig");
 const keys_util = @import("keys_util.zig");
@@ -10,7 +10,7 @@ const MessageCore =
 
 const os = std.os.windows;
 
-pub fn eventFromMsg(msg: *const MessageCore) ?gui.mouse.Event {
+pub fn eventFromMsg(msg: *const MessageCore) ?lib.mouse.Event {
     const action = actionFromUMsg(msg.uMsg) orelse return null;
 
     const physical_pos = posFromLParam(msg.lParam);
@@ -28,7 +28,7 @@ pub fn eventFromMsg(msg: *const MessageCore) ?gui.mouse.Event {
     };
 }
 
-fn actionFromUMsg(uMsg: os.UINT) ?gui.mouse.Action {
+fn actionFromUMsg(uMsg: os.UINT) ?lib.mouse.Action {
     if (!(uMsg >= 0x200 and uMsg <= 0x20E))
         return null;
 
@@ -47,7 +47,7 @@ fn actionFromUMsg(uMsg: os.UINT) ?gui.mouse.Action {
     };
 }
 
-fn buttonsFromWParam(wParam: os.WPARAM) gui.mouse.Buttons {
+fn buttonsFromWParam(wParam: os.WPARAM) lib.mouse.Buttons {
     return .init(.{
         .left = (wParam & 1) != 0,
         .right = (wParam & 2) != 0,
@@ -55,7 +55,7 @@ fn buttonsFromWParam(wParam: os.WPARAM) gui.mouse.Buttons {
     });
 }
 
-fn posFromLParam(l_param: os.LPARAM) gui.mouse.Pos {
+fn posFromLParam(l_param: os.LPARAM) lib.mouse.Pos {
     return .{
         .x = @as(i16, @truncate(l_param)),
         .y = @as(i16, @truncate(l_param >> 16)),
@@ -63,7 +63,7 @@ fn posFromLParam(l_param: os.LPARAM) gui.mouse.Pos {
 }
 
 // Must be called synchronously! (That is while processing the message)
-fn modifiersFromWParamSync(wParam: os.WPARAM) gui.keys.Modifiers {
+fn modifiersFromWParamSync(wParam: os.WPARAM) lib.keys.Modifiers {
     return .init(.{
         .shift = (wParam & 4) != 0,
         .control = (wParam & 8) != 0,
@@ -77,7 +77,7 @@ extern "user32" fn GetCapture() callconv(.winapi) ?os.HWND;
 
 pub fn preprocessEvent(
     window: *Window,
-    event: *const gui.mouse.Event,
+    event: *const lib.mouse.Event,
 ) void {
     switch (event.action.type) {
         .down => {},
@@ -91,7 +91,7 @@ pub fn preprocessEvent(
 
 pub fn handleEventResult(
     window: *Window,
-    event: *const gui.mouse.Event,
+    event: *const lib.mouse.Event,
     result: responders.CommonResults.OnMouse,
 ) void {
     switch (event.action.type) {

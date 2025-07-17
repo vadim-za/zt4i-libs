@@ -1,7 +1,7 @@
 const std = @import("std");
 const Window = @import("../Window.zig");
 const graphics = @import("../graphics.zig");
-const gui = @import("../../gui.zig");
+const lib = @import("../../lib.zig");
 
 // Results which do not depend on Impl
 pub const CommonResults = struct {
@@ -31,11 +31,11 @@ pub fn Responders(Impl: type) type {
         ) ?void = override("onCommand"),
         onMouse: *const fn (
             impl: *Impl,
-            event: *const gui.mouse.Event,
+            event: *const lib.mouse.Event,
         ) ?Results.OnMouse = override("onMouse"),
         onKey: *const fn (
             impl: *Impl,
-            event: *const gui.keys.Event,
+            event: *const lib.keys.Event,
         ) ?void = override("onKey"),
 
         pub const default = @This(){
@@ -92,14 +92,14 @@ fn Defaults(Impl: type, Results: type) type {
 
         fn onMouse(
             impl: *Impl,
-            event: *const gui.mouse.Event,
+            event: *const lib.mouse.Event,
         ) ?Results.OnMouse {
             _ = impl;
             _ = event;
             return null;
         }
 
-        fn onKey(impl: *Impl, event: *const gui.keys.Event) ?void {
+        fn onKey(impl: *Impl, event: *const lib.keys.Event) ?void {
             _ = impl;
             _ = event;
             return null;

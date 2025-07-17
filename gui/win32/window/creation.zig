@@ -1,7 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 
-const gui = @import("../../gui.zig");
+const lib = @import("../../lib.zig");
 const Window = @import("../Window.zig");
 const class = @import("class.zig");
 const winmain = @import("../winmain.zig");
@@ -73,7 +73,7 @@ extern "user32" fn AdjustWindowRectExForDpi(
 const dwCreateStyle = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
 const dwCreateExStyle = 0;
 
-pub fn createWindowRaw(title: []const u8) gui.Error!os.HWND {
+pub fn createWindowRaw(title: []const u8) lib.Error!os.HWND {
     var title16: unicode.Wtf16Str(200) = undefined;
     try title16.initU8(title);
     defer title16.deinit();
@@ -92,13 +92,13 @@ pub fn createWindowRaw(title: []const u8) gui.Error!os.HWND {
         winmain.thisInstance(),
         null,
     ) orelse
-        gui.Error.OsApi;
+        lib.Error.OsApi;
 }
 
 pub fn configureRawWindow(
     window: *Window,
     params: *const Window.CreateParams,
-) gui.Error!void {
+) lib.Error!void {
     // Regular detaching of the menu is done in message_processing.onDestroy()
     if (params.menu) |bar|
         try menu_bar.attach(window, bar);
@@ -117,12 +117,12 @@ pub fn configureRawWindow(
         outer_size.y,
         .{ .NOMOVE = true, .NOZORDER = true },
     ) == 0)
-        return gui.Error.OsApi;
+        return lib.Error.OsApi;
 }
 
 fn toPhysicalSizeTrunc(
     window: *const Window,
-    logical_size: gui.Point,
+    logical_size: lib.Point,
 ) os.POINT {
     const physical_size =
         window.dpr.?.physicalFromLogicalPt(logical_size);
@@ -135,7 +135,7 @@ fn toPhysicalSizeTrunc(
 fn toOuterCreateSize(
     window: *const Window,
     create_size: Window.Size,
-) gui.Error!os.POINT {
+) lib.Error!os.POINT {
     switch (create_size) {
         .outer => |size| return toPhysicalSizeTrunc(window, size),
 
@@ -156,7 +156,7 @@ fn toOuterCreateSize(
                 dwCreateExStyle,
                 window.dpr.?.os_dpi,
             ) == os.FALSE)
-                return gui.Error.OsApi;
+                return lib.Error.OsApi;
 
             return .{
                 .x = rc.right - rc.left,

@@ -1,6 +1,6 @@
 const std = @import("std");
 const Window = @import("Window.zig");
-const gui = @import("../gui.zig");
+const lib = @import("../lib.zig");
 
 const os = std.os.windows;
 
@@ -45,21 +45,21 @@ extern "comdlg32" fn GetSaveFileNameW(_: *OPENFILENAMEW) callconv(.winapi) os.BO
 pub const Purpose = enum { open, save };
 
 /// The caller owns the returned slice and must dispose it
-/// using gui.allocator()
+/// using lib.allocator()
 pub fn run(
     window: ?*Window,
     purpose: Purpose,
     default_extension: ?[]const u8,
-) gui.Error!?[:0]u8 {
-    const alloc = gui.allocator();
+) lib.Error!?[:0]u8 {
+    const alloc = lib.allocator();
 
     const default_extension16 = if (default_extension) |ext|
         std.unicode.wtf8ToWtf16LeAllocZ(
             alloc,
             ext,
         ) catch |err| return switch (err) {
-            error.OutOfMemory => gui.Error.OutOfMemory,
-            error.InvalidWtf8 => gui.Error.Usage,
+            error.OutOfMemory => lib.Error.OutOfMemory,
+            error.InvalidWtf8 => lib.Error.Usage,
         }
     else
         null;
