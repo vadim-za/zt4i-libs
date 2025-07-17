@@ -96,7 +96,6 @@ pub fn ReceivedMessage(
             class.subclass(window.hWnd.?, null, null);
             window.device_resources.releaseResources();
             window.hWnd = null;
-            window.dpi = null;
             window.dpr = null;
             return .zero;
         }

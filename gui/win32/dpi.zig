@@ -25,22 +25,51 @@ pub fn setupDpiAwareness() gui.Error!void {
         return gui.Error.OsApi;
 }
 
-pub fn getDpiAndDprFor(hWnd: os.HWND) struct { os.UINT, f32 } {
-    var dpi = GetDpiForWindow(hWnd);
+pub const Dpr = struct {
+    os_dpi: os.UINT,
+    dpr: f32,
 
-    if (dpi == 0)
-        dpi = 96;
+    pub fn fromWindow(hWnd: os.HWND) @This() {
+        var dpi = GetDpiForWindow(hWnd);
 
-    const dpr = @as(f32, @floatFromInt(dpi)) / 96;
-    return .{ dpi, dpr };
-}
+        if (dpi == 0)
+            dpi = 96;
 
-// Physical coordinates are supposed to be i32, but we return
-// f32 and let the caller decide on the rounding details.
-pub fn physicalFromLogical(dpr: f32, logical: f32) f32 {
-    return logical * dpr;
-}
+        return .{
+            .os_dpi = dpi,
+            .dpr = @as(f32, @floatFromInt(dpi)) / 96,
+        };
+    }
 
-pub fn logicalFromPhysical(dpr: f32, physical: i32) f32 {
-    return @as(f32, @floatFromInt(physical)) / dpr;
-}
+    /// Physical coordinates are supposed to be i32, but we return
+    /// f32 and let the caller decide on the rounding details.
+    pub fn physicalFromLogical(self: *const @This(), logical: f32) f32 {
+        return logical * self.dpr;
+    }
+
+    pub fn logicalFromPhysical(self: *const @This(), physical: i32) f32 {
+        return @as(f32, @floatFromInt(physical)) / self.dpr;
+    }
+
+    /// Physical coordinates are supposed to be i32, but we return
+    /// f32 and let the caller decide on the rounding details.
+    pub fn physicalFromLogicalPt(
+        self: *const @This(),
+        pt: gui.Point,
+    ) struct { f32, f32 } {
+        return .{
+            self.physicalFromLogical(pt.x),
+            self.physicalFromLogical(pt.y),
+        };
+    }
+
+    pub fn logicalFromPhysicalPt(
+        self: *const @This(),
+        pt: struct { i32, i32 },
+    ) gui.Point {
+        return .{
+            .x = self.logicalFromPhysical(pt[0]),
+            .y = self.logicalFromPhysical(pt[1]),
+        };
+    }
+};

@@ -16,11 +16,9 @@ pub fn eventFromMsg(msg: *const MessageCore) ?gui.mouse.Event {
     const physical_pos = posFromLParam(msg.lParam);
     const modifiers = modifiersFromWParamSync(msg.wParam);
     const buttons = buttonsFromWParam(msg.wParam);
-    const dpr = msg.window.dpr.?;
-    const logical_pos = graphics.Point{
-        .x = dpi.logicalFromPhysical(dpr, physical_pos.x),
-        .y = dpi.logicalFromPhysical(dpr, physical_pos.y),
-    };
+    const logical_pos = msg.window.dpr.?.logicalFromPhysicalPt(
+        .{ physical_pos.x, physical_pos.y },
+    );
 
     return .{
         .action = action,

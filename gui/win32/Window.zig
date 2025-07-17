@@ -5,7 +5,7 @@ const gui = @import("../gui.zig");
 const class = @import("window/class.zig");
 const responders = @import("window/responders.zig");
 const winmain = @import("winmain.zig");
-const dpi_support = @import("dpi.zig");
+const dpi = @import("dpi.zig");
 const unicode = @import("unicode.zig");
 const wndproc = @import("window/wndproc.zig");
 const d2d1 = @import("d2d1.zig");
@@ -18,8 +18,7 @@ const os = std.os.windows;
 pub const Responders = responders.Responders;
 
 hWnd: ?os.HWND = null,
-dpi: ?os.UINT = null,
-dpr: ?f32 = null,
+dpr: ?dpi.Dpr = null,
 device_resources: DeviceResources = .{},
 menu_bar: ?*menus.Bar = null,
 
@@ -139,10 +138,8 @@ pub fn create(
         return gui.Error.Usage; // window already exists
 
     const hWnd = try createWindowRaw(params.title);
-    const dpi, const dpr = dpi_support.getDpiAndDprFor(hWnd);
-    window.dpi = dpi;
-    window.dpr = dpr;
     window.hWnd = hWnd;
+    window.dpr = .fromWindow(hWnd);
 
     {
         // This errdefer is correct only until we subclass the window,
@@ -150,7 +147,6 @@ pub fn create(
         errdefer {
             _ = DestroyWindow(hWnd);
             window.hWnd = null;
-            window.dpi = null;
             window.dpr = null;
         }
 
@@ -240,13 +236,10 @@ fn toPhysicalSizeTrunc(
     self: *const @This(),
     logical_size: gui.Point,
 ) os.POINT {
+    const physical_size = self.dpr.?.physicalFromLogicalPt(logical_size);
     return .{
-        .x = @intFromFloat(
-            dpi_support.physicalFromLogical(self.dpr.?, logical_size.x),
-        ),
-        .y = @intFromFloat(
-            dpi_support.physicalFromLogical(self.dpr.?, logical_size.y),
-        ),
+        .x = @intFromFloat(physical_size[0]),
+        .y = @intFromFloat(physical_size[1]),
     };
 }
 
@@ -272,7 +265,7 @@ fn toOuterCreateSize(
                 dwCreateStyle,
                 @intFromBool(self.menu_bar != null),
                 dwCreateExStyle,
-                self.dpi.?,
+                self.dpr.?.os_dpi,
             ) == os.FALSE)
                 return gui.Error.OsApi;
 
