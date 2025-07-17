@@ -6,6 +6,8 @@ const Window = @import("../Window.zig");
 const class = @import("class.zig");
 const winmain = @import("../winmain.zig");
 const unicode = @import("../unicode.zig");
+const debug = @import("../debug.zig");
+const menu_bar = @import("menu_bar.zig");
 
 const os = std.os.windows;
 
@@ -97,8 +99,11 @@ pub fn configureRawWindow(
     window: *Window,
     params: *const Window.CreateParams,
 ) gui.Error!void {
+    // Regular detaching of the menu is done in message_processing.onDestroy()
     if (params.menu) |bar|
-        try bar.attachTo(window);
+        try menu_bar.attach(window, bar);
+    errdefer if (params.menu) |bar|
+        menu_bar.detach(window, bar);
 
     // Compute the size after the menu is configured!
     const outer_size = try toOuterCreateSize(window, params.size);

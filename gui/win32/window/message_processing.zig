@@ -11,6 +11,7 @@ const mouse_util = @import("mouse_util.zig");
 const keys_util = @import("keys_util.zig");
 const debug = @import("../debug.zig");
 const menu_command_ids = @import("../menus/command_ids.zig");
+const menu_bar = @import("menu_bar.zig");
 
 const os = std.os.windows;
 
@@ -90,8 +91,8 @@ pub fn ReceivedMessage(
 
             resps.onDestroy(self.impl);
 
-            // Menu, if any, must have been discarded in onDestroy responder
-            debug.expect(window.menu_bar == null);
+            if (window.menu_bar) |bar|
+                menu_bar.detach(window, bar);
 
             class.subclass(window.hWnd.?, null, null);
             window.device_resources.releaseResources();

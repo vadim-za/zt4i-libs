@@ -139,7 +139,6 @@ pub fn onCreate(self: *@This()) zt4i.gui.Error!void {
 // or during calling onCreate().
 pub fn onDestroy(self: *@This()) void {
     self.timer.releaseWithinWindow(&self.core);
-    self.menu_bar.detachFrom(&self.core);
     zt4i.gui.mloop.stop();
 }
 
