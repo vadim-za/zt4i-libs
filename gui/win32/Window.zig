@@ -124,6 +124,11 @@ pub const Size = union(enum) {
 pub const CreateParams = struct {
     title: []const u8,
     size: Size,
+
+    /// The caller still owns the menu, but the menu becomes attached
+    /// to the window and shouldn't be destroyed prior to the window
+    /// destruction (or a failed creation of the window).
+    menu: ?*menus.Bar,
 };
 
 pub fn create(
@@ -172,6 +177,10 @@ fn configureRawWindow(
     self: *@This(),
     params: *const CreateParams,
 ) gui.Error!void {
+    if (params.menu) |bar|
+        try bar.attachTo(self);
+
+    // Compute the size after the menu is configured!
     const outer_size = try self.toOuterCreateSize(params.size);
 
     if (SetWindowPos(

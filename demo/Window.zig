@@ -120,6 +120,7 @@ pub fn create(self: *@This(), width: f32, height: f32) zt4i.gui.Error!void {
         .{
             .title = main.app_title,
             .size = .{ .inner = .{ .x = width, .y = height } },
+            .menu = &self.menu_bar,
         },
         .{ onCreate, .{self} },
     );
@@ -131,14 +132,6 @@ pub fn create(self: *@This(), width: f32, height: f32) zt4i.gui.Error!void {
 // the initializations which are deinitialized in onDestroy. onDestroy()
 // is not called if onCreate() fails.
 pub fn onCreate(self: *@This()) zt4i.gui.Error!void {
-    try self.menu_bar.attachTo(&self.core);
-    errdefer self.menu_bar.detachFrom(&self.core);
-
-    // We don't really need to call update() here, as we're not modifying
-    // the attached menu, but let's simply see if the code successfully
-    // instantiates.
-    self.menu_bar.update();
-
     try self.timer.setupWithinWindow(&self.core, 1.0);
 }
 
