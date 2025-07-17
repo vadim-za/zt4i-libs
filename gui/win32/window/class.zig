@@ -101,7 +101,7 @@ pub fn registerClass(app_icon_id: ?usize) lib.Error!void {
             @ptrFromInt(32512), // IDC_ARROW
         ),
         .lpszClassName = std.unicode.utf8ToUtf16LeStringLiteral(
-            "PAW Window Class",
+            "zt4i-libs Window Class",
         ),
     };
 
