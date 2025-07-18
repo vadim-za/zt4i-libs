@@ -15,7 +15,7 @@ pub fn List(
 test "All" {
     const L = List(
         i32,
-        .{ .double_linked = .null_terminated },
+        .{ .double_linked = .single_ptr },
         .simple_payload,
     );
     var n0: L.Node = undefined;

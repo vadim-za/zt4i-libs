@@ -10,7 +10,7 @@ pub const Implementation = union(enum) {
     pub const DoubleLinked = union(enum) {
         null_terminated: WrapImpl(@import("dbl/null_term.zig")),
         //sentinel_terminated: WrapImpl(@import("dbl/sentinel_term.zig")),
-        //head_only: WrapImpl(@import("dbl/head_only.zig")),
+        single_ptr: WrapImpl(@import("dbl/single_ptr.zig")),
 
         pub const InsertionPos = @import("dbl/insertion_pos.zig").InsertionPos;
 
