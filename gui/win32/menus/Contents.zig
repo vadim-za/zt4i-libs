@@ -80,7 +80,7 @@ context: *Context,
 items: item_types.ItemsList = .{},
 
 // Items up to this one inclusively have up to date 'index' and
-// 'visible_pos' fields. If null, then all nodes are not up to date.
+// 'visible_pos' fields. If null, then all items are not up to date.
 last_nondirty_item: ?*item_types.Item = null,
 
 const Self = @This();
@@ -194,7 +194,7 @@ fn insertItem(
     uIDNewItem: usize,
 ) lib.Error!*item_types.Item {
     // 'null' means 'prepend'
-    const insert_after: ?*item_types.ItemsList.Node =
+    const insert_after: ?*item_types.Item =
         switch (where) {
             .before_ => |ref_item| if (ref_item) |ref|
                 self.items.prev(ref)
@@ -212,7 +212,7 @@ fn insertItem(
         };
 
     const index, const visible_pos = if (insert_after) |ia| ia: {
-        // Safe to call updateDirtyNodes(ia), since we didn't modify
+        // Safe to call updateDirtyItems(ia), since we didn't modify
         // the items list yet.
         self.updateDirtyItems(ia);
         break :ia .{ ia.index + 1, ia.nextVisiblePos() };
@@ -374,7 +374,7 @@ fn modifyItem(
 /// Updates all items up to and including 'up_to_item'.
 fn updateDirtyItems(
     self: *@This(),
-    up_to_item: *item_types.ItemsList.Node,
+    up_to_item: *item_types.Item,
 ) void {
     var item, var index, var visible_pos =
         if (self.last_nondirty_item) |lni| lni: {
@@ -390,7 +390,7 @@ fn updateDirtyItems(
 
     // Actually we could simply do while(true), since the loop
     // is supposed to break on comparison against 'up_to_item'.
-    // But we still check node defensively against null.
+    // But we still check the item defensively against null.
     while (item) |it| {
         it.index = index;
         it.visible_pos = visible_pos;
