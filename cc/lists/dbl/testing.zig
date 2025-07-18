@@ -149,7 +149,7 @@ test "insertBefore" {
         try verifyConsistency(List, &list);
 
         const Node = List.Node;
-        var nodes: [3]Node = undefined;
+        var nodes: [4]Node = undefined;
 
         // Same as list.insertLast()
         list.insert(.before(null), &nodes[2]); // 2
@@ -162,6 +162,9 @@ test "insertBefore" {
         list.insertBefore(&nodes[2], &nodes[1]); // 0 1 2
         try verifyConsistency(List, &list);
 
+        list.insert(.before(null), &nodes[3]); // 0 1 2 3
+        try verifyConsistency(List, &list);
+
         var i: u32 = 0;
         var node = list.first();
         while (node) |n| : ({
@@ -169,7 +172,7 @@ test "insertBefore" {
             i += 1;
         })
             try std.testing.expectEqual(&nodes[i], n);
-        try std.testing.expectEqual(3, i);
+        try std.testing.expectEqual(4, i);
     }
 }
 
@@ -188,17 +191,20 @@ test "insertAfter" {
         try verifyConsistency(List, &list);
 
         const Node = List.Node;
-        var nodes: [3]Node = undefined;
+        var nodes: [4]Node = undefined;
 
         // Same as list.insertFirst()
-        list.insert(.after(null), &nodes[0]); // 0
+        list.insert(.after(null), &nodes[1]); // 1
         try verifyConsistency(List, &list);
 
-        // Same as list.insertAfter(&nodes[0], &nodes[2]);
-        list.insert(.after(&nodes[0]), &nodes[2]); // 0 2
+        // Same as list.insertAfter(&nodes[1], &nodes[3]);
+        list.insert(.after(&nodes[1]), &nodes[3]); // 1 3
         try verifyConsistency(List, &list);
 
-        list.insertAfter(&nodes[0], &nodes[1]); // 0 1 2
+        list.insertAfter(&nodes[1], &nodes[2]); // 1 2 3
+        try verifyConsistency(List, &list);
+
+        list.insert(.after(null), &nodes[0]); // 0 1 2 3
         try verifyConsistency(List, &list);
 
         var i: u32 = 0;
@@ -208,6 +214,6 @@ test "insertAfter" {
             i += 1;
         })
             try std.testing.expectEqual(&nodes[i], n);
-        try std.testing.expectEqual(3, i);
+        try std.testing.expectEqual(4, i);
     }
 }
