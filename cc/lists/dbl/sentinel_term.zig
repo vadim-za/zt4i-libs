@@ -178,5 +178,8 @@ pub fn List(
                 (self.sentinel.prev != &self.sentinel));
             return self.sentinel.next != &self.sentinel;
         }
+
+        pub const popFirst = Methods.popFirst;
+        pub const popLast = Methods.popLast;
     };
 }

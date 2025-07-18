@@ -183,5 +183,8 @@ pub fn List(
         pub fn hasContent(self: *const @This()) bool {
             return self.first_ != null;
         }
+
+        pub const popFirst = Methods.popFirst;
+        pub const popLast = Methods.popLast;
     };
 }

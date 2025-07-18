@@ -22,5 +22,21 @@ pub fn Methods(Container: type, OwnershipTraits: type) type {
             OwnershipTraits.checkOwnership(self, &hook.owner);
             return hook;
         }
+
+        pub fn popFirst(self: *Container) ?*Node {
+            if (self.first()) |node| {
+                self.remove(node);
+                return node;
+            }
+            return null;
+        }
+
+        pub fn popLast(self: *Container) ?*Node {
+            if (self.last()) |node| {
+                self.remove(node);
+                return node;
+            }
+            return null;
+        }
     };
 }

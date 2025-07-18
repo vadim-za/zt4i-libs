@@ -28,6 +28,9 @@ const tested_configs = configs: {
 };
 
 fn verifyConsistency(List: type, list: *List) !void {
+    try std.testing.expectEqual(list.hasContent(), list.first() != null);
+    try std.testing.expectEqual(list.hasContent(), list.last() != null);
+
     var node = list.first();
     while (node) |n| : (node = list.next(n)) {
         if (n == list.first())
@@ -246,8 +249,9 @@ test "remove" {
         try std.testing.expectEqual(&nodes[1], list.first());
         try std.testing.expectEqual(&nodes[2], list.last());
 
-        list.remove(&nodes[1]);
-        list.remove(&nodes[2]);
+        try std.testing.expectEqual(&nodes[1], list.popFirst());
+        try std.testing.expectEqual(&nodes[2], list.popFirst());
+        try std.testing.expectEqual(null, list.popFirst());
         try std.testing.expect(!list.hasContent());
 
         // remove last node
@@ -261,8 +265,9 @@ test "remove" {
         try std.testing.expectEqual(&nodes[0], list.first());
         try std.testing.expectEqual(&nodes[1], list.last());
 
-        list.remove(&nodes[0]);
-        list.remove(&nodes[1]);
+        try std.testing.expectEqual(&nodes[1], list.popLast());
+        try std.testing.expectEqual(&nodes[0], list.popLast());
+        try std.testing.expectEqual(null, list.popLast());
         try std.testing.expect(!list.hasContent());
 
         // remove middle node
