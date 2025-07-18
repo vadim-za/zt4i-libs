@@ -366,7 +366,7 @@ test "Non-empty layout" {
         for (0..2) |index| {
             var list: types.List = undefined;
             list.init();
-            list.layout.index = index;
+            list.layout = .{ .index = index };
             if (comptime config.ownership_tracking == .custom)
                 list.setOwnershipToken(1);
 
