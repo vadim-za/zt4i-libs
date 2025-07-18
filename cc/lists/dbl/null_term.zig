@@ -3,6 +3,8 @@ const lib = @import("../../lib.zig");
 const CommonMethods = @import("../common.zig").Methods;
 const insertion = @import("insertion.zig");
 
+/// This double-linked list stores the pointers to the first and last elements.
+/// The termination is indicated by prev/next pointers set to null.
 pub fn List(
     Payload: type,
     layout: lib.Layout,

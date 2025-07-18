@@ -6,6 +6,8 @@ The list of libraries:
 
 1. **GUI** - a minimal platform-agnostic UI windowing library. At the moment supports only the Windows x64 platform. No immediate plans to support other platforms in the nearest future, but the API is laid down in a platform-abstract way (although almost certainly it will need to be adjusted in order to efficiently support further platforms). For the time being can be functionally seen as a (much smaller) parallel to MFC.
 
+2. **CC** - "containers collection" library. At the moment contains highly-configurable double-linked lists. One can choose different implementations, list node layouts and ownership tracking. Check the unit tests as well as the commits [ddd321](commit/ddd321bad4eaae24fabc3a915e38015729d66430) and [796f50](commit/796f504150ce49d05392519b368115b2a662911a) for examples.
+
 The plan is to add further libraries as well as a more realistic demo app in next months. The former are intended to be platform-independent.
 
 ## Demo application

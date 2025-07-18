@@ -3,6 +3,9 @@ const lib = @import("../../lib.zig");
 const CommonMethods = @import("../common.zig").Methods;
 const insertion = @import("insertion.zig");
 
+/// This double-linked list stores only the pointer to the first element,
+/// thereby saving memory at the cost of a bit more involved list manipulation
+/// and inspection code.
 pub fn List(
     Payload: type,
     layout: lib.Layout,

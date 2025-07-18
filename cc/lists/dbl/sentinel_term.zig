@@ -4,6 +4,12 @@ const lib = @import("../../lib.zig");
 const CommonMethods = @import("../common.zig").Methods;
 const insertion = @import("insertion.zig");
 
+/// This double-linked list stores the pointers to the first and last elements.
+/// The termination is indicated by prev/next pointers pointing to the
+/// sentinel node embedded into the list. This allows faster list manipulation
+/// but a bit more involved inspection. The more expensive inspection is due
+/// to Zig Issue #20254. If the issue persists, the intention is to add an
+/// alternative list inspection API, which circumvents the problem.
 pub fn List(
     Payload: type,
     layout: lib.Layout,
