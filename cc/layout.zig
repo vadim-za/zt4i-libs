@@ -9,8 +9,7 @@ pub const Layout = union(enum) {
             .embedded_hook => |hook_field_name| EmbeddedHook(
                 hook_field_name,
             ),
-            .custom => |custom_layout| return custom_layout
-                .With(List.Hook),
+            .custom => |custom_layout| custom_layout,
         };
         return generic.With(Payload, List.Hook);
     }
