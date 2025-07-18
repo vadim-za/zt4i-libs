@@ -20,7 +20,7 @@ pub fn List(T: type, cfg: Config) type {
 
 test "All" {
     const L = List(i32, .{
-        .implementation = .{ .double_linked = .null_terminated },
+        .implementation = .{ .double_linked = .single_ptr },
         .layout = .simple_payload,
         .ownership_tracking = .container_ptr,
     });

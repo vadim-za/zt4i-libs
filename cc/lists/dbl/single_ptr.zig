@@ -6,12 +6,12 @@ const insertion = @import("insertion.zig");
 pub fn List(
     Payload: type,
     layout: lib.Layout,
+    ownership_tracking: lib.OwnershipTracking,
 ) type {
     return struct {
         // These fields are private
         first_: ?*Node = null,
-        check_ownership: if (std.debug.runtime_safety) bool else void =
-            if (std.debug.runtime_safety) true,
+        ownership_token_storage: OwnershipTraits.ContainerTokenStorage = .{},
 
         /// This field may be accessed publicly to set the internal
         /// state of a non-empty layout. The layout type still must
@@ -21,19 +21,20 @@ pub fn List(
         const Self = @This();
 
         pub const Layout = layout.make(@This(), Payload);
+        const OwnershipTraits = ownership_tracking.TraitsFor(@This());
 
         pub const Node = Layout.Node;
         pub const Hook = struct {
             next: *Node,
             prev: *Node,
-            owner: if (std.debug.runtime_safety) ?*Self else void,
+            owner: OwnershipTraits.Token,
         };
 
         pub fn init(self: *@This()) void {
             self.* = .{};
         }
 
-        const Methods = CommonMethods(@This());
+        const Methods = CommonMethods(@This(), OwnershipTraits);
         pub const hookFromFreeNode = Methods.hookFromFreeNode;
         pub const hookFromOwnedNode = Methods.hookFromOwnedNode;
         pub const hookFromOwnedConstNode = Methods.hookFromOwnedConstNode;
@@ -64,8 +65,7 @@ pub fn List(
                 const hook = self.hookFromFreeNode(node);
                 hook.prev = node;
                 hook.next = node;
-                if (comptime std.debug.runtime_safety)
-                    hook.owner = self;
+                hook.owner = OwnershipTraits.getContainerToken(self);
 
                 self.first_ = node;
             }
@@ -111,8 +111,7 @@ pub fn List(
             const hook = self.hookFromFreeNode(node);
             hook.prev = prev_node;
             hook.next = next_node;
-            if (comptime std.debug.runtime_safety)
-                hook.owner = self;
+            hook.owner = OwnershipTraits.getContainerToken(self);
 
             prev_hook.next = node;
             next_hook.prev = node;

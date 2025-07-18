@@ -10,7 +10,7 @@ pub const Implementation = union(enum) {
     pub const DoubleLinked = union(enum) {
         null_terminated: WrapImpl(@import("dbl/null_term.zig")),
         // sentinel_terminated: WrapImpl(@import("dbl/sentinel_term.zig")),
-        // single_ptr: WrapImpl(@import("dbl/single_ptr.zig")),
+        single_ptr: WrapImpl(@import("dbl/single_ptr.zig")),
 
         fn namespace(self: @This()) type {
             return switch (self) {
