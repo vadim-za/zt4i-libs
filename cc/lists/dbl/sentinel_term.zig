@@ -12,7 +12,7 @@ pub fn List(
     return struct {
         // These fields are private
         sentinel: Hook,
-        ownership_token_storage: OwnershipTraits.ContainerTokenStorage = .{},
+        ownership_token_storage: OwnershipTraits.ContainerTokenStorage,
 
         /// This field may be accessed publicly to set the internal
         /// state of a non-empty layout. The layout type still must
@@ -35,12 +35,21 @@ pub fn List(
         const debug_nodes = builtin.mode == .Debug;
 
         pub fn init(self: *@This()) void {
+            self.ownership_token_storage = .{};
             self.sentinel = .{
                 .next = &self.sentinel,
                 .prev = &self.sentinel,
-                .owner = if (std.debug.runtime_safety) self,
+                .owner = OwnershipTraits.initialContainerToken(self),
                 .node = if (debug_nodes) null,
             };
+        }
+
+        pub fn setOwnershipToken(
+            self: *@This(),
+            token: OwnershipTraits.Token,
+        ) void {
+            OwnershipTraits.setContainerToken(self, token);
+            self.sentinel.owner = token;
         }
 
         const Methods = CommonMethods(@This(), OwnershipTraits);
@@ -106,10 +115,8 @@ pub fn List(
             next_hook: *Hook,
             node: *Node,
         ) void {
-            if (comptime std.debug.runtime_safety) {
-                std.debug.assert(prev_hook.owner == self);
-                std.debug.assert(next_hook.owner == self);
-            }
+            OwnershipTraits.checkOwnership(self, &prev_hook.owner);
+            OwnershipTraits.checkOwnership(self, &next_hook.owner);
             std.debug.assert(prev_hook.next == next_hook);
             std.debug.assert(next_hook.prev == prev_hook);
 

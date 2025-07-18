@@ -13,6 +13,8 @@ const tested_configs = configs: {
     }) |impl| {
         for ([_]lib.OwnershipTracking{
             .container_ptr,
+            .{ .custom = i32 },
+            .off,
         }) |tracking| {
             configs = configs ++ [1]lib.lists.Config{.{
                 .implementation = .{ .double_linked = impl },
@@ -30,6 +32,8 @@ test "Basic" {
         const List = lib.lists.List(Payload, config);
         var list: List = undefined;
         list.init();
+        if (comptime config.ownership_tracking == .custom)
+            list.setOwnershipToken(1);
 
         const Node = List.Node;
         var nodes: [2]Node = undefined;

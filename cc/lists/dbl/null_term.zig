@@ -35,6 +35,8 @@ pub fn List(
             self.* = .{};
         }
 
+        pub const setOwnershipToken = OwnershipTraits.setContainerToken;
+
         const Methods = CommonMethods(@This(), OwnershipTraits);
         pub const hookFromFreeNode = Methods.hookFromFreeNode;
         pub const hookFromOwnedNode = Methods.hookFromOwnedNode;

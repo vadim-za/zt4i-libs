@@ -39,8 +39,29 @@ pub const Tracking = union(enum) {
                 return switch (comptime tracking) {
                     .off => {},
                     .container_ptr => container,
-                    .custom => container.ownership_token_storage.?.token,
+                    .custom => container.ownership_token_storage.token.?,
                 };
+            }
+
+            pub inline fn initialContainerToken(container: *const Container) Token {
+                return switch (comptime tracking) {
+                    .off => {},
+                    .container_ptr => container,
+                    .custom => undefined, // no initial value, must be set by the user
+                };
+            }
+
+            pub const setContainerToken = switch (tracking) {
+                .custom => setContainerCustomToken,
+                else => @compileError("Tracking mode " ++
+                    @tagName(tracking) ++ " doesn't support setContainerToken()"),
+            };
+
+            inline fn setContainerCustomToken(
+                container: *Container,
+                token: Token,
+            ) void {
+                container.ownership_token_storage = .{ .token = token };
             }
 
             pub inline fn checkOwnership(
