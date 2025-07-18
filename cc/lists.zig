@@ -15,11 +15,13 @@ pub fn List(
 test "All" {
     const L = List(
         i32,
-        .{ .double_linked = .null_terminated },
+        .{ .double_linked = .sentinel_terminated },
         .simple_payload,
     );
     var n0: L.Node = undefined;
-    var l: L = .{};
+    //var l: L = .{};
+    var l: L = undefined;
+    l.init();
     l.insertLast(&n0);
     var n1: L.Node = undefined;
     l.insert(.after(null), &n1);

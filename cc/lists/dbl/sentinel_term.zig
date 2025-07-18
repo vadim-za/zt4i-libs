@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 const lib = @import("../../lib.zig");
 const CommonMethods = @import("../common.zig").Methods;
 const insertion = @import("insertion.zig");
@@ -9,8 +10,7 @@ pub fn List(
 ) type {
     return struct {
         // These fields are private
-        first_: ?*Node = null,
-        last_: ?*Node = null,
+        sentinel: Hook,
         check_ownership: if (std.debug.runtime_safety) bool else void =
             if (std.debug.runtime_safety) true,
 
@@ -25,19 +25,43 @@ pub fn List(
 
         pub const Node = Layout.Node;
         pub const Hook = struct {
-            next: ?*Node,
-            prev: ?*Node,
+            next: *Hook,
+            prev: *Hook,
             owner: if (std.debug.runtime_safety) ?*Self else void,
+            node: if (debug_nodes) ?*Node else void,
         };
 
+        const debug_nodes = builtin.mode == .Debug;
+
         pub fn init(self: *@This()) void {
-            self.* = .{};
+            self.sentinel = .{
+                .next = &self.sentinel,
+                .prev = &self.sentinel,
+                .owner = if (std.debug.runtime_safety) self,
+                .node = if (debug_nodes) null,
+            };
         }
 
         const Methods = CommonMethods(@This());
         pub const hookFromFreeNode = Methods.hookFromFreeNode;
         pub const hookFromOwnedNode = Methods.hookFromOwnedNode;
         pub const hookFromOwnedConstNode = Methods.hookFromOwnedConstNode;
+
+        pub fn nodeFromOwnedHook(
+            self: *const @This(),
+            hook: *Hook,
+        ) *Node {
+            if (comptime std.debug.runtime_safety) {
+                if (self.check_ownership)
+                    std.debug.assert(hook.owner == self);
+            }
+
+            const node = self.layout.nodeFromHook(hook);
+            if (comptime debug_nodes)
+                std.debug.assert(node == hook.node);
+
+            return @constCast(node);
+        }
 
         // -------------------- insertion/removal
 
@@ -53,35 +77,11 @@ pub fn List(
         }
 
         pub fn insertFirst(self: *@This(), node: *Node) void {
-            const hook = self.hookFromFreeNode(node);
-
-            hook.prev = null;
-            hook.next = self.first_;
-            if (comptime std.debug.runtime_safety)
-                hook.owner = self;
-
-            if (self.first_) |first_node|
-                self.hookFromOwnedNode(first_node).prev = node
-            else
-                self.last_ = node;
-
-            self.first_ = node;
+            self.insertBetween(&self.sentinel, self.sentinel.next, node);
         }
 
         pub fn insertLast(self: *@This(), node: *Node) void {
-            const hook = self.hookFromFreeNode(node);
-
-            hook.prev = self.last_;
-            hook.next = null;
-            if (comptime std.debug.runtime_safety)
-                hook.owner = self;
-
-            if (self.last_) |last_node|
-                self.hookFromOwnedNode(last_node).next = node
-            else
-                self.first_ = node;
-
-            self.last_ = node;
+            self.insertBetween(self.sentinel.prev, &self.sentinel, node);
         }
 
         pub fn insertBefore(
@@ -89,26 +89,8 @@ pub fn List(
             next_node: *Node,
             node: *Node,
         ) void {
-            const hook = self.hookFromFreeNode(node);
-            hook.next = next_node;
-
             const next_hook = self.hookFromOwnedNode(next_node);
-            if (next_hook.prev) |prev_node| {
-                std.debug.assert(next_node != self.first_);
-                hook.prev = prev_node;
-
-                const prev_hook = self.hookFromOwnedNode(prev_node);
-                prev_hook.next = node;
-            } else {
-                std.debug.assert(next_node == self.first_);
-                hook.prev = null;
-                self.first_ = node;
-            }
-
-            next_hook.prev = node;
-
-            if (comptime std.debug.runtime_safety)
-                hook.owner = self;
+            self.insertBetween(next_hook.prev, next_hook, node);
         }
 
         pub fn insertAfter(
@@ -116,46 +98,40 @@ pub fn List(
             prev_node: *Node,
             node: *Node,
         ) void {
-            const hook = self.hookFromFreeNode(node);
-            hook.prev = prev_node;
-
             const prev_hook = self.hookFromOwnedNode(prev_node);
-            if (prev_hook.next) |next_node| {
-                std.debug.assert(prev_node != self.last_);
-                hook.next = next_node;
+            self.insertBetween(prev_hook, prev_hook.next, node);
+        }
 
-                const next_hook = self.hookFromOwnedNode(next_node);
-                next_hook.prev = node;
-            } else {
-                std.debug.assert(prev_node == self.last_);
-                hook.next = null;
-                self.last_ = node;
+        fn insertBetween(
+            self: *@This(),
+            prev_hook: *Hook,
+            next_hook: *Hook,
+            node: *Node,
+        ) void {
+            if (comptime std.debug.runtime_safety) {
+                std.debug.assert(prev_hook.owner == self);
+                std.debug.assert(next_hook.owner == self);
             }
+            std.debug.assert(prev_hook.next == next_hook);
+            std.debug.assert(next_hook.prev == prev_hook);
 
-            prev_hook.next = node;
-
+            const hook = self.hookFromFreeNode(node);
+            hook.prev = prev_hook;
+            hook.next = next_hook;
             if (comptime std.debug.runtime_safety)
                 hook.owner = self;
+            if (comptime debug_nodes)
+                hook.node = node;
+
+            prev_hook.next = hook;
+            next_hook.prev = hook;
         }
 
         pub fn remove(self: *@This(), node: *Node) void {
             const hook = self.hookFromOwnedNode(node);
 
-            if (hook.prev) |prev_node| {
-                std.debug.assert(node != self.first_);
-                self.hookFromOwnedNode(prev_node).next = hook.next;
-            } else {
-                std.debug.assert(node == self.first_);
-                self.first_ = hook.next;
-            }
-
-            if (hook.next) |next_node| {
-                std.debug.assert(node != self.last_);
-                self.hookFromOwnedNode(next_node).prev = hook.prev;
-            } else {
-                std.debug.assert(node == self.last_);
-                self.last_ = hook.prev;
-            }
+            hook.prev.next = hook.next;
+            hook.next.prev = hook.prev;
 
             if (comptime std.debug.runtime_safety)
                 hook.* = undefined;
@@ -164,25 +140,39 @@ pub fn List(
         // -------------------- standard inspection
 
         pub fn first(self: *const @This()) ?*Node {
-            return self.first_;
+            return if (self.hasContent())
+                self.nodeFromOwnedHook(self.sentinel.next)
+            else
+                null;
         }
 
         pub fn last(self: *const @This()) ?*Node {
-            return self.last_;
+            return if (self.hasContent())
+                self.nodeFromOwnedHook(self.sentinel.prev)
+            else
+                null;
         }
 
         pub fn next(self: *const @This(), node: *const Node) ?*Node {
             const hook = self.hookFromOwnedConstNode(node);
-            return hook.next;
+            return if (hook.next == &self.sentinel)
+                null
+            else
+                self.nodeFromOwnedHook(hook.next);
         }
 
         pub fn prev(self: *const @This(), node: *const Node) ?*Node {
             const hook = self.hookFromOwnedConstNode(node);
-            return hook.prev;
+            return if (hook.prev == &self.sentinel)
+                null
+            else
+                self.nodeFromOwnedHook(hook.prev);
         }
 
         pub fn hasContent(self: *const @This()) bool {
-            return self.first_ != null;
+            std.debug.assert((self.sentinel.next != &self.sentinel) ==
+                (self.sentinel.prev != &self.sentinel));
+            return self.sentinel.next != &self.sentinel;
         }
     };
 }

@@ -1,6 +1,7 @@
 const std = @import("std");
 const lib = @import("../../lib.zig");
 const CommonMethods = @import("../common.zig").Methods;
+const insertion = @import("insertion.zig");
 
 pub fn List(
     Payload: type,
@@ -33,16 +34,13 @@ pub fn List(
         }
 
         const Methods = CommonMethods(@This());
-        pub const uncheckedCopyFrom = Methods.uncheckedCopyFrom;
-        pub const moveFrom = Methods.moveFrom;
         pub const hookFromFreeNode = Methods.hookFromFreeNode;
         pub const hookFromOwnedNode = Methods.hookFromOwnedNode;
         pub const hookFromOwnedConstNode = Methods.hookFromOwnedConstNode;
 
         // -------------------- insertion/removal
 
-        pub const InsertionPos = lib.lists.Implementation
-            .DoubleLinked.InsertionPos(Node);
+        pub const InsertionPos = insertion.InsertionPos(Node);
 
         pub inline fn insert(self: *@This(), where: InsertionPos, node: *Node) void {
             switch (where) {
