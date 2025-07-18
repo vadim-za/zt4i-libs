@@ -1,6 +1,8 @@
+const std = @import("std");
 const lib = @import("lib.zig");
+const impl = @import("lists/impl.zig");
 
-pub const Implementation = @import("lists/impl.zig").Implementation;
+pub const Implementation = impl.Implementation;
 
 pub const Config = struct {
     implementation: Implementation,
@@ -14,6 +16,10 @@ pub fn List(T: type, cfg: Config) type {
         cfg.layout,
         cfg.ownership_tracking,
     );
+}
+
+comptime {
+    std.testing.refAllDecls(impl);
 }
 
 // -----------------------------------------------------------------------
@@ -38,5 +44,4 @@ test "All" {
         while (node) |n| node = l.prev(n);
     }
     l.remove(&n1);
-    @breakpoint();
 }

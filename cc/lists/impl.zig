@@ -1,3 +1,5 @@
+const std = @import("std");
+
 pub const Implementation = union(enum) {
     double_linked: DoubleLinked,
 
@@ -26,4 +28,8 @@ fn WrapImpl(impl_namespace: type) type {
             return impl_namespace;
         }
     };
+}
+
+comptime {
+    std.testing.refAllDecls(@import("dbl/testing.zig"));
 }
