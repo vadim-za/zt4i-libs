@@ -71,6 +71,8 @@ pub fn List(
             return hook;
         }
 
+        // -------------------- insertion/removal
+
         pub const InsertionPos = lib.lists.Implementation
             .DoubleLinked.InsertionPos(Node);
 
@@ -191,6 +193,8 @@ pub fn List(
             if (comptime std.debug.runtime_safety)
                 hook.* = undefined;
         }
+
+        // -------------------- standard inspection
 
         pub fn first(self: *const @This()) ?*Node {
             return self.first_;
