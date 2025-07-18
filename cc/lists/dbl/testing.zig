@@ -286,3 +286,36 @@ test "remove" {
         try std.testing.expect(!list.hasContent());
     }
 }
+
+test "Embedded hook" {
+    inline for (tested_configs) |base_config| {
+        comptime var config = base_config;
+        config.layout = comptime .{ .embedded_hook = "hook" };
+
+        const types = struct {
+            const List = lib.lists.List(Node, config);
+            const Node = struct {
+                data: Payload,
+                hook: List.Hook,
+            };
+        };
+        const impl = comptime config.implementation.double_linked;
+        var list: types.List = if (impl == .sentinel_terminated)
+            undefined
+        else
+            .{};
+        list.init(); // redundant if .{} initialization is done above
+        if (comptime config.ownership_tracking == .custom)
+            list.setOwnershipToken(1);
+
+        try verifyConsistency(types.List, &list);
+
+        var node: types.Node = undefined;
+
+        list.insertFirst(&node);
+        try verifyConsistency(types.List, &list);
+
+        list.remove(&node);
+        try verifyConsistency(types.List, &list);
+    }
+}
