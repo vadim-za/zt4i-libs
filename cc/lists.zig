@@ -23,5 +23,6 @@ test "All" {
     l.insertLast(&n);
     var n1: L.Node = undefined;
     l.insert(.after(null), &n1);
+    l.remove(&n1);
     @breakpoint();
 }

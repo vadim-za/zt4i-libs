@@ -51,7 +51,7 @@ pub fn List(
         }
 
         fn hookFromFreeNode(self: *@This(), node: *Node) *Hook {
-            // Free nodes can have undefined ownership, which we cannot check
+            // Free nodes have undefined hooks, so we cannot check ownership
             return self.layout.hookFromNode(node);
         }
 
@@ -160,6 +160,29 @@ pub fn List(
 
             if (comptime std.debug.runtime_safety)
                 hook.owner = self;
+        }
+
+        pub fn remove(self: *@This(), node: *Node) void {
+            const hook = self.hookFromOwnedNode(node);
+
+            if (hook.prev) |prev_node| {
+                std.debug.assert(node != self.first_);
+                self.hookFromOwnedNode(prev_node).next = hook.next;
+            } else {
+                std.debug.assert(node == self.first_);
+                self.first_ = hook.next;
+            }
+
+            if (hook.next) |next_node| {
+                std.debug.assert(node != self.last_);
+                self.hookFromOwnedNode(next_node).prev = hook.prev;
+            } else {
+                std.debug.assert(node == self.last_);
+                self.last_ = hook.prev;
+            }
+
+            if (comptime std.debug.runtime_safety)
+                hook.* = undefined;
         }
     };
 }
