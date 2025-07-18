@@ -217,3 +217,67 @@ test "insertAfter" {
         try std.testing.expectEqual(4, i);
     }
 }
+
+test "remove" {
+    inline for (tested_configs) |config| {
+        const List = lib.lists.List(Payload, config);
+        const impl = comptime config.implementation.double_linked;
+        var list: List = if (impl == .sentinel_terminated)
+            undefined
+        else
+            .{};
+        list.init(); // redundant if .{} initialization is done above
+        if (comptime config.ownership_tracking == .custom)
+            list.setOwnershipToken(1);
+
+        try verifyConsistency(List, &list);
+
+        const Node = List.Node;
+        var nodes: [3]Node = undefined;
+
+        // remove first node
+
+        for (&nodes) |*node|
+            list.insertLast(node);
+        try verifyConsistency(List, &list);
+
+        list.remove(&nodes[0]);
+        try verifyConsistency(List, &list);
+        try std.testing.expectEqual(&nodes[1], list.first());
+        try std.testing.expectEqual(&nodes[2], list.last());
+
+        list.remove(&nodes[1]);
+        list.remove(&nodes[2]);
+        try std.testing.expect(!list.hasContent());
+
+        // remove last node
+
+        for (&nodes) |*node|
+            list.insertLast(node);
+        try verifyConsistency(List, &list);
+
+        list.remove(&nodes[2]);
+        try verifyConsistency(List, &list);
+        try std.testing.expectEqual(&nodes[0], list.first());
+        try std.testing.expectEqual(&nodes[1], list.last());
+
+        list.remove(&nodes[0]);
+        list.remove(&nodes[1]);
+        try std.testing.expect(!list.hasContent());
+
+        // remove middle node
+
+        for (&nodes) |*node|
+            list.insertLast(node);
+        try verifyConsistency(List, &list);
+
+        list.remove(&nodes[1]);
+        try verifyConsistency(List, &list);
+        try std.testing.expectEqual(&nodes[0], list.first());
+        try std.testing.expectEqual(&nodes[2], list.last());
+
+        list.remove(&nodes[0]);
+        list.remove(&nodes[2]);
+        try std.testing.expect(!list.hasContent());
+    }
+}
