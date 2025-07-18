@@ -13,6 +13,8 @@ pub const Tracking = union(enum) {
     custom: type,
 
     pub fn TraitsFor(self: @This(), Container: type) type {
+        // Don't enable tracking in non-safe modes, containers may
+        // reset the stored tokens to undefined.
         const tracking = if (comptime builtin.mode == .Debug)
             self
         else

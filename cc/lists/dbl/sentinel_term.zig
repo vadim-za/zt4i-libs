@@ -7,12 +7,12 @@ const insertion = @import("insertion.zig");
 pub fn List(
     Payload: type,
     layout: lib.Layout,
+    ownership_tracking: lib.OwnershipTracking,
 ) type {
     return struct {
         // These fields are private
         sentinel: Hook,
-        check_ownership: if (std.debug.runtime_safety) bool else void =
-            if (std.debug.runtime_safety) true,
+        ownership_token_storage: OwnershipTraits.ContainerTokenStorage = .{},
 
         /// This field may be accessed publicly to set the internal
         /// state of a non-empty layout. The layout type still must
@@ -22,12 +22,13 @@ pub fn List(
         const Self = @This();
 
         pub const Layout = layout.make(@This(), Payload);
+        const OwnershipTraits = ownership_tracking.TraitsFor(@This());
 
         pub const Node = Layout.Node;
         pub const Hook = struct {
             next: *Hook,
             prev: *Hook,
-            owner: if (std.debug.runtime_safety) ?*Self else void,
+            owner: OwnershipTraits.Token,
             node: if (debug_nodes) ?*Node else void,
         };
 
@@ -42,7 +43,7 @@ pub fn List(
             };
         }
 
-        const Methods = CommonMethods(@This());
+        const Methods = CommonMethods(@This(), OwnershipTraits);
         pub const hookFromFreeNode = Methods.hookFromFreeNode;
         pub const hookFromOwnedNode = Methods.hookFromOwnedNode;
         pub const hookFromOwnedConstNode = Methods.hookFromOwnedConstNode;
@@ -51,10 +52,7 @@ pub fn List(
             self: *const @This(),
             hook: *Hook,
         ) *Node {
-            if (comptime std.debug.runtime_safety) {
-                if (self.check_ownership)
-                    std.debug.assert(hook.owner == self);
-            }
+            OwnershipTraits.checkOwnership(self, &hook.owner);
 
             const node = self.layout.nodeFromHook(hook);
             if (comptime debug_nodes)
@@ -118,8 +116,7 @@ pub fn List(
             const hook = self.hookFromFreeNode(node);
             hook.prev = prev_hook;
             hook.next = next_hook;
-            if (comptime std.debug.runtime_safety)
-                hook.owner = self;
+            hook.owner = OwnershipTraits.getContainerToken(self);
             if (comptime debug_nodes)
                 hook.node = node;
 
