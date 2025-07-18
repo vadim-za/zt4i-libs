@@ -1,6 +1,6 @@
 const std = @import("std");
 
-pub fn Methods(Container: type) type {
+pub fn Methods(Container: type, OwnershipTraits: type) type {
     return struct {
         const Node = Container.Node;
         const Hook = Container.Hook;
@@ -19,10 +19,7 @@ pub fn Methods(Container: type) type {
             node: *const Node,
         ) *const Hook {
             const hook = self.layout.hookFromNode(node);
-            if (comptime std.debug.runtime_safety) {
-                if (self.check_ownership)
-                    std.debug.assert(hook.owner == self);
-            }
+            OwnershipTraits.checkOwnership(self, &hook.owner);
             return hook;
         }
     };

@@ -6,13 +6,13 @@ const insertion = @import("insertion.zig");
 pub fn List(
     Payload: type,
     layout: lib.Layout,
+    ownership_tracking: lib.OwnershipTracking,
 ) type {
     return struct {
         // These fields are private
         first_: ?*Node = null,
         last_: ?*Node = null,
-        check_ownership: if (std.debug.runtime_safety) bool else void =
-            if (std.debug.runtime_safety) true,
+        ownership_token_storage: OwnershipTraits.ContainerTokenStorage = .{},
 
         /// This field may be accessed publicly to set the internal
         /// state of a non-empty layout. The layout type still must
@@ -22,19 +22,20 @@ pub fn List(
         const Self = @This();
 
         pub const Layout = layout.make(@This(), Payload);
+        const OwnershipTraits = ownership_tracking.TraitsFor(@This());
 
         pub const Node = Layout.Node;
         pub const Hook = struct {
             next: ?*Node,
             prev: ?*Node,
-            owner: if (std.debug.runtime_safety) ?*Self else void,
+            owner: OwnershipTraits.Token,
         };
 
         pub fn init(self: *@This()) void {
             self.* = .{};
         }
 
-        const Methods = CommonMethods(@This());
+        const Methods = CommonMethods(@This(), OwnershipTraits);
         pub const hookFromFreeNode = Methods.hookFromFreeNode;
         pub const hookFromOwnedNode = Methods.hookFromOwnedNode;
         pub const hookFromOwnedConstNode = Methods.hookFromOwnedConstNode;
@@ -57,8 +58,7 @@ pub fn List(
 
             hook.prev = null;
             hook.next = self.first_;
-            if (comptime std.debug.runtime_safety)
-                hook.owner = self;
+            hook.owner = OwnershipTraits.getContainerToken(self);
 
             if (self.first_) |first_node|
                 self.hookFromOwnedNode(first_node).prev = node
@@ -73,8 +73,7 @@ pub fn List(
 
             hook.prev = self.last_;
             hook.next = null;
-            if (comptime std.debug.runtime_safety)
-                hook.owner = self;
+            hook.owner = OwnershipTraits.getContainerToken(self);
 
             if (self.last_) |last_node|
                 self.hookFromOwnedNode(last_node).next = node
@@ -107,8 +106,7 @@ pub fn List(
 
             next_hook.prev = node;
 
-            if (comptime std.debug.runtime_safety)
-                hook.owner = self;
+            hook.owner = OwnershipTraits.getContainerToken(self);
         }
 
         pub fn insertAfter(
@@ -134,8 +132,7 @@ pub fn List(
 
             prev_hook.next = node;
 
-            if (comptime std.debug.runtime_safety)
-                hook.owner = self;
+            hook.owner = OwnershipTraits.getContainerToken(self);
         }
 
         pub fn remove(self: *@This(), node: *Node) void {

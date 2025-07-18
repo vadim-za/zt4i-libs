@@ -2,22 +2,28 @@ const lib = @import("lib.zig");
 
 pub const Implementation = @import("lists/impl.zig").Implementation;
 
-pub fn List(
-    T: type,
-    impl: Implementation,
+pub const Config = struct {
+    implementation: Implementation,
     layout: lib.Layout,
-) type {
-    return impl.namespace().List(T, layout);
+    ownership_tracking: lib.OwnershipTracking,
+};
+
+pub fn List(T: type, cfg: Config) type {
+    return cfg.implementation.namespace().List(
+        T,
+        cfg.layout,
+        cfg.ownership_tracking,
+    );
 }
 
 // -----------------------------------------------------------------------
 
 test "All" {
-    const L = List(
-        i32,
-        .{ .double_linked = .sentinel_terminated },
-        .simple_payload,
-    );
+    const L = List(i32, .{
+        .implementation = .{ .double_linked = .null_terminated },
+        .layout = .simple_payload,
+        .ownership_tracking = .container_ptr,
+    });
     var n0: L.Node = undefined;
     //var l: L = .{};
     var l: L = undefined;
