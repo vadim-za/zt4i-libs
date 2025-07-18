@@ -1,5 +1,6 @@
 const std = @import("std");
 const lib = @import("../../lib.zig");
+const CommonMethods = @import("../common.zig").Methods;
 
 pub fn List(
     Payload: type,
@@ -32,44 +33,12 @@ pub fn List(
             self.* = .{};
         }
 
-        pub inline fn uncheckedCopyFrom(self: *@This(), from: *const @This()) void {
-            self.* = from.*;
-            if (comptime std.debug.runtime_safety)
-                self.check_ownership = false;
-        }
-
-        pub inline fn moveFrom(self: *@This(), from: *@This()) void {
-            self.* = from.*;
-
-            if (comptime std.debug.runtime_safety) {
-                from.check_ownership = false;
-
-                var node = self.first_;
-                while (node) |n| : (node = n.next)
-                    n.owner = self;
-            }
-        }
-
-        fn hookFromFreeNode(self: *const @This(), node: *Node) *Hook {
-            // Free nodes have undefined hooks, so we cannot check ownership
-            return @constCast(self.layout.hookFromNode(node));
-        }
-
-        fn hookFromOwnedNode(self: *const @This(), node: *Node) *Hook {
-            return @constCast(self.hookFromOwnedConstNode(node));
-        }
-
-        fn hookFromOwnedConstNode(
-            self: *const @This(),
-            node: *const Node,
-        ) *const Hook {
-            const hook = self.layout.hookFromNode(node);
-            if (comptime std.debug.runtime_safety) {
-                if (self.check_ownership)
-                    std.debug.assert(hook.owner == self);
-            }
-            return hook;
-        }
+        const Methods = CommonMethods(@This());
+        pub const uncheckedCopyFrom = Methods.uncheckedCopyFrom;
+        pub const moveFrom = Methods.moveFrom;
+        pub const hookFromFreeNode = Methods.hookFromFreeNode;
+        pub const hookFromOwnedNode = Methods.hookFromOwnedNode;
+        pub const hookFromOwnedConstNode = Methods.hookFromOwnedConstNode;
 
         // -------------------- insertion/removal
 
