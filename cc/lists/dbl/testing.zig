@@ -84,6 +84,7 @@ test "insertLast" {
             i += 1;
         })
             try std.testing.expectEqual(&nodes[i], n);
+        try std.testing.expectEqual(2, i);
     }
 }
 
@@ -129,5 +130,45 @@ test "insertFirst" {
             i += 1;
         })
             try std.testing.expectEqual(&nodes[i], n);
+        try std.testing.expectEqual(2, i);
+    }
+}
+
+test "insertBefore" {
+    inline for (tested_configs) |config| {
+        const List = lib.lists.List(Payload, config);
+        const impl = comptime config.implementation.double_linked;
+        var list: List = if (impl == .sentinel_terminated)
+            undefined
+        else
+            .{};
+        list.init(); // redundant if .{} initialization is done above
+        if (comptime config.ownership_tracking == .custom)
+            list.setOwnershipToken(1);
+
+        try verifyConsistency(List, &list);
+
+        const Node = List.Node;
+        var nodes: [3]Node = undefined;
+
+        // No list.insertBefore() counterpart
+        list.insert(.before(null), &nodes[2]); // 2
+        try verifyConsistency(List, &list);
+
+        // Same as list.insertBefore(&nodes[2], &nodes[0]);
+        list.insert(.before(&nodes[2]), &nodes[0]); // 0 2
+        try verifyConsistency(List, &list);
+
+        list.insertBefore(&nodes[2], &nodes[1]); // 0 1 2
+        try verifyConsistency(List, &list);
+
+        var i: u32 = 0;
+        var node = list.first();
+        while (node) |n| : ({
+            node = list.next(n);
+            i += 1;
+        })
+            try std.testing.expectEqual(&nodes[i], n);
+        try std.testing.expectEqual(3, i);
     }
 }
