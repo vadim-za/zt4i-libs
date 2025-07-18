@@ -27,6 +27,21 @@ const tested_configs = configs: {
     break :configs configs;
 };
 
+fn verifyConsistency(List: type, list: *List) !void {
+    var node = list.first();
+    while (node) |n| : (node = list.next(n)) {
+        if (n == list.first())
+            try std.testing.expectEqual(null, list.prev(n))
+        else
+            try std.testing.expectEqual(n, list.next(list.prev(n).?));
+
+        if (n == list.last())
+            try std.testing.expectEqual(null, list.next(n))
+        else
+            try std.testing.expectEqual(n, list.prev(list.next(n).?));
+    }
+}
+
 test "insertLast" {
     inline for (tested_configs) |config| {
         const List = lib.lists.List(Payload, config);
@@ -39,6 +54,8 @@ test "insertLast" {
         if (comptime config.ownership_tracking == .custom)
             list.setOwnershipToken(1);
 
+        try verifyConsistency(List, &list);
+
         const Node = List.Node;
         var nodes: [2]Node = undefined;
 
@@ -48,6 +65,8 @@ test "insertLast" {
         try std.testing.expectEqual(null, list.next(&nodes[0]));
         try std.testing.expectEqual(null, list.prev(&nodes[0]));
 
+        try verifyConsistency(List, &list);
+
         list.insertLast(&nodes[1]); // same as list.insert(.last, &nodes[1])
         try std.testing.expectEqual(&nodes[0], list.first());
         try std.testing.expectEqual(null, list.prev(&nodes[0]));
@@ -55,6 +74,8 @@ test "insertLast" {
         try std.testing.expectEqual(&nodes[1], list.last());
         try std.testing.expectEqual(null, list.next(&nodes[1]));
         try std.testing.expectEqual(&nodes[0], list.prev(&nodes[1]));
+
+        try verifyConsistency(List, &list);
 
         var i: u32 = 0;
         var node = list.first();
