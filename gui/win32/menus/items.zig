@@ -1,15 +1,23 @@
 const std = @import("std");
 const Contents = @import("Contents.zig");
+const lib_imports = @import("../../lib_imports.zig");
+const cc = lib_imports.cc;
 
 const os = std.os.windows;
 
-pub const ItemsList = std.DoublyLinkedList(Item);
+pub const ItemsList = cc.List(Item, .{
+    .implementation = .{ .double_linked = .null_terminated },
+    .layout = .{ .embedded_hook = "list_hook" },
+    .ownership_tracking = .container_ptr,
+});
 
 pub const Item = struct {
     // 'index' and 'visible_pos' may be not up to date
     index: usize, // 0-based, increments over all items
     visible_pos: usize, // 0-based, does not increment over anchors
     variant: Variant,
+
+    list_hook: ItemsList.Hook,
 
     owner: if (std.debug.runtime_safety) *Contents else void,
 

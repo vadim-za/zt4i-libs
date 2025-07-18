@@ -79,18 +79,17 @@ context: *Context,
 
 items: item_types.ItemsList = .{},
 
-// Nodes up to this one inclusively have up to date 'index' and
+// Items up to this one inclusively have up to date 'index' and
 // 'visible_pos' fields. If null, then all nodes are not up to date.
-last_nondirty_node: ?*item_types.ItemsList.Node = null,
+last_nondirty_item: ?*item_types.Item = null,
 
 const Self = @This();
 
 /// Can be called repeatedly
 pub fn deinit(self: *@This()) void {
-    while (self.items.pop()) |node| {
-        const item = &node.data;
+    while (self.items.popLast()) |item| {
         item.deinit();
-        self.context.contents_pool.destroy(node);
+        self.context.contents_pool.destroy(item);
     }
 }
 
@@ -198,15 +197,15 @@ fn insertItem(
     const insert_after: ?*item_types.ItemsList.Node =
         switch (where) {
             .before_ => |ref_item| if (ref_item) |ref|
-                self.nodeFromItem(ref).prev
+                self.items.prev(ref)
             else
-                self.items.last,
+                self.items.last(),
             .after_ => |ref_item| if (ref_item) |ref|
-                self.nodeFromItem(ref)
+                ref
             else
                 null,
             .replace_ => |old_item| repl: {
-                const prev = self.nodeFromItem(old_item).prev;
+                const prev = self.items.prev(old_item);
                 self.deleteRawItem(old_item);
                 break :repl prev;
             },
@@ -215,16 +214,15 @@ fn insertItem(
     const index, const visible_pos = if (insert_after) |ia| ia: {
         // Safe to call updateDirtyNodes(ia), since we didn't modify
         // the items list yet.
-        self.updateDirtyNodes(ia);
-        break :ia .{ ia.data.index + 1, ia.data.nextVisiblePos() };
+        self.updateDirtyItems(ia);
+        break :ia .{ ia.index + 1, ia.nextVisiblePos() };
     } else .{ 0, 0 };
 
-    const node = try self.context.contents_pool.create(
-        item_types.ItemsList.Node,
+    const item = try self.context.contents_pool.create(
+        item_types.Item,
     );
-    errdefer self.context.contents_pool.destroy(node);
+    errdefer self.context.contents_pool.destroy(item);
 
-    const item = &node.data;
     item.* = .{
         .index = index,
         .visible_pos = visible_pos,
@@ -233,19 +231,20 @@ fn insertItem(
             @tagName(variant_tag),
             .{},
         ),
+        .list_hook = undefined,
         .owner = if (std.debug.runtime_safety) self,
     };
 
     if (insert_after) |ia|
-        self.items.insertAfter(ia, node)
+        self.items.insertAfter(ia, item)
     else
-        self.items.prepend(node);
-    errdefer self.items.remove(node);
+        self.items.insertFirst(item);
+    errdefer self.items.remove(item);
 
-    // The nodes preceding 'node' are up-to-date due to the
-    // updateDirtyNodes() call earlier above. The 'node' has
+    // The items preceding 'item' are up-to-date due to the
+    // updateDirtyItems() call earlier above. The 'item' has
     // been set up to date manually.
-    self.last_nondirty_node = node;
+    self.last_nondirty_item = item;
 
     if (item.isVisible()) {
         const text16: ?[*:0]const u16 = if (text) |t|
@@ -259,7 +258,7 @@ fn insertItem(
             else => 0,
         };
 
-        if (node == self.items.last) {
+        if (item == self.items.last()) {
             if (AppendMenuW(
                 self.hMenu,
                 uFlags,
@@ -287,14 +286,12 @@ pub fn deleteItem(self: *@This(), any_item_ptr: anytype) void {
 }
 
 fn deleteRawItem(self: *@This(), item: *item_types.Item) void {
-    const node = self.nodeFromItem(item);
-
-    // Safe to call updateDirtyNodes(node), since
+    // Safe to call updateDirtyItems(item), since
     // we didn't modify the items list yet.
-    self.updateDirtyNodes(node);
+    self.updateDirtyItems(item);
 
     if (item.isVisible()) {
-        const pos = node.data.visible_pos;
+        const pos = item.visible_pos;
 
         if (DeleteMenu(
             self.hMenu,
@@ -304,13 +301,13 @@ fn deleteRawItem(self: *@This(), item: *item_types.Item) void {
             debug.debugModePanic("Deleting menu item failed");
     }
 
-    // The nodes preceding the 'node' (inclusively) are up-to-date
-    // due to the updateDirtyNodes() call earlier above.
-    // So we can simply set the last nondirty node to node.prev.
-    self.last_nondirty_node = node.prev;
+    // The items preceding the 'item' (inclusively) are up-to-date
+    // due to the updateDirtyItems() call earlier above.
+    // So we can simply set the last nondirty item to prev(item).
+    self.last_nondirty_item = self.items.prev(item);
 
-    self.items.remove(node);
-    self.context.contents_pool.destroy(node);
+    self.items.remove(item);
+    self.context.contents_pool.destroy(item);
 }
 
 pub fn modifyCommand(
@@ -338,13 +335,12 @@ fn modifyItem(
     flags: ?@TypeOf(any_item_ptr.*).Flags,
 ) lib.Error!void {
     const item = item_types.Item.fromAny(any_item_ptr);
-    const node = self.nodeFromItem(item);
 
     if (item.isVisible()) {
-        // Safe to call updateDirtyNodes(node), since
+        // Safe to call updateDirtyItems(item), since
         // we didn't modify the items list yet.
-        self.updateDirtyNodes(node);
-        const pos = node.data.visible_pos;
+        self.updateDirtyItems(item);
+        const pos = item.visible_pos;
 
         const text16: ?[*:0]const u16 = if (text) |t|
             (try self.context.convertU8(t)).ptr
@@ -377,54 +373,43 @@ fn modifyItem(
 }
 
 /// May be called only if the list hasn't been manipulated
-/// since the last time `first_dirty_node' field has been updated.
-/// Updates all nodes up to and including 'up_to_node'.
-fn updateDirtyNodes(
+/// since the last time `first_dirty_item' field has been updated.
+/// Updates all items up to and including 'up_to_item'.
+fn updateDirtyItems(
     self: *@This(),
-    up_to_node: *item_types.ItemsList.Node,
+    up_to_item: *item_types.ItemsList.Node,
 ) void {
-    var node, var index, var visible_pos =
-        if (self.last_nondirty_node) |lnn| lnn: {
-            if (up_to_node.data.index > lnn.data.index)
-                break :lnn .{
-                    lnn.next,
-                    lnn.data.index + 1,
-                    lnn.data.nextVisiblePos(),
+    var item, var index, var visible_pos =
+        if (self.last_nondirty_item) |lni| lni: {
+            if (up_to_item.index > lni.index)
+                break :lni .{
+                    self.items.next(lni),
+                    lni.index + 1,
+                    lni.nextVisiblePos(),
                 }
             else
                 return;
-        } else .{ self.items.first, 0, 0 };
+        } else .{ self.items.first(), 0, 0 };
 
     // Actually we could simply do while(true), since the loop
-    // is supposed to break on comparison against 'up_to_node'.
+    // is supposed to break on comparison against 'up_to_item'.
     // But we still check node defensively against null.
-    while (node) |n| {
-        const item = &n.data;
+    while (item) |it| {
+        it.index = index;
+        it.visible_pos = visible_pos;
 
-        item.index = index;
-        item.visible_pos = visible_pos;
-
-        // Since we checked that 'up_to_node' does not occur earlier
-        // in the list than 'first_dirty_node', we expect that the
+        // Since we checked that 'up_to_item' does not occur earlier
+        // in the list than 'first_dirty_item', we expect that the
         // loop terminates here.
-        if (n == up_to_node) break;
+        if (it == up_to_item) break;
 
-        node = n.next;
+        item = self.items.next(it);
         index += 1;
-        visible_pos = item.nextVisiblePos();
+        visible_pos = it.nextVisiblePos();
     }
 
-    // Use '.?' to cause panic if we didn't encounter 'up_to_node'
-    self.last_nondirty_node = node.?;
-}
-
-fn nodeFromItem(
-    self: *@This(),
-    item: *item_types.Item,
-) *item_types.ItemsList.Node {
-    if (std.debug.runtime_safety)
-        std.debug.assert(item.owner == self);
-    return @alignCast(@fieldParentPtr("data", item));
+    // Use '.?' to cause panic if we didn't encounter 'up_to_item'
+    self.last_nondirty_item = item.?;
 }
 
 // TODO: unit tests for position updating
