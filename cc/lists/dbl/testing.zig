@@ -30,8 +30,12 @@ const tested_configs = configs: {
 test "Basic" {
     inline for (tested_configs) |config| {
         const List = lib.lists.List(Payload, config);
-        var list: List = undefined;
-        list.init();
+        const impl = comptime config.implementation.double_linked;
+        var list: List = if (impl == .sentinel_terminated)
+            undefined
+        else
+            .{};
+        list.init(); // redundant if .{} initialization is done above
         if (comptime config.ownership_tracking == .custom)
             list.setOwnershipToken(1);
 
