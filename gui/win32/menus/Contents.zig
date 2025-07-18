@@ -235,10 +235,7 @@ fn insertItem(
         .owner = if (std.debug.runtime_safety) self,
     };
 
-    if (insert_after) |ia|
-        self.items.insertAfter(ia, item)
-    else
-        self.items.insertFirst(item);
+    self.items.insert(.after(insert_after), item);
     errdefer self.items.remove(item);
 
     // The items preceding 'item' are up-to-date due to the
