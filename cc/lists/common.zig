@@ -5,7 +5,7 @@ pub fn Methods(Container: type) type {
         const Node = Container.Node;
         const Hook = Container.Hook;
 
-        pub inline fn uncheckedCopyFrom(
+        pub fn uncheckedCopyFrom(
             self: *Container,
             from: *const Container,
         ) void {
@@ -14,14 +14,14 @@ pub fn Methods(Container: type) type {
                 self.check_ownership = false;
         }
 
-        pub inline fn moveFrom(self: *Container, from: *Container) void {
+        pub fn moveFrom(self: *Container, from: *Container) void {
             self.* = from.*;
 
             if (comptime std.debug.runtime_safety) {
                 from.check_ownership = false;
 
-                var node = self.first_;
-                while (node) |n| : (node = n.next)
+                var node = self.first();
+                while (node) |n| : (node = self.next(n))
                     n.owner = self;
             }
         }
