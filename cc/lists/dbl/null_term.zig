@@ -50,12 +50,19 @@ pub fn List(
             }
         }
 
-        fn hookFromFreeNode(self: *@This(), node: *Node) *Hook {
+        fn hookFromFreeNode(self: *const @This(), node: *Node) *Hook {
             // Free nodes have undefined hooks, so we cannot check ownership
-            return self.layout.hookFromNode(node);
+            return @constCast(self.layout.hookFromNode(node));
         }
 
-        fn hookFromOwnedNode(self: *@This(), node: *Node) *Hook {
+        fn hookFromOwnedNode(self: *const @This(), node: *Node) *Hook {
+            return @constCast(self.hookFromOwnedConstNode(node));
+        }
+
+        fn hookFromOwnedConstNode(
+            self: *const @This(),
+            node: *const Node,
+        ) *const Hook {
             const hook = self.layout.hookFromNode(node);
             if (comptime std.debug.runtime_safety) {
                 if (self.check_ownership)
@@ -185,25 +192,25 @@ pub fn List(
                 hook.* = undefined;
         }
 
-        pub fn first(self: *@This()) ?*Node {
+        pub fn first(self: *const @This()) ?*Node {
             return self.first_;
         }
 
-        pub fn last(self: *@This()) ?*Node {
+        pub fn last(self: *const @This()) ?*Node {
             return self.last_;
         }
 
-        pub fn next(self: *@This(), node: *Node) ?*Node {
-            const hook = self.hookFromOwnedNode(node);
+        pub fn next(self: *const @This(), node: *const Node) ?*Node {
+            const hook = self.hookFromOwnedConstNode(node);
             return hook.next;
         }
 
-        pub fn prev(self: *@This(), node: *Node) ?*Node {
-            const hook = self.hookFromOwnedNode(node);
+        pub fn prev(self: *const @This(), node: *const Node) ?*Node {
+            const hook = self.hookFromOwnedConstNode(node);
             return hook.prev;
         }
 
-        pub fn hasContent(self: *@This()) bool {
+        pub fn hasContent(self: *const @This()) bool {
             return self.first_ != null;
         }
     };

@@ -25,12 +25,18 @@ fn EmbeddedHook(
                 pub const Node = Payload;
 
                 /// This function is required by all implementations
-                pub inline fn hookFromNode(_: @This(), node: *Node) *Hook {
+                pub inline fn hookFromNode(
+                    _: @This(),
+                    node: *const Node,
+                ) *const Hook {
                     return &@field(node, hook_field_name);
                 }
 
                 /// This function is required by some but not all implementations
-                pub inline fn nodeFromHook(_: @This(), hook: *Hook) *Node {
+                pub inline fn nodeFromHook(
+                    _: @This(),
+                    hook: *const Hook,
+                ) *const Node {
                     return @alignCast(@fieldParentPtr(hook_field_name, hook));
                 }
             };
