@@ -4,11 +4,13 @@ const std = @import("std");
 const d2d1 = @import("../d2d1.zig");
 const DeviceResources = @import("DeviceResources.zig");
 const lib = @import("../../lib.zig");
+const lib_imports = @import("../../lib_imports.zig");
+const cc = lib_imports.cc;
 
 pub const Self = @This();
 
 vtbl: *const Vtbl,
-node: List.Node = .{ .data = .{} },
+list_hook: List.Hook = undefined,
 owner: ?*const DeviceResources = null,
 is_created: bool = false,
 
@@ -45,9 +47,8 @@ pub fn release(
     return self.vtbl.release(self);
 }
 
-const ListData = struct {};
-pub const List = std.DoublyLinkedList(ListData);
-
-pub fn fromListNode(node: *List.Node) *@This() {
-    return @alignCast(@fieldParentPtr("node", node));
-}
+pub const List = cc.List(@This(), .{
+    .implementation = .{ .double_linked = .null_terminated },
+    .layout = .{ .embedded_hook = "list_hook" },
+    .ownership_tracking = .container_ptr,
+});

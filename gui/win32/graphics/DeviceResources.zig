@@ -13,8 +13,8 @@ created: DeviceResource.List = .{},
 uncreated: DeviceResource.List = .{},
 
 pub fn deinit(self: *@This()) void {
-    std.debug.assert(self.created.len == 0);
-    std.debug.assert(self.uncreated.len == 0);
+    std.debug.assert(!self.created.hasContent());
+    std.debug.assert(!self.uncreated.hasContent());
 }
 
 pub fn addResource(self: *@This(), ptr_to_derived_resource: anytype) void {
@@ -39,7 +39,7 @@ fn addDeviceResource(self: *@This(), resource: *DeviceResource) void {
 
     std.debug.assert(!resource.is_created);
 
-    self.uncreated.append(&resource.node);
+    self.uncreated.insertLast(resource);
     resource.owner = self;
     resource.is_created = false;
 
@@ -64,19 +64,15 @@ fn removeDeviceResource(
         self.releaseDeviceResource(resource);
 
     std.debug.assert(!resource.is_created);
-    self.uncreated.remove(&resource.node);
+    self.uncreated.remove(resource);
     resource.owner = null;
 }
 
 pub fn removeAllResources(self: *@This()) void {
-    while (self.created.last) |node| {
-        const resource: *DeviceResource = .fromListNode(node);
+    while (self.created.last()) |resource|
         self.removeDeviceResource(resource);
-    }
-    while (self.uncreated.last) |node| {
-        const resource: *DeviceResource = .fromListNode(node);
+    while (self.uncreated.last()) |resource|
         self.removeDeviceResource(resource);
-    }
 }
 
 fn createDeviceResource(
@@ -88,8 +84,8 @@ fn createDeviceResource(
     std.debug.assert(!resource.is_created);
 
     try resource.create(render_target);
-    self.uncreated.remove(&resource.node);
-    self.created.append(&resource.node);
+    self.uncreated.remove(resource);
+    self.created.insertLast(resource);
     resource.is_created = true;
 }
 
@@ -101,8 +97,8 @@ fn releaseDeviceResource(
     std.debug.assert(resource.is_created);
 
     resource.release();
-    self.created.remove(&resource.node);
-    self.uncreated.append(&resource.node);
+    self.created.remove(resource);
+    self.uncreated.insertLast(resource);
     resource.is_created = false;
 }
 
@@ -140,12 +136,9 @@ pub fn provideResourcesFor(
     const hwnd_target = try self.provideRenderTargetFor(hWnd);
     const target = hwnd_target.as(d2d1.IRenderTarget);
 
-    var node = self.uncreated.first;
-    while (node) |n| : (node = n.next) {
-        const resource: *DeviceResource = .fromListNode(n);
+    while (self.uncreated.first()) |resource|
         try self.createDeviceResource(resource, target);
-    }
-    std.debug.assert(self.uncreated.first == null);
+    std.debug.assert(!self.uncreated.hasContent());
 
     return hwnd_target;
 }
@@ -158,10 +151,7 @@ pub fn releaseResources(
         self.render_target = null;
     }
 
-    var node = self.created.first;
-    while (node) |n| : (node = n.next) {
-        const resource: *DeviceResource = .fromListNode(n);
+    while (self.created.first()) |resource|
         self.releaseDeviceResource(resource);
-    }
-    std.debug.assert(self.created.first == null);
+    std.debug.assert(!self.created.hasContent());
 }
