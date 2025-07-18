@@ -18,11 +18,17 @@ test "All" {
         .{ .double_linked = .null_terminated },
         .simple_payload,
     );
-    var n: L.Node = undefined;
+    var n0: L.Node = undefined;
     var l: L = .{};
-    l.insertLast(&n);
+    l.insertLast(&n0);
     var n1: L.Node = undefined;
     l.insert(.after(null), &n1);
+    {
+        var node = l.first();
+        while (node) |n| node = l.next(n);
+        node = l.last();
+        while (node) |n| node = l.prev(n);
+    }
     l.remove(&n1);
     @breakpoint();
 }

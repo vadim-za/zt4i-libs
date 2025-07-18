@@ -184,5 +184,27 @@ pub fn List(
             if (comptime std.debug.runtime_safety)
                 hook.* = undefined;
         }
+
+        pub fn first(self: *@This()) ?*Node {
+            return self.first_;
+        }
+
+        pub fn last(self: *@This()) ?*Node {
+            return self.last_;
+        }
+
+        pub fn next(self: *@This(), node: *Node) ?*Node {
+            const hook = self.hookFromOwnedNode(node);
+            return hook.next;
+        }
+
+        pub fn prev(self: *@This(), node: *Node) ?*Node {
+            const hook = self.hookFromOwnedNode(node);
+            return hook.prev;
+        }
+
+        pub fn hasContent(self: *@This()) bool {
+            return self.first_ != null;
+        }
     };
 }
