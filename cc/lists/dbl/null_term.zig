@@ -64,7 +64,8 @@ pub fn List(
             return hook;
         }
 
-        pub const InsertionPos = lib.lists.InsertionPos(Node);
+        pub const InsertionPos = lib.lists.Implementation
+            .DoubleLinked.InsertionPos(Node);
 
         pub inline fn insert(self: *@This(), where: InsertionPos, node: *Node) void {
             switch (where) {

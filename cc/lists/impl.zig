@@ -12,6 +12,8 @@ pub const Implementation = union(enum) {
         //sentinel_terminated: WrapImpl(@import("dbl/sentinel_term.zig")),
         //head_only: WrapImpl(@import("dbl/head_only.zig")),
 
+        pub const InsertionPos = @import("dbl/insertion_pos.zig").InsertionPos;
+
         fn namespace(self: @This()) type {
             return switch (self) {
                 inline else => |impl| impl.namespace(),
