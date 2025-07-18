@@ -1,6 +1,14 @@
+/// Layout of container nodes
 pub const Layout = union(enum) {
+    /// Container nodes contain 'data' field of Payload type
     simple_payload: void,
+
+    /// Container nodes are of Payload type, one of the fields is a container hook.
+    /// See "Embedded hook" test in lists/dbl/testing.zig
     embedded_hook: []const u8,
+
+    /// Other layout, possibly runtime-configurable.
+    /// See "Non-empty layout" test in lists/dbl/testing.zig
     custom: type,
 
     pub fn make(self: @This(), List: type, Payload: type) type {
@@ -15,6 +23,8 @@ pub const Layout = union(enum) {
     }
 };
 
+/// Container nodes are of Payload type, one of the fields is a container hook.
+/// See "Embedded hook" test in lists/dbl/testing.zig
 fn EmbeddedHook(
     hook_field_name: []const u8,
 ) type {
@@ -43,6 +53,7 @@ fn EmbeddedHook(
     };
 }
 
+/// List nodes contain 'data' field of Payload type
 const SimplePayload = struct {
     pub fn With(Payload: type, Hook: type) type {
         const Node = struct {
