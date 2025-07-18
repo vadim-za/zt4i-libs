@@ -27,7 +27,7 @@ const tested_configs = configs: {
     break :configs configs;
 };
 
-test "Basic" {
+test "insertLast" {
     inline for (tested_configs) |config| {
         const List = lib.lists.List(Payload, config);
         const impl = comptime config.implementation.double_linked;
@@ -42,11 +42,27 @@ test "Basic" {
         const Node = List.Node;
         var nodes: [2]Node = undefined;
 
-        list.insertLast(&nodes[0]);
+        list.insert(.last, &nodes[0]); // same as list.insertLast(&nodes[0])
         try std.testing.expectEqual(&nodes[0], list.first());
         try std.testing.expectEqual(&nodes[0], list.last());
         try std.testing.expectEqual(null, list.next(&nodes[0]));
         try std.testing.expectEqual(null, list.prev(&nodes[0]));
+
+        list.insertLast(&nodes[1]); // same as list.insert(.last, &nodes[1])
+        try std.testing.expectEqual(&nodes[0], list.first());
+        try std.testing.expectEqual(null, list.prev(&nodes[0]));
+        try std.testing.expectEqual(&nodes[1], list.next(&nodes[0]));
+        try std.testing.expectEqual(&nodes[1], list.last());
+        try std.testing.expectEqual(null, list.next(&nodes[1]));
+        try std.testing.expectEqual(&nodes[0], list.prev(&nodes[1]));
+
+        var i: u32 = 0;
+        var node = list.first();
+        while (node) |n| : ({
+            node = list.next(n);
+            i += 1;
+        })
+            try std.testing.expectEqual(&nodes[i], n);
     }
 
     @breakpoint();
