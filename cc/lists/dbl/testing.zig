@@ -53,7 +53,8 @@ test "insertLast" {
             undefined
         else
             .{};
-        list.init(); // redundant if .{} initialization is done above
+        if (impl == .sentinel_terminated)
+            list.init();
         if (comptime config.ownership_tracking.owned_items == .custom)
             list.setOwnershipToken(1);
 
@@ -99,7 +100,8 @@ test "insertFirst" {
             undefined
         else
             .{};
-        list.init(); // redundant if .{} initialization is done above
+        if (impl == .sentinel_terminated)
+            list.init();
         if (comptime config.ownership_tracking.owned_items == .custom)
             list.setOwnershipToken(1);
 
