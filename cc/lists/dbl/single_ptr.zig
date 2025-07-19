@@ -28,18 +28,23 @@ pub fn List(
 
         pub const Node = Layout.Node;
         pub const Hook = struct {
-            next: *Node,
-            prev: *Node,
-            owner: OwnershipTraits.PassedAroundToken,
+            next: *Node = undefined,
+            prev: *Node = undefined,
+            ownership_token_storage: OwnershipTraits.ItemTokenStorage = .{},
         };
 
         pub fn init(self: *@This()) void {
             self.* = .{};
         }
 
+        pub fn deinit(self: *const @This()) void {
+            if (comptime !OwnershipTraits.can_discard_content)
+                std.debug.assert(!self.hasContent());
+        }
+
         pub const setOwnershipToken = OwnershipTraits.setContainerToken;
 
-        const Methods = CommonMethods(@This(), OwnershipTraits);
+        const Methods = CommonMethods(@This());
         pub const hookFromFreeNode = Methods.hookFromFreeNode;
         pub const hookFromOwnedNode = Methods.hookFromOwnedNode;
         pub const hookFromOwnedConstNode = Methods.hookFromOwnedConstNode;
@@ -68,9 +73,11 @@ pub fn List(
                 self.insertBetween(last_node, first_node, node);
             } else {
                 const hook = self.hookFromFreeNode(node);
-                hook.prev = node;
-                hook.next = node;
-                hook.owner = OwnershipTraits.getContainerToken(self);
+                hook.* = .{
+                    .prev = node,
+                    .next = node,
+                    .ownership_token_storage = .from(self),
+                };
 
                 self.first_ = node;
             }
@@ -114,9 +121,11 @@ pub fn List(
             std.debug.assert(next_hook.prev == prev_node);
 
             const hook = self.hookFromFreeNode(node);
-            hook.prev = prev_node;
-            hook.next = next_node;
-            hook.owner = OwnershipTraits.getContainerToken(self);
+            hook.* = .{
+                .prev = prev_node,
+                .next = next_node,
+                .ownership_token_storage = .from(self),
+            };
 
             prev_hook.next = node;
             next_hook.prev = node;
@@ -136,8 +145,7 @@ pub fn List(
                 self.hookFromOwnedNode(hook.next).prev = hook.prev;
             }
 
-            if (comptime std.debug.runtime_safety)
-                hook.* = undefined;
+            hook.* = .{};
         }
 
         // -------------------- standard inspection

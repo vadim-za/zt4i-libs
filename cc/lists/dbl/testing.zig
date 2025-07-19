@@ -3,17 +3,13 @@ const lib = @import("../../lib.zig");
 
 const Payload = i32;
 
-const tested_configs = tested_configs_all;
-
-const tested_configs_none: []const lib.lists.Config = &.{};
-
-const tested_configs_all = configs: {
+const tested_configs = configs: {
     var configs: []const lib.lists.Config = &.{};
 
     for ([_]std.meta.Tag(lib.lists.Implementation.DoubleLinked){
         .null_terminated,
         .sentinel_terminated,
-        //.single_ptr,
+        .single_ptr,
     }) |impl| {
         for ([_]lib.OwnershipTracking.TrackOwnedItems{
             .container_ptr,
