@@ -6,23 +6,28 @@ const Payload = i32;
 const tested_configs = configs: {
     var configs: []const lib.lists.Config = &.{};
 
-    for ([_]lib.OwnershipTracking.TrackOwnedItems{
-        .container_ptr,
-        .{ .custom = i32 },
-        .off,
-    }) |owned_items| {
-        for ([_]lib.OwnershipTracking.TrackFreeItems{
+    for ([_]std.meta.Tag(lib.lists.Implementation.SingleLinked){
+        .single_ptr,
+        .double_ptr,
+    }) |impl| {
+        for ([_]lib.OwnershipTracking.TrackOwnedItems{
+            .container_ptr,
+            .{ .custom = i32 },
             .off,
-            .on,
-        }) |free_items| {
-            configs = configs ++ [1]lib.lists.Config{.{
-                .implementation = .single_linked,
-                .layout = .simple_payload,
-                .ownership_tracking = .{
-                    .owned_items = owned_items,
-                    .free_items = free_items,
-                },
-            }};
+        }) |owned_items| {
+            for ([_]lib.OwnershipTracking.TrackFreeItems{
+                .off,
+                .on,
+            }) |free_items| {
+                configs = configs ++ [1]lib.lists.Config{.{
+                    .implementation = .{ .single_linked = impl },
+                    .layout = .simple_payload,
+                    .ownership_tracking = .{
+                        .owned_items = owned_items,
+                        .free_items = free_items,
+                    },
+                }};
+            }
         }
     }
 

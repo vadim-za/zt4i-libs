@@ -44,5 +44,5 @@ fn WrapImpl(impl_namespace: type) type {
 
 comptime {
     std.testing.refAllDecls(@import("dbl/testing.zig"));
-    //std.testing.refAllDecls(@import("sgl/testing.zig"));
+    std.testing.refAllDecls(@import("sgl/testing.zig"));
 }
