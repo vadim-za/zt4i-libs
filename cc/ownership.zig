@@ -1,74 +1,114 @@
 const std = @import("std");
 const builtin = @import("builtin");
 
-pub const Tracking = union(enum) {
-    /// Ownership is not tracked. In non-debug builds the ownership
-    /// tracking is always off.
-    off: void,
+pub const Tracking = struct {
+    owned_items: TrackOwnedItems,
+    free_items: TrackFreeItems,
 
-    /// Pointer to the container object is used as the ownership token
-    container_ptr: void,
+    /// How to track items owned by a container
+    pub const TrackOwnedItems = union(enum) {
+        /// Ownership is not tracked. In non-debug builds the ownership
+        /// tracking is always off.
+        off: void,
 
-    /// So far only types comparable with '==' are supported
-    custom: type,
+        /// Pointer to the container object is used as the ownership token
+        container_ptr: void,
+
+        /// So far only types comparable with '==' are supported
+        custom: type,
+    };
+
+    /// Whether free items should be tracked as being free
+    pub const TrackFreeItems = enum {
+        /// The item state of being free (not in a container) is tracked.
+        /// You must explicitly remove an item from a container before
+        /// being able to reuse it in another container, simple discarding
+        /// of containers is not supported.
+        on,
+
+        /// The item state of being free (not in a container) is not tracked.
+        /// You may simply discard a container and reuse its items
+        /// in another container right away.
+        off,
+    };
 
     pub fn TraitsFor(self: @This(), Container: type) type {
-        // Don't enable tracking in non-safe modes, containers may
-        // reset the stored tokens to undefined.
-        const tracking = if (comptime builtin.mode == .Debug)
-            self
-        else
-            .off;
+        const spec = self; // tracking mode as requested by the user
+
+        // Tracking is never enabled in non-safe modes, containers may
+        // formally reset the stored tokens to undefined in these modes.
+        const tracking_allowed = comptime builtin.mode != .Debug;
 
         return struct {
-            pub const enabled = tracking != .off;
+            pub const track_owned: TrackOwnedItems =
+                if (tracking_allowed) spec.owned_items else .off;
+            pub const track_free: TrackFreeItems =
+                if (tracking_allowed) spec.free_items else .off;
 
-            pub const Token: type = switch (tracking) {
+            // Token type actually passed around
+            pub const PassedAroundToken: type =
+                if (tracking_allowed) Token else void;
+
+            pub inline fn toPassedAround(token: Token) PassedAroundToken {
+                return if (comptime tracking_allowed) token;
+            }
+
+            // Token type as requested by the user (to be used in user-side API)
+            pub const Token: type = switch (spec.owned_items) {
                 .off => void,
                 .container_ptr => *const Container,
                 .custom => |T| T,
             };
 
-            pub const ContainerTokenStorage: type = switch (tracking) {
+            pub const ContainerTokenStorage: type = switch (track_owned) {
                 .off => struct {},
                 .container_ptr => struct {},
                 .custom => |T| struct { token: ?T = null },
             };
 
-            pub inline fn getContainerToken(container: *const Container) Token {
-                return switch (comptime tracking) {
+            pub inline fn getContainerToken(
+                container: *const Container,
+            ) PassedAroundToken {
+                return switch (comptime track_owned) {
                     .off => {},
                     .container_ptr => container,
                     .custom => container.ownership_token_storage.token.?,
                 };
             }
 
-            pub inline fn initialContainerToken(container: *const Container) Token {
-                return switch (comptime tracking) {
+            // Call this function to obtain the value that would be returned
+            // by the container after the container has been initialized
+            pub inline fn initialContainerToken(
+                container: *const Container,
+            ) PassedAroundToken {
+                return switch (comptime track_owned) {
                     .off => {},
                     .container_ptr => container,
                     .custom => undefined, // no initial value, must be set by the user
                 };
             }
 
-            pub const setContainerToken = switch (tracking) {
-                .custom => setContainerCustomToken,
-                else => @compileError("Tracking mode " ++
-                    @tagName(tracking) ++ " doesn't support setContainerToken()"),
-            };
-
-            inline fn setContainerCustomToken(
+            // This one is part of the user-side API implementation, use Token,
+            // not PassedToken
+            pub inline fn setContainerToken(
                 container: *Container,
                 token: Token,
             ) void {
-                container.ownership_token_storage = .{ .token = token };
+                switch (spec.owned_items) {
+                    .custom => {
+                        if (comptime tracking_allowed)
+                            container.ownership_token_storage = .{ .token = token };
+                    },
+                    else => @compileError("Tracking mode " ++
+                        @tagName(track_owned) ++ " doesn't support setContainerToken()"),
+                }
             }
 
             pub inline fn checkOwnership(
                 container: *const Container,
-                token: *const Token,
+                token: *const PassedAroundToken,
             ) void {
-                if (comptime tracking != .off)
+                if (comptime track_owned != .off)
                     std.debug.assert(token.* == getContainerToken(container));
             }
         };

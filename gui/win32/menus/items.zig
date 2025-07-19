@@ -8,7 +8,10 @@ const os = std.os.windows;
 pub const ItemsList = cc.List(Item, .{
     .implementation = .{ .double_linked = .null_terminated },
     .layout = .{ .embedded_hook = "list_hook" },
-    .ownership_tracking = .container_ptr,
+    .ownership_tracking = .{
+        .owned_items = .container_ptr,
+        .free_items = .on,
+    },
 });
 
 pub const Item = struct {

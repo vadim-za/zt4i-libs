@@ -30,7 +30,7 @@ pub fn List(
         pub const Hook = struct {
             next: *Node,
             prev: *Node,
-            owner: OwnershipTraits.Token,
+            owner: OwnershipTraits.PassedAroundToken,
         };
 
         pub fn init(self: *@This()) void {

@@ -36,7 +36,10 @@ test "Simple list demo" {
         .layout = .simple_payload,
 
         // Track node ownership in debug builds using pointer to the list object.
-        .ownership_tracking = .container_ptr,
+        .ownership_tracking = .{
+            .owned_items = .container_ptr,
+            .free_items = .off,
+        },
     });
 
     // Also could initialize to .{}, except for sentinel-terminated lists

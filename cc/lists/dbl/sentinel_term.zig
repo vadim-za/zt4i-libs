@@ -34,7 +34,7 @@ pub fn List(
         pub const Hook = struct {
             next: *Hook,
             prev: *Hook,
-            owner: OwnershipTraits.Token,
+            owner: OwnershipTraits.PassedAroundToken,
             node: if (debug_nodes) ?*Node else void,
         };
 
@@ -55,7 +55,7 @@ pub fn List(
             token: OwnershipTraits.Token,
         ) void {
             OwnershipTraits.setContainerToken(self, token);
-            self.sentinel.owner = token;
+            self.sentinel.owner = OwnershipTraits.toPassedAround(token);
         }
 
         const Methods = CommonMethods(@This(), OwnershipTraits);

@@ -12,9 +12,9 @@ const tested_configs = configs: {
         .single_ptr,
     }) |impl| {
         for ([_]lib.OwnershipTracking{
-            .container_ptr,
-            .{ .custom = i32 },
-            .off,
+            .{ .owned_items = .container_ptr, .free_items = .off },
+            .{ .owned_items = .{ .custom = i32 }, .free_items = .off },
+            .{ .owned_items = .off, .free_items = .off },
         }) |tracking| {
             configs = configs ++ [1]lib.lists.Config{.{
                 .implementation = .{ .double_linked = impl },
@@ -54,7 +54,7 @@ test "insertLast" {
         else
             .{};
         list.init(); // redundant if .{} initialization is done above
-        if (comptime config.ownership_tracking == .custom)
+        if (comptime config.ownership_tracking.owned_items == .custom)
             list.setOwnershipToken(1);
 
         try verifyConsistency(List, &list);
@@ -100,7 +100,7 @@ test "insertFirst" {
         else
             .{};
         list.init(); // redundant if .{} initialization is done above
-        if (comptime config.ownership_tracking == .custom)
+        if (comptime config.ownership_tracking.owned_items == .custom)
             list.setOwnershipToken(1);
 
         try verifyConsistency(List, &list);
@@ -146,7 +146,7 @@ test "insertBefore" {
         else
             .{};
         list.init(); // redundant if .{} initialization is done above
-        if (comptime config.ownership_tracking == .custom)
+        if (comptime config.ownership_tracking.owned_items == .custom)
             list.setOwnershipToken(1);
 
         try verifyConsistency(List, &list);
@@ -188,7 +188,7 @@ test "insertAfter" {
         else
             .{};
         list.init(); // redundant if .{} initialization is done above
-        if (comptime config.ownership_tracking == .custom)
+        if (comptime config.ownership_tracking.owned_items == .custom)
             list.setOwnershipToken(1);
 
         try verifyConsistency(List, &list);
@@ -230,7 +230,7 @@ test "remove" {
         else
             .{};
         list.init(); // redundant if .{} initialization is done above
-        if (comptime config.ownership_tracking == .custom)
+        if (comptime config.ownership_tracking.owned_items == .custom)
             list.setOwnershipToken(1);
 
         try verifyConsistency(List, &list);
@@ -305,7 +305,7 @@ test "Embedded hook" {
         else
             .{};
         list.init(); // redundant if .{} initialization is done above
-        if (comptime config.ownership_tracking == .custom)
+        if (comptime config.ownership_tracking.owned_items == .custom)
             list.setOwnershipToken(1);
 
         try verifyConsistency(types.List, &list);
@@ -367,7 +367,7 @@ test "Non-empty layout" {
             var list: types.List = undefined;
             list.init();
             list.layout = .{ .index = index };
-            if (comptime config.ownership_tracking == .custom)
+            if (comptime config.ownership_tracking.owned_items == .custom)
                 list.setOwnershipToken(1);
 
             try verifyConsistency(types.List, &list);
