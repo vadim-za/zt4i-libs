@@ -2,6 +2,7 @@ const std = @import("std");
 
 pub const Implementation = union(enum) {
     double_linked: DoubleLinked,
+    single_linked: SingleLinked,
 
     pub fn namespace(self: @This()) type {
         return switch (self) {
@@ -20,6 +21,8 @@ pub const Implementation = union(enum) {
             };
         }
     };
+
+    pub const SingleLinked = WrapImpl(@import("sgl/single_ptr.zig"));
 };
 
 fn WrapImpl(impl_namespace: type) type {

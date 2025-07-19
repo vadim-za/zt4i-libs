@@ -30,7 +30,7 @@ test "Simple list demo" {
     // A list with an i32 payload
     const L = List(i32, .{
         // Select list implementation
-        .implementation = .{ .double_linked = .single_ptr },
+        .implementation = .single_linked, //.{ .double_linked = .single_ptr },
 
         // List nodes contain 'data' field with payload
         .layout = .simple_payload,
@@ -51,7 +51,7 @@ test "Simple list demo" {
 
     var n0: L.Node = .{ .data = undefined };
     n0.data = 0;
-    l.insertLast(&n0);
+    l.insertFirst(&n0);
 
     var n1: L.Node = .{ .data = 1 };
     l.insert(.after(null), &n1);
@@ -59,9 +59,10 @@ test "Simple list demo" {
     {
         var node = l.first();
         while (node) |n| node = l.next(n);
-        node = l.last();
-        while (node) |n| node = l.prev(n);
+        // node = l.last();
+        // while (node) |n| node = l.prev(n);
     }
-    l.remove(&n1);
+    l.removeFirst();
+    //l.remove(&n1);
     l.removeAll();
 }
