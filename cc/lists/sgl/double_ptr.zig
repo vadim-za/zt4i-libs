@@ -80,7 +80,7 @@ pub fn List(
         pub fn insertLast(self: *@This(), node: *Node) void {
             const hook = self.hookFromFreeNode(node);
             hook.* = .{
-                .next = self.last_,
+                .next = null,
                 .ownership_token_storage = .from(self),
             };
 

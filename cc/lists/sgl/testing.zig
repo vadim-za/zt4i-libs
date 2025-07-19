@@ -71,6 +71,48 @@ test "insertFirst" {
     }
 }
 
+test "insertLast" {
+    inline for (tested_configs) |config| {
+        const List = lib.lists.List(Payload, config);
+        const impl = comptime config.implementation.single_linked;
+        if (impl == .single_ptr) continue;
+
+        var list: List = .{};
+        if (comptime config.ownership_tracking.owned_items == .custom)
+            list.setOwnershipToken(1);
+        defer list.deinit();
+
+        const Node = List.Node;
+        var nodes: [2]Node = undefined;
+        if (comptime config.ownership_tracking.free_items != .off) {
+            for (&nodes) |*n| n.* = .{ .data = undefined };
+        }
+
+        list.insert(.last, &nodes[0]); // same as list.insertLast(&nodes[0])
+        try std.testing.expectEqual(&nodes[0], list.first());
+        try std.testing.expectEqual(&nodes[0], list.last());
+        try std.testing.expectEqual(null, list.next(&nodes[0]));
+
+        list.insertLast(&nodes[1]); // same as list.insert(.last, &nodes[1])
+        try std.testing.expectEqual(&nodes[0], list.first());
+        try std.testing.expectEqual(&nodes[1], list.next(&nodes[0]));
+        try std.testing.expectEqual(&nodes[1], list.last());
+        try std.testing.expectEqual(null, list.next(&nodes[1]));
+
+        var i: u32 = 0;
+        var node = list.first();
+        while (node) |n| : ({
+            node = list.next(n);
+            i += 1;
+        })
+            try std.testing.expectEqual(&nodes[i], n);
+        try std.testing.expectEqual(2, i);
+
+        if (comptime config.ownership_tracking.free_items != .off)
+            list.removeAll();
+    }
+}
+
 test "insertAfter" {
     inline for (tested_configs) |config| {
         const List = lib.lists.List(Payload, config);
@@ -131,7 +173,7 @@ test "removeFirst" {
 
         list.removeFirst();
         try std.testing.expectEqual(&nodes[1], list.first());
-        try std.testing.expectEqual(&nodes[0], list.next(list.first().?));
+        try std.testing.expectEqual(&nodes[0], list.next(&nodes[1]));
 
         try std.testing.expectEqual(&nodes[1], list.popFirst());
         try std.testing.expectEqual(&nodes[0], list.popFirst());
