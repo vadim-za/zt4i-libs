@@ -12,7 +12,7 @@ const tested_configs_all = configs: {
 
     for ([_]std.meta.Tag(lib.lists.Implementation.DoubleLinked){
         .null_terminated,
-        //.sentinel_terminated,
+        .sentinel_terminated,
         //.single_ptr,
     }) |impl| {
         for ([_]lib.OwnershipTracking.TrackOwnedItems{

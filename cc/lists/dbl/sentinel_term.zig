@@ -60,7 +60,7 @@ pub fn List(
             token: OwnershipTraits.Token,
         ) void {
             OwnershipTraits.setContainerToken(self, token);
-            self.sentinel.ownership_token_storage = .init(self);
+            self.sentinel.ownership_token_storage = .from(self);
         }
 
         pub fn deinit(self: *const @This()) void {
