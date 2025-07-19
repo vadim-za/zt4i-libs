@@ -30,7 +30,7 @@ test "Simple list demo" {
     // A list with an i32 payload
     const L = List(i32, .{
         // Select list implementation
-        .implementation = .{ .double_linked = .sentinel_terminated },
+        .implementation = .{ .double_linked = .null_terminated },
 
         // List nodes contain 'data' field with payload
         .layout = .simple_payload,
@@ -38,7 +38,7 @@ test "Simple list demo" {
         // Track node ownership in debug builds using pointer to the list object.
         .ownership_tracking = .{
             .owned_items = .container_ptr,
-            .free_items = .off,
+            .free_items = .on,
         },
     });
 
@@ -47,6 +47,7 @@ test "Simple list demo" {
 
     // init() is available for all list types
     l.init();
+    defer l.deinit();
 
     var n0: L.Node = undefined;
     n0.data = 0;
@@ -63,4 +64,5 @@ test "Simple list demo" {
         while (node) |n| node = l.prev(n);
     }
     l.remove(&n1);
+    l.removeAll();
 }

@@ -3,7 +3,9 @@ const lib = @import("../../lib.zig");
 
 const Payload = i32;
 
-const tested_configs = configs: {
+const tested_configs = tested_configs_none;
+const tested_configs_none: []const lib.lists.Config = &.{};
+const tested_configs_all = configs: {
     var configs: []const lib.lists.Config = &.{};
 
     for ([_]std.meta.Tag(lib.lists.Implementation.DoubleLinked){

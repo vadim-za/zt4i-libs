@@ -1,6 +1,6 @@
 const std = @import("std");
 
-pub fn Methods(Container: type, OwnershipTraits: type) type {
+pub fn Methods(Container: type) type {
     return struct {
         const Node = Container.Node;
         const Hook = Container.Hook;
@@ -19,7 +19,7 @@ pub fn Methods(Container: type, OwnershipTraits: type) type {
             node: *const Node,
         ) *const Hook {
             const hook = self.layout.hookFromNode(node);
-            OwnershipTraits.checkOwnership(self, &hook.owner);
+            hook.ownership_token_storage.checkOwnership(self);
             return hook;
         }
 
@@ -37,6 +37,11 @@ pub fn Methods(Container: type, OwnershipTraits: type) type {
                 return node;
             }
             return null;
+        }
+
+        pub fn removeAll(self: *Container) void {
+            while (self.last()) |node|
+                self.remove(node);
         }
     };
 }

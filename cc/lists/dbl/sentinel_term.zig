@@ -187,5 +187,6 @@ pub fn List(
 
         pub const popFirst = Methods.popFirst;
         pub const popLast = Methods.popLast;
+        pub const removeAll = Methods.removeAll;
     };
 }

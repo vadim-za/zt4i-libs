@@ -28,18 +28,27 @@ pub fn List(
 
         pub const Node = Layout.Node;
         pub const Hook = struct {
-            next: ?*Node,
-            prev: ?*Node,
-            owner: OwnershipTraits.PassedAroundToken,
+            next: ?*Node = undefined,
+            prev: ?*Node = undefined,
+            ownership_token_storage: OwnershipTraits.ItemTokenStorage = .{},
+
+            fn reset(self: *@This()) void {
+                self.* = .{};
+            }
         };
 
         pub fn init(self: *@This()) void {
             self.* = .{};
         }
 
+        pub fn deinit(self: *const @This()) void {
+            if (comptime OwnershipTraits.track_free != .off)
+                std.debug.assert(!self.hasContent());
+        }
+
         pub const setOwnershipToken = OwnershipTraits.setContainerToken;
 
-        const Methods = CommonMethods(@This(), OwnershipTraits);
+        const Methods = CommonMethods(@This());
         pub const hookFromFreeNode = Methods.hookFromFreeNode;
         pub const hookFromOwnedNode = Methods.hookFromOwnedNode;
         pub const hookFromOwnedConstNode = Methods.hookFromOwnedConstNode;
@@ -59,10 +68,11 @@ pub fn List(
 
         pub fn insertFirst(self: *@This(), node: *Node) void {
             const hook = self.hookFromFreeNode(node);
-
-            hook.prev = null;
-            hook.next = self.first_;
-            hook.owner = OwnershipTraits.getContainerToken(self);
+            hook.* = .{
+                .prev = null,
+                .next = self.first_,
+                .ownership_token_storage = .from(self),
+            };
 
             if (self.first_) |first_node|
                 self.hookFromOwnedNode(first_node).prev = node
@@ -74,10 +84,11 @@ pub fn List(
 
         pub fn insertLast(self: *@This(), node: *Node) void {
             const hook = self.hookFromFreeNode(node);
-
-            hook.prev = self.last_;
-            hook.next = null;
-            hook.owner = OwnershipTraits.getContainerToken(self);
+            hook.* = .{
+                .prev = self.last_,
+                .next = null,
+                .ownership_token_storage = .from(self),
+            };
 
             if (self.last_) |last_node|
                 self.hookFromOwnedNode(last_node).next = node
@@ -93,24 +104,25 @@ pub fn List(
             node: *Node,
         ) void {
             const hook = self.hookFromFreeNode(node);
-            hook.next = next_node;
-
             const next_hook = self.hookFromOwnedNode(next_node);
-            if (next_hook.prev) |prev_node| {
-                std.debug.assert(next_node != self.first_);
-                hook.prev = prev_node;
 
-                const prev_hook = self.hookFromOwnedNode(prev_node);
-                prev_hook.next = node;
-            } else {
+            const prev_node = if (next_hook.prev) |prev_node| prev: {
+                std.debug.assert(next_node != self.first_);
+                self.hookFromOwnedNode(prev_node).next = node;
+                break :prev prev_node;
+            } else prev: {
                 std.debug.assert(next_node == self.first_);
-                hook.prev = null;
                 self.first_ = node;
-            }
+                break :prev null;
+            };
 
             next_hook.prev = node;
 
-            hook.owner = OwnershipTraits.getContainerToken(self);
+            hook.* = .{
+                .prev = prev_node,
+                .next = next_node,
+                .ownership_token_storage = .from(self),
+            };
         }
 
         pub fn insertAfter(
@@ -119,24 +131,25 @@ pub fn List(
             node: *Node,
         ) void {
             const hook = self.hookFromFreeNode(node);
-            hook.prev = prev_node;
-
             const prev_hook = self.hookFromOwnedNode(prev_node);
-            if (prev_hook.next) |next_node| {
-                std.debug.assert(prev_node != self.last_);
-                hook.next = next_node;
 
-                const next_hook = self.hookFromOwnedNode(next_node);
-                next_hook.prev = node;
-            } else {
+            const next_node = if (prev_hook.next) |next_node| next: {
+                std.debug.assert(prev_node != self.last_);
+                self.hookFromOwnedNode(next_node).prev = node;
+                break :next next_node;
+            } else next: {
                 std.debug.assert(prev_node == self.last_);
-                hook.next = null;
                 self.last_ = node;
-            }
+                break :next null;
+            };
 
             prev_hook.next = node;
 
-            hook.owner = OwnershipTraits.getContainerToken(self);
+            hook.* = .{
+                .prev = prev_node,
+                .next = next_node,
+                .ownership_token_storage = .from(self),
+            };
         }
 
         pub fn remove(self: *@This(), node: *Node) void {
@@ -158,8 +171,7 @@ pub fn List(
                 self.last_ = hook.prev;
             }
 
-            if (comptime std.debug.runtime_safety)
-                hook.* = undefined;
+            hook.* = .{};
         }
 
         // -------------------- standard inspection
@@ -188,5 +200,6 @@ pub fn List(
 
         pub const popFirst = Methods.popFirst;
         pub const popLast = Methods.popLast;
+        pub const removeAll = Methods.removeAll;
     };
 }

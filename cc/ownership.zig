@@ -32,12 +32,11 @@ pub const Tracking = struct {
         off,
     };
 
-    pub fn TraitsFor(self: @This(), Container: type) type {
-        const spec = self; // tracking mode as requested by the user
+    pub fn TraitsFor(spec: @This(), Container: type) type {
 
-        // Tracking is never enabled in non-safe modes, containers may
-        // formally reset the stored tokens to undefined in these modes.
-        const tracking_allowed = comptime builtin.mode != .Debug;
+        // Tracking is never enabled in non-safe modes, some non-safe
+        // code may be incompatible with enabled tracking.
+        const tracking_allowed = comptime builtin.mode == .Debug;
 
         return struct {
             pub const track_owned: TrackOwnedItems =
@@ -66,7 +65,7 @@ pub const Tracking = struct {
                 .custom => |T| struct { token: ?T = null },
             };
 
-            pub inline fn getContainerToken(
+            inline fn getContainerToken(
                 container: *const Container,
             ) PassedAroundToken {
                 return switch (comptime track_owned) {
@@ -89,7 +88,7 @@ pub const Tracking = struct {
             }
 
             // This one is part of the user-side API implementation, use Token,
-            // not PassedToken
+            // not PassedAroundToken
             pub inline fn setContainerToken(
                 container: *Container,
                 token: Token,
@@ -104,13 +103,32 @@ pub const Tracking = struct {
                 }
             }
 
-            pub inline fn checkOwnership(
-                container: *const Container,
-                token: *const PassedAroundToken,
-            ) void {
-                if (comptime track_owned != .off)
-                    std.debug.assert(token.* == getContainerToken(container));
-            }
+            pub const ItemTokenStorage: type = switch (track_owned) {
+                .off => struct {
+                    pub fn from(_: *const Container) @This() {
+                        return .{};
+                    }
+                    pub inline fn checkOwnership(
+                        _: *const @This(),
+                        _: *const Container,
+                    ) void {}
+                },
+                else => struct {
+                    token: ?PassedAroundToken = switch (track_free) {
+                        .off => undefined,
+                        .on => null,
+                    },
+                    pub fn from(container: *const Container) @This() {
+                        return .{ .token = getContainerToken(container) };
+                    }
+                    pub inline fn checkOwnership(
+                        self: *const @This(),
+                        container: *const Container,
+                    ) void {
+                        std.debug.assert(self.token.? == getContainerToken(container));
+                    }
+                },
+            };
         };
     }
 };
