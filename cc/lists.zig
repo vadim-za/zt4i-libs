@@ -30,7 +30,7 @@ test "Simple list demo" {
     // A list with an i32 payload
     const L = List(i32, .{
         // Select list implementation
-        .implementation = .single_linked, //.{ .double_linked = .single_ptr },
+        .implementation = .{ .single_linked = .double_ptr },
 
         // List nodes contain 'data' field with payload
         .layout = .simple_payload,

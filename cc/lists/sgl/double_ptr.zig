@@ -2,7 +2,7 @@ const std = @import("std");
 const lib = @import("../../lib.zig");
 const CommonMethods = @import("../common.zig").Methods;
 
-/// This single-linked list stores the pointer to the first element.
+/// This single-linked list stores the pointers to the first and last elements.
 /// The termination is indicated by the next pointer set to null.
 pub fn List(
     Payload: type,
@@ -12,6 +12,7 @@ pub fn List(
     return struct {
         // These fields are private
         first_: ?*Node = null,
+        last_: ?*Node = null,
         ownership_token_storage: OwnershipTraits.ContainerTokenStorage = .{},
 
         /// This field may be accessed publicly to set the internal
@@ -50,6 +51,7 @@ pub fn List(
 
         pub const InsertionPos = union(enum) {
             first: void,
+            last: void,
             after_: *Node,
 
             pub inline fn after(node: ?*Node) @This() {
@@ -60,6 +62,7 @@ pub fn List(
         pub inline fn insert(self: *@This(), where: InsertionPos, node: *Node) void {
             switch (where) {
                 .first => self.insertFirst(node),
+                .last => self.insertLast(node),
                 .after_ => |prev_node| self.insertAfter(prev_node, node),
             }
         }
@@ -72,6 +75,24 @@ pub fn List(
             };
 
             self.first_ = node;
+        }
+
+        pub fn insertLast(self: *@This(), node: *Node) void {
+            const hook = self.hookFromFreeNode(node);
+            hook.* = .{
+                .next = self.last_,
+                .ownership_token_storage = .from(self),
+            };
+
+            if (self.last_) |last_node| {
+                const last_hook = self.hookFromOwnedNode(last_node);
+                std.debug.assert(last_hook.next == null);
+                last_hook.next = node;
+            } else {
+                self.first_ = node;
+            }
+
+            self.last_ = node;
         }
 
         pub fn insertAfter(
@@ -88,11 +109,19 @@ pub fn List(
             };
 
             prev_hook.next = node;
+
+            if (prev_node == self.last_)
+                self.last_ = node;
         }
 
         pub fn removeFirst(self: *@This()) void {
-            const hook = self.hookFromOwnedNode(self.first_.?);
+            const node = self.first_.?;
+            const hook = self.hookFromOwnedNode(node);
+
             self.first_ = hook.next;
+            if (self.last_ == node)
+                self.last_ = null;
+
             hook.* = .{};
         }
 
@@ -100,6 +129,10 @@ pub fn List(
 
         pub fn first(self: *const @This()) ?*Node {
             return self.first_;
+        }
+
+        pub fn last(self: *const @This()) ?*Node {
+            return self.last_;
         }
 
         pub fn next(self: *const @This(), node: *const Node) ?*Node {
