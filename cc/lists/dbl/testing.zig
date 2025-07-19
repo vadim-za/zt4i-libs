@@ -3,26 +3,36 @@ const lib = @import("../../lib.zig");
 
 const Payload = i32;
 
-const tested_configs = tested_configs_none;
+const tested_configs = tested_configs_all;
+
 const tested_configs_none: []const lib.lists.Config = &.{};
+
 const tested_configs_all = configs: {
     var configs: []const lib.lists.Config = &.{};
 
     for ([_]std.meta.Tag(lib.lists.Implementation.DoubleLinked){
         .null_terminated,
-        .sentinel_terminated,
-        .single_ptr,
+        //.sentinel_terminated,
+        //.single_ptr,
     }) |impl| {
-        for ([_]lib.OwnershipTracking{
-            .{ .owned_items = .container_ptr, .free_items = .off },
-            .{ .owned_items = .{ .custom = i32 }, .free_items = .off },
-            .{ .owned_items = .off, .free_items = .off },
-        }) |tracking| {
-            configs = configs ++ [1]lib.lists.Config{.{
-                .implementation = .{ .double_linked = impl },
-                .layout = .simple_payload,
-                .ownership_tracking = tracking,
-            }};
+        for ([_]lib.OwnershipTracking.TrackOwnedItems{
+            .container_ptr,
+            .{ .custom = i32 },
+            .off,
+        }) |owned_items| {
+            for ([_]lib.OwnershipTracking.TrackFreeItems{
+                .off,
+                .on,
+            }) |free_items| {
+                configs = configs ++ [1]lib.lists.Config{.{
+                    .implementation = .{ .double_linked = impl },
+                    .layout = .simple_payload,
+                    .ownership_tracking = .{
+                        .owned_items = owned_items,
+                        .free_items = free_items,
+                    },
+                }};
+            }
         }
     }
 
