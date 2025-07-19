@@ -69,11 +69,15 @@ test "insertLast" {
             list.init();
         if (comptime config.ownership_tracking.owned_items == .custom)
             list.setOwnershipToken(1);
+        defer list.deinit();
 
         try verifyConsistency(List, &list);
 
         const Node = List.Node;
         var nodes: [2]Node = undefined;
+        if (comptime config.ownership_tracking.free_items != .off) {
+            for (&nodes) |*n| n.* = .{ .data = undefined };
+        }
 
         list.insert(.last, &nodes[0]); // same as list.insertLast(&nodes[0])
         try std.testing.expectEqual(&nodes[0], list.first());
@@ -101,6 +105,9 @@ test "insertLast" {
         })
             try std.testing.expectEqual(&nodes[i], n);
         try std.testing.expectEqual(2, i);
+
+        if (comptime config.ownership_tracking.free_items != .off)
+            list.removeAll();
     }
 }
 
@@ -116,11 +123,15 @@ test "insertFirst" {
             list.init();
         if (comptime config.ownership_tracking.owned_items == .custom)
             list.setOwnershipToken(1);
+        defer list.deinit();
 
         try verifyConsistency(List, &list);
 
         const Node = List.Node;
-        var nodes: [2]Node = undefined;
+        var nodes: [2]Node = if (comptime config.ownership_tracking.free_items != .off)
+            [1]Node{.{ .data = undefined }} ** 2
+        else
+            undefined;
 
         list.insert(.first, &nodes[0]); // same as list.insertFirst(&nodes[0])
         try std.testing.expectEqual(&nodes[0], list.first());
@@ -148,6 +159,9 @@ test "insertFirst" {
         })
             try std.testing.expectEqual(&nodes[i], n);
         try std.testing.expectEqual(2, i);
+
+        if (comptime config.ownership_tracking.free_items != .off)
+            list.removeAll();
     }
 }
 
@@ -162,11 +176,15 @@ test "insertBefore" {
         list.init(); // redundant if .{} initialization is done above
         if (comptime config.ownership_tracking.owned_items == .custom)
             list.setOwnershipToken(1);
+        defer list.deinit();
 
         try verifyConsistency(List, &list);
 
         const Node = List.Node;
         var nodes: [4]Node = undefined;
+        if (comptime config.ownership_tracking.free_items != .off) {
+            for (&nodes) |*n| n.* = .{ .data = undefined };
+        }
 
         // Same as list.insertLast()
         list.insert(.before(null), &nodes[2]); // 2
@@ -190,6 +208,9 @@ test "insertBefore" {
         })
             try std.testing.expectEqual(&nodes[i], n);
         try std.testing.expectEqual(4, i);
+
+        if (comptime config.ownership_tracking.free_items != .off)
+            list.removeAll();
     }
 }
 
@@ -204,11 +225,15 @@ test "insertAfter" {
         list.init(); // redundant if .{} initialization is done above
         if (comptime config.ownership_tracking.owned_items == .custom)
             list.setOwnershipToken(1);
+        defer list.deinit();
 
         try verifyConsistency(List, &list);
 
         const Node = List.Node;
         var nodes: [4]Node = undefined;
+        if (comptime config.ownership_tracking.free_items != .off) {
+            for (&nodes) |*n| n.* = .{ .data = undefined };
+        }
 
         // Same as list.insertFirst()
         list.insert(.after(null), &nodes[1]); // 1
@@ -232,6 +257,9 @@ test "insertAfter" {
         })
             try std.testing.expectEqual(&nodes[i], n);
         try std.testing.expectEqual(4, i);
+
+        if (comptime config.ownership_tracking.free_items != .off)
+            list.removeAll();
     }
 }
 
@@ -246,11 +274,15 @@ test "remove" {
         list.init(); // redundant if .{} initialization is done above
         if (comptime config.ownership_tracking.owned_items == .custom)
             list.setOwnershipToken(1);
+        defer list.deinit();
 
         try verifyConsistency(List, &list);
 
         const Node = List.Node;
         var nodes: [3]Node = undefined;
+        if (comptime config.ownership_tracking.free_items != .off) {
+            for (&nodes) |*n| n.* = .{ .data = undefined };
+        }
 
         // remove first node
 
@@ -309,8 +341,8 @@ test "Embedded hook" {
         const types = struct {
             const List = lib.lists.List(Node, config);
             const Node = struct {
-                data: Payload,
-                hook: List.Hook,
+                data: Payload = undefined,
+                hook: List.Hook = .{},
             };
         };
         const impl = comptime config.implementation.double_linked;
@@ -324,7 +356,7 @@ test "Embedded hook" {
 
         try verifyConsistency(types.List, &list);
 
-        var node: types.Node = undefined;
+        var node: types.Node = .{};
 
         list.insertFirst(&node);
         try verifyConsistency(types.List, &list);
@@ -372,8 +404,12 @@ test "Non-empty layout" {
         const types = struct {
             const List = lib.lists.List(Node, config);
             const Node = struct {
-                data: Payload,
-                hooks: [2]List.Hook,
+                data: Payload = undefined,
+                hooks: [2]List.Hook =
+                    if (config.ownership_tracking.free_items != .off)
+                        .{ .{}, .{} }
+                    else
+                        undefined,
             };
         };
 
@@ -383,10 +419,11 @@ test "Non-empty layout" {
             list.layout = .{ .index = index };
             if (comptime config.ownership_tracking.owned_items == .custom)
                 list.setOwnershipToken(1);
+            defer list.deinit();
 
             try verifyConsistency(types.List, &list);
 
-            var node: types.Node = undefined;
+            var node: types.Node = .{};
 
             list.insertFirst(&node);
             try verifyConsistency(types.List, &list);

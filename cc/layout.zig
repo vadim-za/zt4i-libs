@@ -4,6 +4,7 @@ pub const Layout = union(enum) {
     simple_payload: void,
 
     /// Container nodes are of Payload type, one of the fields is a container hook.
+    /// The string specified the name of the hook field.
     /// See "Embedded hook" test in lists/dbl/testing.zig
     embedded_hook: []const u8,
 
