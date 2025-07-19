@@ -349,6 +349,7 @@ test "Embedded hook" {
         list.init(); // redundant if .{} initialization is done above
         if (comptime config.ownership_tracking.owned_items == .custom)
             list.setOwnershipToken(1);
+        defer list.deinit();
 
         try verifyConsistency(types.List, &list);
 
