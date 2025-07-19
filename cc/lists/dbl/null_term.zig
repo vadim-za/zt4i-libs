@@ -31,10 +31,6 @@ pub fn List(
             next: ?*Node = undefined,
             prev: ?*Node = undefined,
             ownership_token_storage: OwnershipTraits.ItemTokenStorage = .{},
-
-            fn reset(self: *@This()) void {
-                self.* = .{};
-            }
         };
 
         pub fn init(self: *@This()) void {
