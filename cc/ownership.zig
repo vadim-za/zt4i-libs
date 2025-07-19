@@ -39,18 +39,15 @@ pub const Tracking = struct {
         const tracking_allowed = comptime builtin.mode == .Debug;
 
         return struct {
-            pub const track_owned: TrackOwnedItems =
+            const track_owned: TrackOwnedItems =
                 if (tracking_allowed) spec.owned_items else .off;
-            pub const track_free: TrackFreeItems =
+            const track_free: TrackFreeItems =
                 if (tracking_allowed) spec.free_items else .off;
+            pub const can_discard_content = track_free == .off;
 
             // Token type actually passed around
-            pub const PassedAroundToken: type =
+            const PassedAroundToken: type =
                 if (tracking_allowed) Token else void;
-
-            pub inline fn toPassedAround(token: Token) PassedAroundToken {
-                return if (comptime tracking_allowed) token;
-            }
 
             // Token type as requested by the user (to be used in user-side API)
             pub const Token: type = switch (spec.owned_items) {
@@ -77,7 +74,7 @@ pub const Tracking = struct {
 
             // Call this function to obtain the value that would be returned
             // by the container after the container has been initialized
-            pub inline fn initialContainerToken(
+            inline fn initialContainerToken(
                 container: *const Container,
             ) PassedAroundToken {
                 return switch (comptime track_owned) {
@@ -108,6 +105,9 @@ pub const Tracking = struct {
                     pub fn from(_: *const Container) @This() {
                         return .{};
                     }
+                    pub fn initialFrom(_: *const Container) @This() {
+                        return .{};
+                    }
                     pub inline fn checkOwnership(
                         _: *const @This(),
                         _: *const Container,
@@ -124,6 +124,9 @@ pub const Tracking = struct {
                     pub fn from(container: *const Container) @This() {
                         return .{ .token = getContainerToken(container) };
                     }
+                    pub fn initialFrom(container: *const Container) @This() {
+                        return .{ .token = initialContainerToken(container) };
+                    }
                     pub inline fn checkOwnership(
                         self: *const @This(),
                         container: *const Container,
@@ -139,7 +142,7 @@ pub const Tracking = struct {
                         }
                     }
                 },
-            };
-        };
-    }
+            }; // ItemTokenStorage
+        }; // TraitsFor struct
+    } // TraitsFor
 };

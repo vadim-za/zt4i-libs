@@ -42,7 +42,7 @@ pub fn List(
         }
 
         pub fn deinit(self: *const @This()) void {
-            if (comptime OwnershipTraits.track_free != .off)
+            if (comptime !OwnershipTraits.can_discard_content)
                 std.debug.assert(!self.hasContent());
         }
 
