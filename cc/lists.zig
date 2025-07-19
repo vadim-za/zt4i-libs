@@ -49,13 +49,12 @@ test "Simple list demo" {
     l.init();
     defer l.deinit();
 
-    var n0: L.Node = undefined;
+    var n0: L.Node = .{ .data = undefined };
     n0.data = 0;
     l.insertLast(&n0);
 
-    var n1: L.Node = undefined;
+    var n1: L.Node = .{ .data = 1 };
     l.insert(.after(null), &n1);
-    n1.data = 1;
 
     {
         var node = l.first();

@@ -58,7 +58,7 @@ const SimplePayload = struct {
     pub fn With(Payload: type, Hook: type) type {
         const Node = struct {
             data: Payload,
-            hook: Hook,
+            hook: Hook = .{},
         };
         return EmbeddedHook("hook").With(Node, Hook);
     }

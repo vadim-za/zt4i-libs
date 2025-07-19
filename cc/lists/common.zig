@@ -7,7 +7,9 @@ pub fn Methods(Container: type) type {
 
         pub fn hookFromFreeNode(self: *const Container, node: *Node) *Hook {
             // Free nodes have undefined hooks, so we cannot check ownership
-            return @constCast(self.layout.hookFromNode(node));
+            const hook = self.layout.hookFromNode(node);
+            hook.ownership_token_storage.checkFree();
+            return @constCast(hook);
         }
 
         pub fn hookFromOwnedNode(self: *const Container, node: *Node) *Hook {

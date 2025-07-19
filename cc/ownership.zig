@@ -112,6 +112,9 @@ pub const Tracking = struct {
                         _: *const @This(),
                         _: *const Container,
                     ) void {}
+                    pub inline fn checkFree(
+                        _: *const @This(),
+                    ) void {}
                 },
                 else => struct {
                     token: ?PassedAroundToken = switch (track_free) {
@@ -126,6 +129,14 @@ pub const Tracking = struct {
                         container: *const Container,
                     ) void {
                         std.debug.assert(self.token.? == getContainerToken(container));
+                    }
+                    pub inline fn checkFree(
+                        self: *const @This(),
+                    ) void {
+                        switch (comptime track_free) {
+                            .off => {},
+                            .on => std.debug.assert(self.token == null),
+                        }
                     }
                 },
             };
