@@ -32,22 +32,27 @@ pub fn List(
 
         pub const Node = Layout.Node;
         pub const Hook = struct {
-            next: *Hook,
-            prev: *Hook,
-            owner: OwnershipTraits.PassedAroundToken,
-            node: if (debug_nodes) ?*Node else void,
+            next: *Hook = undefined,
+            prev: *Hook = undefined,
+            ownership_token_storage: OwnershipTraits.ItemTokenStorage = .{},
+            node: if (debug_nodes) ?*Node else void =
+                if (debug_nodes) null,
         };
 
         const debug_nodes = builtin.mode == .Debug;
 
         pub fn init(self: *@This()) void {
+            // Initialize one by one to make it easier on the compiler
+            // and considering Zig Issue #24313. If the latter is fixed
+            // could change this to self.* = ....
             self.ownership_token_storage = .{};
             self.sentinel = .{
                 .next = &self.sentinel,
                 .prev = &self.sentinel,
-                .owner = OwnershipTraits.initialContainerToken(self),
+                .ownership_token_storage = .initialFrom(self),
                 .node = if (debug_nodes) null,
             };
+            // self.layout is either empty or must be initialized by the user
         }
 
         pub fn setOwnershipToken(
@@ -55,10 +60,15 @@ pub fn List(
             token: OwnershipTraits.Token,
         ) void {
             OwnershipTraits.setContainerToken(self, token);
-            self.sentinel.owner = OwnershipTraits.toPassedAround(token);
+            self.sentinel.ownership_token_storage = .init(self);
         }
 
-        const Methods = CommonMethods(@This(), OwnershipTraits);
+        pub fn deinit(self: *const @This()) void {
+            if (comptime !OwnershipTraits.can_discard_content)
+                std.debug.assert(!self.hasContent());
+        }
+
+        const Methods = CommonMethods(@This());
         pub const hookFromFreeNode = Methods.hookFromFreeNode;
         pub const hookFromOwnedNode = Methods.hookFromOwnedNode;
         pub const hookFromOwnedConstNode = Methods.hookFromOwnedConstNode;
@@ -67,7 +77,7 @@ pub fn List(
             self: *const @This(),
             hook: *Hook,
         ) *Node {
-            OwnershipTraits.checkOwnership(self, &hook.owner);
+            hook.ownership_token_storage.checkOwnership(self);
 
             const node = self.layout.nodeFromHook(hook);
             if (comptime debug_nodes)
@@ -121,17 +131,18 @@ pub fn List(
             next_hook: *Hook,
             node: *Node,
         ) void {
-            OwnershipTraits.checkOwnership(self, &prev_hook.owner);
-            OwnershipTraits.checkOwnership(self, &next_hook.owner);
+            prev_hook.ownership_token_storage.checkOwnership(self);
+            next_hook.ownership_token_storage.checkOwnership(self);
             std.debug.assert(prev_hook.next == next_hook);
             std.debug.assert(next_hook.prev == prev_hook);
 
             const hook = self.hookFromFreeNode(node);
-            hook.prev = prev_hook;
-            hook.next = next_hook;
-            hook.owner = OwnershipTraits.getContainerToken(self);
-            if (comptime debug_nodes)
-                hook.node = node;
+            hook.* = .{
+                .prev = prev_hook,
+                .next = next_hook,
+                .ownership_token_storage = .from(self),
+                .node = if (comptime debug_nodes) node,
+            };
 
             prev_hook.next = hook;
             next_hook.prev = hook;
@@ -143,8 +154,7 @@ pub fn List(
             hook.prev.next = hook.next;
             hook.next.prev = hook.prev;
 
-            if (comptime std.debug.runtime_safety)
-                hook.* = undefined;
+            hook.* = .{};
         }
 
         // -------------------- standard inspection
