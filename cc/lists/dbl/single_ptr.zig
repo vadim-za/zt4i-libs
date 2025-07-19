@@ -1,6 +1,7 @@
 const std = @import("std");
 const lib = @import("../../lib.zig");
 const CommonMethods = @import("../common.zig").Methods;
+const DblCommonMethods = @import("common.zig").Methods;
 const insertion = @import("insertion.zig");
 
 /// This double-linked list stores only the pointer to the first element,
@@ -180,8 +181,9 @@ pub fn List(
             return self.first_ != null;
         }
 
-        pub const popFirst = Methods.popFirst;
-        pub const popLast = Methods.popLast;
-        pub const removeAll = Methods.removeAll;
+        const DblMethods = DblCommonMethods(@This());
+        pub const popFirst = DblMethods.popFirst;
+        pub const popLast = DblMethods.popLast;
+        pub const removeAll = DblMethods.removeAll;
     };
 }

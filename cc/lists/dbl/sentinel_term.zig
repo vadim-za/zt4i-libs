@@ -2,6 +2,7 @@ const std = @import("std");
 const builtin = @import("builtin");
 const lib = @import("../../lib.zig");
 const CommonMethods = @import("../common.zig").Methods;
+const DblCommonMethods = @import("common.zig").Methods;
 const insertion = @import("insertion.zig");
 
 /// This double-linked list stores the pointers to the first and last elements.
@@ -195,8 +196,9 @@ pub fn List(
             return self.sentinel.next != &self.sentinel;
         }
 
-        pub const popFirst = Methods.popFirst;
-        pub const popLast = Methods.popLast;
-        pub const removeAll = Methods.removeAll;
+        const DblMethods = DblCommonMethods(@This());
+        pub const popFirst = DblMethods.popFirst;
+        pub const popLast = DblMethods.popLast;
+        pub const removeAll = DblMethods.removeAll;
     };
 }
