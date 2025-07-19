@@ -10,7 +10,7 @@ const cc = lib_imports.cc;
 pub const Self = @This();
 
 vtbl: *const Vtbl,
-list_hook: List.Hook = undefined,
+list_hook: List.Hook = .{},
 owner: ?*const DeviceResources = null,
 is_created: bool = false,
 

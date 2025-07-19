@@ -231,7 +231,7 @@ fn insertItem(
             @tagName(variant_tag),
             .{},
         ),
-        .list_hook = undefined,
+        .list_hook = .{},
         .owner = if (std.debug.runtime_safety) self,
     };
 
