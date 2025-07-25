@@ -75,6 +75,7 @@ test "Simple tree demo" {
     });
 
     var t: T = .{};
+    //defer t.deinit();
 
     try std.testing.expectEqual(null, t.find(&0));
 
@@ -92,5 +93,19 @@ test "Simple tree demo" {
         const result = t.insert(Inserter{ .node = &n0 });
         try std.testing.expect(result.success);
         try std.testing.expectEqual(&n0, result.node);
+        try std.testing.expectEqual(&n0, t.find(&0));
+        try std.testing.expectEqual(null, t.find(&1));
+        try std.testing.expectEqual(null, t.find(&-1));
+    }
+    var n1: T.Node = .{ .data = 10 };
+    {
+        const result = t.insert(Inserter{ .node = &n1 });
+        try std.testing.expect(result.success);
+        try std.testing.expectEqual(&n1, result.node);
+        try std.testing.expectEqual(&n0, t.find(&0));
+        try std.testing.expectEqual(&n1, t.find(&10));
+        try std.testing.expectEqual(null, t.find(&20));
+        try std.testing.expectEqual(null, t.find(&-1));
+        try std.testing.expectEqual(null, t.find(&5));
     }
 }

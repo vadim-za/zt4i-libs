@@ -29,6 +29,13 @@ pub fn Tree(
             ownership_token_storage: OwnershipTraits.ItemTokenStorage = .{},
         };
 
+        pub fn deinit(self: *const @This()) void {
+            if (comptime !OwnershipTraits.can_discard_content)
+                std.debug.assert(!self.hasContent());
+        }
+
+        pub const setOwnershipToken = OwnershipTraits.setContainerToken;
+
         const HookCommon = hook_common.For(@This(), hook_field_name);
         pub const hookFromFreeNode = HookCommon.hookFromFreeNode;
         pub const hookFromOwnedNode = HookCommon.hookFromOwnedNode;
@@ -111,6 +118,7 @@ pub fn Tree(
                     .ownership_token_storage = .from(self),
                 };
                 self.updateNodeCachedData(node);
+                slot.* = node;
                 return .{ .success = true, .node = node };
             }
         }
@@ -211,6 +219,10 @@ pub fn Tree(
 
         fn balanceOf(self: *const @This(), hook: *Hook) i32 {
             return self.balanceFrom(0, hook);
+        }
+
+        pub fn hasContent(self: *const @This()) bool {
+            return self.root != null;
         }
     };
 }
