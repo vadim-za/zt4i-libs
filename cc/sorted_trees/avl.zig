@@ -11,7 +11,6 @@ pub fn Tree(
     update_node: UpdateNode,
     ownership_tracking: lib.OwnershipTracking,
 ) type {
-    _ = update_node; // autofix
     return struct {
         root: Slot = null,
         ownership_token_storage: OwnershipTraits.ContainerTokenStorage = .{},
@@ -26,7 +25,7 @@ pub fn Tree(
         pub const Node = Node_;
         pub const Hook = struct {
             children: [2]Slot = undefined,
-            subtree_depth: u32 = undefined,
+            subtree_depth: i32 = undefined,
             ownership_token_storage: OwnershipTraits.ItemTokenStorage = .{},
         };
 
@@ -75,13 +74,143 @@ pub fn Tree(
         /// really inserting it, since there can already be an equal node in
         /// the tree, in which case we won't insert the new node. During that
         /// time the respective information (including the node's "key") might
-        /// be available in some other form. The node should be constructed
-        /// latest in the produceNode() call.
+        /// be available in some other form.
+        /// The node should be constructed latest in the produceNode() call.
+        /// The "key" of the constructed node must be semantically identical
+        /// to the one returned by inserter.key().
         /// ComparableValuePtr is any type compatible to the second argument
         /// of the 'compare_to' functor.
         pub fn insert(self: *@This(), inserter: anytype) InsertionResult {
-            _ = self; // autofix
-            _ = inserter; // autofix
+            return self.insertUnder(&self.root, inserter);
+        }
+
+        fn insertUnder(
+            self: *@This(),
+            slot: *Slot,
+            inserter: anytype,
+        ) InsertionResult {
+            if (slot.*) |node| {
+                const hook = self.hookFromOwnedNode(node);
+
+                const subslot = switch (compareNodeTo(node, inserter.key())) {
+                    .eq => return .{ .success = false, .node = node },
+                    .lt => &hook.children[1],
+                    .gt => &hook.children[0],
+                };
+
+                const result = self.insertUnder(subslot, inserter);
+                if (result.success)
+                    self.rebalanceSlot(slot);
+                return result;
+            } else {
+                const node = inserter.produceNode();
+                const hook = self.hookFromFreeNode(node);
+                hook.* = .{
+                    .children = .{ null, null },
+                    .subtree_depth = undefined,
+                    .ownership_token_storage = .from(self),
+                };
+                self.updateNodeCachedData(node);
+                return .{ .success = true, .node = node };
+            }
+        }
+
+        fn rebalanceSlot(self: *@This(), slot: *Slot) void {
+            const node = slot.*.?;
+            const hook = self.hookFromOwnedNode(node);
+            const balance = self.balanceOf(hook);
+
+            if (@abs(balance) > 1) {
+                std.debug.assert(@abs(balance) == 2);
+                self.rebalanceSlotFrom(if (balance < 0) 0 else 1, slot);
+                std.debug.assert(@abs(self.balanceOf(hook)) <= 1);
+            } else {
+                self.updateNodeCachedData(node);
+            }
+        }
+
+        fn rebalanceSlotFrom(self: *@This(), from: u1, slot: *Slot) void {
+            const hook = self.hookFromOwnedNode(slot.*.?);
+            const from_slot = &hook.children[from];
+            const from_hook = self.hookFromOwnedNode(from_slot.*.?);
+            const from_balance = self.balanceFrom(from, from_hook);
+
+            // if (from_balance <= 0)
+            // ----------------------
+            //     slot.*                     from
+            //     /    \                    /    \
+            //   (A)   from       =>      slot.*  (B)
+            //        /    \              /    \
+            //      (C)    (B)          (A)   (C)
+            //
+            // if (from_balance > 0)
+            // ---------------------
+            //     slot.*                slot.*                     C
+            //     /    \                /    \                   /   \
+            //   (A)   from            (A)     C             slot.*    from
+            //        /    \     =>          /   \      =>   /   \     /  \
+            //       C     (B)             (E)  from       (A)   (E) (D)  (B)
+            //      / \                        /    \
+            //    (E) (D)                    (D)    (B)
+
+            if (from_balance > 0)
+                self.rotateSlot(from_slot, ~from);
+            self.rotateSlot(slot, from);
+        }
+
+        fn rotateSlot(self: *@This(), slot: *Slot, from: u1) void {
+            const node = slot.*.?;
+            const hook = self.hookFromOwnedNode(node);
+
+            const from_node = hook.children[from].?;
+            const from_hook = self.hookFromOwnedNode(from_node);
+
+            const from_to_node = from_hook.children[~from]; // optional
+
+            //      node                      from
+            //     /    \                    /    \
+            //   (A)   from       =>       node   (B)
+            //        /    \              /    \
+            //   (from_to) (B)          (A)  (from_to)
+            slot.* = from_node;
+            from_hook.children[~from] = node;
+            hook.children[from] = from_to_node;
+
+            self.updateNodeCachedData(node);
+            self.updateNodeCachedData(from_node);
+        }
+
+        fn updateNodeCachedData(self: *@This(), node: *Node) void {
+            const hook = self.hookFromOwnedNode(node);
+
+            hook.subtree_depth = @max(
+                self.cachedSubtreeDepthOf(hook.children[0]),
+                self.cachedSubtreeDepthOf(hook.children[1]),
+            ) + 1;
+
+            update_node.call(Node, node, &hook.children);
+        }
+
+        fn cachedSubtreeDepthOf(self: *const @This(), slot: Slot) i32 {
+            return if (slot) |node|
+                self.hookFromOwnedNode(node).subtree_depth
+            else
+                0;
+        }
+
+        // depth_to - depth_from
+        fn balanceFrom(
+            self: *const @This(),
+            from: u1,
+            hook: *Hook,
+        ) i32 {
+            const depth_from = self.cachedSubtreeDepthOf(hook.children[from]);
+            const depth_to = self.cachedSubtreeDepthOf(hook.children[~from]);
+            return depth_to - depth_from;
+        }
+
+        fn balanceOf(self: *const @This(), hook: *Hook) i32 {
+            return self.balanceFrom(0, hook);
         }
     };
 }

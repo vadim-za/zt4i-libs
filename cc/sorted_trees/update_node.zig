@@ -2,8 +2,9 @@ pub const UpdateNode = union(enum) {
     // Don't access fields directly, use methods to construct UpdateNode values
     method_: []const u8,
     Function: type,
+    none: void,
 
-    pub const do_nothing = function(doNothing);
+    pub const do_nothing = .none;
 
     pub fn method(name: []const u8) @This() {
         return .{ .method_ = name };
@@ -17,27 +18,15 @@ pub const UpdateNode = union(enum) {
 
     pub fn call(
         comptime self: @This(),
-        ResultType: type,
         Node: type,
         node: *Node,
-        left_result: ?ResultType,
-        right_result: ?ResultType,
-    ) ResultType {
+        children: *[2]?*Node,
+    ) void {
         const callable = switch (self) {
             .method_ => |method_name| @field(Node, method_name),
             .Function => |F| F.update,
+            .none => return,
         };
-        return @call(.auto, callable, .{ node, left_result, right_result });
+        @call(.auto, callable, .{ node, children });
     }
 };
-
-inline fn doNothing(
-    node_ptr: anytype,
-    left_result: ?void,
-    right_result: ?void,
-) void {
-    _ = node_ptr;
-    _ = left_result;
-    _ = right_result;
-    return {};
-}

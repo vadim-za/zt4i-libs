@@ -76,8 +76,21 @@ test "Simple tree demo" {
 
     var t: T = .{};
 
-    _ = t.find(&0);
+    try std.testing.expectEqual(null, t.find(&0));
 
-    // var n0: T.Node = .{ .data = undefined };
-    // n0.data = 0;
+    const Inserter = struct {
+        node: *T.Node,
+        pub fn key(self: *const @This()) *i32 {
+            return &self.node.data;
+        }
+        pub fn produceNode(self: *const @This()) *T.Node {
+            return self.node;
+        }
+    };
+    var n0: T.Node = .{ .data = 0 };
+    {
+        const result = t.insert(Inserter{ .node = &n0 });
+        try std.testing.expect(result.success);
+        try std.testing.expectEqual(&n0, result.node);
+    }
 }
