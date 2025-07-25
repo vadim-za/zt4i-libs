@@ -49,7 +49,7 @@ pub fn release(
 
 pub const List = cc.List(@This(), .{
     .implementation = .{ .double_linked = .null_terminated },
-    .layout = .{ .embedded_hook = "list_hook" },
+    .hook_field = "list_hook",
     .ownership_tracking = .{
         .owned_items = .container_ptr,
         .free_items = .on,

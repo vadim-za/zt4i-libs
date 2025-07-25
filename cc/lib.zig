@@ -1,8 +1,7 @@
 const std = @import("std");
 
 pub const lists = @import("lists.zig");
-pub const Layout = @import("layout.zig").Layout;
-pub const OwnershipTracking = @import("ownership.zig").Tracking;
+pub const OwnershipTracking = @import("OwnershipTracking.zig");
 
 pub const List = lists.List;
 

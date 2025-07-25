@@ -1,4 +1,4 @@
-pub fn Methods(Container: type) type {
+pub fn For(Container: type) type {
     return struct {
         const Node = Container.Node;
 

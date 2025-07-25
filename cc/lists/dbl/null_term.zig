@@ -1,14 +1,14 @@
 const std = @import("std");
 const lib = @import("../../lib.zig");
-const CommonMethods = @import("../common.zig").Methods;
-const DblCommonMethods = @import("common.zig").Methods;
+const hook_common = @import("../hook_common.zig");
+const dbl_common = @import("common.zig");
 const insertion = @import("insertion.zig");
 
 /// This double-linked list stores the pointers to the first and last elements.
 /// The termination is indicated by prev/next pointers set to null.
 pub fn List(
-    Payload: type,
-    layout: lib.Layout,
+    Node_: type,
+    hook_field_name: []const u8,
     ownership_tracking: lib.OwnershipTracking,
 ) type {
     return struct {
@@ -17,17 +17,11 @@ pub fn List(
         last_: ?*Node = null,
         ownership_token_storage: OwnershipTraits.ContainerTokenStorage = .{},
 
-        /// This field may be accessed publicly to set the internal
-        /// state of a non-empty layout. The layout type still must
-        /// be default-initializable with .{} even if it's non-empty.
-        layout: Layout = .{},
-
         const Self = @This();
 
-        pub const Layout = layout.make(@This(), Payload);
         const OwnershipTraits = ownership_tracking.TraitsFor(@This());
 
-        pub const Node = Layout.Node;
+        pub const Node = Node_;
         pub const Hook = struct {
             next: ?*Node = undefined,
             prev: ?*Node = undefined,
@@ -45,10 +39,10 @@ pub fn List(
 
         pub const setOwnershipToken = OwnershipTraits.setContainerToken;
 
-        const Methods = CommonMethods(@This());
-        pub const hookFromFreeNode = Methods.hookFromFreeNode;
-        pub const hookFromOwnedNode = Methods.hookFromOwnedNode;
-        pub const hookFromOwnedConstNode = Methods.hookFromOwnedConstNode;
+        const HookCommon = hook_common.For(@This(), hook_field_name);
+        pub const hookFromFreeNode = HookCommon.hookFromFreeNode;
+        pub const hookFromOwnedNode = HookCommon.hookFromOwnedNode;
+        pub const hookFromOwnedConstNode = HookCommon.hookFromOwnedConstNode;
 
         // -------------------- insertion/removal
 
@@ -195,9 +189,9 @@ pub fn List(
             return self.first_ != null;
         }
 
-        const DblMethods = DblCommonMethods(@This());
-        pub const popFirst = DblMethods.popFirst;
-        pub const popLast = DblMethods.popLast;
-        pub const removeAll = DblMethods.removeAll;
+        const DblCommon = dbl_common.For(@This());
+        pub const popFirst = DblCommon.popFirst;
+        pub const popLast = DblCommon.popLast;
+        pub const removeAll = DblCommon.removeAll;
     };
 }

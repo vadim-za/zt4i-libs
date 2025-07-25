@@ -6,16 +6,39 @@ pub const Implementation = impl.Implementation;
 
 pub const Config = struct {
     implementation: Implementation,
-    layout: lib.Layout,
+    hook_field: []const u8,
     ownership_tracking: lib.OwnershipTracking,
 };
 
-pub fn List(T: type, cfg: Config) type {
+pub fn List(Node: type, cfg: Config) type {
     return cfg.implementation.namespace().List(
-        T,
-        cfg.layout,
+        Node,
+        cfg.hook_field,
         cfg.ownership_tracking,
     );
+}
+
+pub fn SimpleList(
+    Payload: type,
+    implementation: Implementation,
+    ownership_tracking: lib.OwnershipTracking,
+) type {
+    const Decls = struct {
+        const Node = struct {
+            data: Payload,
+            hook: List_.Hook = .{},
+        };
+
+        const cfg = Config{
+            .implementation = implementation,
+            .hook_field = "hook",
+            .ownership_tracking = ownership_tracking,
+        };
+
+        const List_ = List(Node, cfg);
+    };
+
+    return Decls.List_;
 }
 
 comptime {
@@ -29,19 +52,20 @@ comptime {
 // and lists/sgl/testing.zig
 test "Simple list demo" {
     // A list with an i32 payload
-    const L = List(i32, .{
-        // Select list implementation
-        .implementation = .{ .single_linked = .double_ptr },
-
-        // List nodes contain 'data' field with payload
-        .layout = .simple_payload,
-
-        // Track node ownership in debug builds using pointer to the list object.
-        .ownership_tracking = .{
+    const L = SimpleList(
+        i32,
+        .{ .double_linked = .null_terminated },
+        .{
+            // Track node ownership in debug builds using pointer to the list object.
+            // Ownership tracking prevents inadvertent incorrect pairing of a node
+            // with a list which doesn't own it (e.g. it list iteration or node removal).
             .owned_items = .container_ptr,
+
+            // Track free items status, so that one cannot inadvertently insert
+            // an already inserted item into anothe rlist.
             .free_items = .on,
         },
-    });
+    );
 
     // Also could initialize to .{}, except for sentinel-terminated lists
     var l: L = undefined;
@@ -63,7 +87,7 @@ test "Simple list demo" {
         // node = l.last();
         // while (node) |n| node = l.prev(n);
     }
-    l.removeFirst();
-    //l.remove(&n1);
+    //l.removeFirst();
+    l.remove(&n1);
     l.removeAll();
 }
