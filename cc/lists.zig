@@ -24,8 +24,9 @@ comptime {
 
 // -----------------------------------------------------------------------
 
-// This test serves more like a list demo.
+// This test serves more like a minimal list demo.
 // More in-depth testing is done in lists/dbl/testing.zig
+// and lists/sgl/testing.zig
 test "Simple list demo" {
     // A list with an i32 payload
     const L = List(i32, .{
