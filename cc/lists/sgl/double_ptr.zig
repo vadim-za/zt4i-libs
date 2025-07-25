@@ -1,6 +1,6 @@
 const std = @import("std");
 const lib = @import("../../lib.zig");
-const hook_common = @import("../hook_common.zig");
+const hook_common = @import("../../hook_common.zig");
 
 /// This single-linked list stores the pointers to the first and last elements.
 /// The termination is indicated by the next pointer set to null.

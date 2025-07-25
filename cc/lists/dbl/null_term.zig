@@ -1,6 +1,6 @@
 const std = @import("std");
 const lib = @import("../../lib.zig");
-const hook_common = @import("../hook_common.zig");
+const hook_common = @import("../../hook_common.zig");
 const dbl_common = @import("common.zig");
 const insertion = @import("insertion.zig");
 

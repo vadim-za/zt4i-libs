@@ -1,6 +1,6 @@
 const std = @import("std");
 const lib = @import("../../lib.zig");
-const hook_common = @import("../hook_common.zig");
+const hook_common = @import("../../hook_common.zig");
 const dbl_common = @import("common.zig");
 const insertion = @import("insertion.zig");
 
@@ -39,10 +39,10 @@ pub fn List(
 
         pub const setOwnershipToken = OwnershipTraits.setContainerToken;
 
-        const Methods = hook_common.For(@This(), hook_field_name);
-        pub const hookFromFreeNode = Methods.hookFromFreeNode;
-        pub const hookFromOwnedNode = Methods.hookFromOwnedNode;
-        pub const hookFromOwnedConstNode = Methods.hookFromOwnedConstNode;
+        const HookCommon = hook_common.For(@This(), hook_field_name);
+        pub const hookFromFreeNode = HookCommon.hookFromFreeNode;
+        pub const hookFromOwnedNode = HookCommon.hookFromOwnedNode;
+        pub const hookFromOwnedConstNode = HookCommon.hookFromOwnedConstNode;
 
         // -------------------- insertion/removal
 
