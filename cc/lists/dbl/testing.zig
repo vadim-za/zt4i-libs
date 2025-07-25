@@ -4,7 +4,7 @@ const lib = @import("../../lib.zig");
 const Payload = i32;
 
 const tested_configs = configs: {
-    var configs: []const lib.lists.Config = &.{};
+    var configs: []const lib.lists.SimpleListConfig = &.{};
 
     for ([_]std.meta.Tag(lib.lists.Implementation.DoubleLinked){
         .null_terminated,
@@ -20,9 +20,8 @@ const tested_configs = configs: {
                 .off,
                 .on,
             }) |free_items| {
-                configs = configs ++ [1]lib.lists.Config{.{
+                configs = configs ++ [1]lib.lists.SimpleListConfig{.{
                     .implementation = .{ .double_linked = impl },
-                    .layout = .simple_payload,
                     .ownership_tracking = .{
                         .owned_items = owned_items,
                         .free_items = free_items,
@@ -55,7 +54,7 @@ fn verifyConsistency(List: type, list: *List) !void {
 
 test "insertLast" {
     inline for (tested_configs) |config| {
-        const List = lib.lists.List(Payload, config);
+        const List = lib.SimpleList(Payload, config);
         const impl = comptime config.implementation.double_linked;
         var list: List = if (impl == .sentinel_terminated)
             undefined
@@ -109,7 +108,7 @@ test "insertLast" {
 
 test "insertFirst" {
     inline for (tested_configs) |config| {
-        const List = lib.lists.List(Payload, config);
+        const List = lib.SimpleList(Payload, config);
         const impl = comptime config.implementation.double_linked;
         var list: List = if (impl == .sentinel_terminated)
             undefined
@@ -163,7 +162,7 @@ test "insertFirst" {
 
 test "insertBefore" {
     inline for (tested_configs) |config| {
-        const List = lib.lists.List(Payload, config);
+        const List = lib.SimpleList(Payload, config);
         const impl = comptime config.implementation.double_linked;
         var list: List = if (impl == .sentinel_terminated)
             undefined
@@ -212,7 +211,7 @@ test "insertBefore" {
 
 test "insertAfter" {
     inline for (tested_configs) |config| {
-        const List = lib.lists.List(Payload, config);
+        const List = lib.SimpleList(Payload, config);
         const impl = comptime config.implementation.double_linked;
         var list: List = if (impl == .sentinel_terminated)
             undefined
@@ -261,7 +260,7 @@ test "insertAfter" {
 
 test "remove" {
     inline for (tested_configs) |config| {
-        const List = lib.lists.List(Payload, config);
+        const List = lib.SimpleList(Payload, config);
         const impl = comptime config.implementation.double_linked;
         var list: List = if (impl == .sentinel_terminated)
             undefined
@@ -330,12 +329,15 @@ test "remove" {
 }
 
 test "Embedded hook" {
-    inline for (tested_configs) |base_config| {
-        comptime var config = base_config;
-        config.layout = comptime .{ .embedded_hook = "hook" };
+    inline for (tested_configs) |simple_config| {
+        const config = lib.lists.Config{
+            .implementation = simple_config.implementation,
+            .hook_field = "hook",
+            .ownership_tracking = simple_config.ownership_tracking,
+        };
 
         const types = struct {
-            const List = lib.lists.List(Node, config);
+            const List = lib.List(Node, config);
             const Node = struct {
                 data: Payload = undefined,
                 hook: List.Hook = .{},
@@ -360,73 +362,5 @@ test "Embedded hook" {
 
         list.remove(&node);
         try verifyConsistency(types.List, &list);
-    }
-}
-
-test "Non-empty layout" {
-    // Layout can be configured at runtime to one of two different hooks
-    // specified using the 'index' field
-    const Layout = struct {
-        pub fn With(Node_: type, Hook: type) type {
-            return struct {
-                pub const Node = Node_;
-
-                index: usize = undefined,
-
-                /// This function is required by all implementations
-                pub fn hookFromNode(
-                    self: @This(),
-                    node: *const Node,
-                ) *const Hook {
-                    return &node.hooks[self.index];
-                }
-
-                /// This function is required by some but not all implementations
-                pub fn nodeFromHook(
-                    self: @This(),
-                    hook: *const Hook,
-                ) *const Node {
-                    const hook0 = hook[0..1].ptr - self.index;
-                    const hooks: *const [2]Hook = @ptrCast(hook0);
-                    return @alignCast(@fieldParentPtr("hooks", hooks));
-                }
-            };
-        }
-    };
-
-    inline for (tested_configs) |base_config| {
-        comptime var config = base_config;
-        config.layout = comptime .{ .custom = Layout };
-
-        const types = struct {
-            const List = lib.lists.List(Node, config);
-            const Node = struct {
-                data: Payload = undefined,
-                hooks: [2]List.Hook =
-                    if (config.ownership_tracking.free_items != .off)
-                        .{ .{}, .{} }
-                    else
-                        undefined,
-            };
-        };
-
-        for (0..2) |index| {
-            var list: types.List = undefined;
-            list.init();
-            list.layout = .{ .index = index };
-            if (comptime config.ownership_tracking.owned_items == .custom)
-                list.setOwnershipToken(1);
-            defer list.deinit();
-
-            try verifyConsistency(types.List, &list);
-
-            var node: types.Node = .{};
-
-            list.insertFirst(&node);
-            try verifyConsistency(types.List, &list);
-
-            list.remove(&node);
-            try verifyConsistency(types.List, &list);
-        }
     }
 }

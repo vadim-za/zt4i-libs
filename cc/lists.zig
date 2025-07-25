@@ -18,24 +18,25 @@ pub fn List(Node: type, cfg: Config) type {
     );
 }
 
-pub fn SimpleList(
-    Payload: type,
+pub const SimpleListConfig = struct {
     implementation: Implementation,
     ownership_tracking: lib.OwnershipTracking,
-) type {
+};
+
+pub fn SimpleList(Payload: type, cfg: SimpleListConfig) type {
     const Decls = struct {
         const Node = struct {
             data: Payload,
             hook: List_.Hook = .{},
         };
 
-        const cfg = Config{
-            .implementation = implementation,
+        const cfg_ = Config{
+            .implementation = cfg.implementation,
             .hook_field = "hook",
-            .ownership_tracking = ownership_tracking,
+            .ownership_tracking = cfg.ownership_tracking,
         };
 
-        const List_ = List(Node, cfg);
+        const List_ = List(Node, cfg_);
     };
 
     return Decls.List_;
@@ -52,10 +53,9 @@ comptime {
 // and lists/sgl/testing.zig
 test "Simple list demo" {
     // A list with an i32 payload
-    const L = SimpleList(
-        i32,
-        .{ .double_linked = .sentinel_terminated },
-        .{
+    const L = SimpleList(i32, .{
+        .implementation = .{ .double_linked = .sentinel_terminated },
+        .ownership_tracking = .{
             // Track node ownership in debug builds using pointers to the list object.
             // Ownership tracking prevents inadvertent incorrect pairing of a node
             // with a list which doesn't own it (e.g. it list iteration or node removal).
@@ -65,7 +65,7 @@ test "Simple list demo" {
             // an already inserted item into anothe rlist.
             .free_items = .on,
         },
-    );
+    });
 
     // Also could initialize to .{}, except for sentinel-terminated lists
     var l: L = undefined;
