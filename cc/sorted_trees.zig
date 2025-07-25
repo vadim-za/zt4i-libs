@@ -99,7 +99,8 @@ test "Simple tree demo" {
     }
     var n1: T.Node = .{ .data = 10 };
     {
-        const result = t.insert(Inserter{ .node = &n1 });
+        //const result = t.insert(Inserter{ .node = &n1 });
+        const result = t.insertNode(&n1);
         try std.testing.expect(result.success);
         try std.testing.expectEqual(&n1, result.node);
         try std.testing.expectEqual(&n0, t.find(&0));

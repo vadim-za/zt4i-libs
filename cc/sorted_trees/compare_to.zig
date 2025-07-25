@@ -25,22 +25,38 @@ pub const CompareTo = union(enum) {
         field_name: []const u8,
         comptime compare_to: CompareTo, // comparison for the field
     ) @This() {
-        return .{ .Function = struct {
-            fn compareTo(
-                reference_value_ptr: anytype,
-                comparable_value_ptr: anytype,
-            ) std.math.Order {
-                const field_ptr = &@field(
-                    reference_value_ptr,
-                    field_name,
-                );
+        return .{
+            .Function = struct {
+                fn compareTo(
+                    reference_value_ptr: anytype,
+                    comparable_value_ptr: anytype,
+                ) std.math.Order {
+                    const field_ptr = &@field(
+                        reference_value_ptr,
+                        field_name,
+                    );
 
-                return compare_to.call(
-                    field_ptr,
-                    comparable_value_ptr,
-                );
-            }
-        } };
+                    // If comparing to another node
+                    if (@TypeOf(comparable_value_ptr.*) ==
+                        @TypeOf(reference_value_ptr.*))
+                    {
+                        const comparable_field_ptr = &@field(
+                            comparable_value_ptr,
+                            field_name,
+                        );
+                        return compare_to.call(
+                            field_ptr,
+                            comparable_field_ptr,
+                        );
+                    }
+
+                    return compare_to.call(
+                        field_ptr,
+                        comparable_value_ptr,
+                    );
+                }
+            },
+        };
     }
 
     pub fn call(

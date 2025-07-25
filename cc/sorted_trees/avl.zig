@@ -91,6 +91,21 @@ pub fn Tree(
             return self.insertUnder(&self.root, inserter);
         }
 
+        /// This function may be used only if 'compare_to' is capable
+        /// of comparing to a '*Node' value.
+        pub fn insertNode(self: *@This(), node: *Node) InsertionResult {
+            return self.insert(struct {
+                node: *Node,
+
+                fn key(ins: *const @This()) *Node {
+                    return ins.node;
+                }
+                fn produceNode(ins: *const @This()) *Node {
+                    return ins.node;
+                }
+            }{ .node = node });
+        }
+
         fn insertUnder(
             self: *@This(),
             slot: *Slot,
