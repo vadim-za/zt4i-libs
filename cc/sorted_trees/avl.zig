@@ -148,6 +148,97 @@ pub fn Tree(
             }
         }
 
+        // Returns the removed node or null if node not found
+        pub fn remove(
+            self: *@This(),
+            comparable_value_ptr: anytype,
+            retracer: anytype,
+        ) ?*Node {
+            return self.removeUnder(
+                &self.root_,
+                comparable_value_ptr,
+                retracer,
+            );
+        }
+
+        pub fn removeUnder(
+            self: *@This(),
+            slot: *Slot,
+            comparable_value_ptr: anytype,
+            retracer: anytype,
+        ) ?*Node {
+            const node = slot.* orelse return null;
+            const hook = self.hookFromOwnedNode(node);
+
+            const subslot =
+                switch (compareNodeTo(node, comparable_value_ptr)) {
+                    .eq => return self.removeAt(slot, retracer),
+                    .lt => &hook.children[1],
+                    .gt => &hook.children[0],
+                };
+
+            const result = self.removeUnder(
+                subslot,
+                comparable_value_ptr,
+                retracer,
+            );
+
+            if (result != null)
+                self.rebalanceSlot(slot, retracer);
+            return result;
+        }
+
+        fn removeAt(self: *@This(), slot: *Slot, retracer: anytype) ?*Node {
+            const node = slot.*.?;
+            const hook = self.hookFromOwnedNode(node);
+
+            if (hook.subtree_depth > 1) {
+                const balance = self.balanceOf(hook);
+                const replacement_branch: u1 = if (balance > 0) 1 else 0;
+
+                const replacement_node = self.retrieveReplacementNode(
+                    &hook.children[replacement_branch],
+                    ~replacement_branch,
+                    retracer,
+                );
+
+                slot.* = replacement_node;
+                const replacement_hook =
+                    self.hookFromOwnedNode(replacement_node);
+                replacement_hook.children = hook.children;
+
+                self.rebalanceSlot(slot, retracer);
+            } else {
+                slot.* = null;
+            }
+
+            return node;
+        }
+
+        fn retrieveReplacementNode(
+            self: *@This(),
+            slot: *Slot,
+            branch: u1,
+            retracer: anytype,
+        ) *Node {
+            const node = slot.*.?;
+            const hook = self.hookFromOwnedNode(node);
+            const child_slot = &hook.children[branch];
+
+            if (child_slot.* != null) {
+                const replacement_node =
+                    self.retrieveReplacementNode(child_slot, branch, retracer);
+
+                self.rebalanceSlot(slot, retracer);
+                return replacement_node;
+            } else {
+                const other_child = hook.children[~branch];
+
+                slot.* = other_child;
+                return node;
+            }
+        }
+
         fn rebalanceSlot(self: *@This(), slot: *Slot, retracer: anytype) void {
             const node = slot.*.?;
             const hook = self.hookFromOwnedNode(node);

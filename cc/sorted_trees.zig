@@ -73,7 +73,7 @@ test "Simple tree demo" {
     const verifyTree = @import("sorted_trees/avl.zig").verifyTree;
 
     var t: T = .{};
-    //defer t.deinit();
+    defer t.deinit();
 
     verifyTree(&t);
     try std.testing.expectEqual(null, t.find(&0));
@@ -113,4 +113,7 @@ test "Simple tree demo" {
         try std.testing.expectEqual(null, t.children(&n0)[0]);
         try std.testing.expectEqual(&n1, t.children(&n0)[1]);
     }
+
+    try std.testing.expectEqual(&n0, t.remove(&n0, {}));
+    try std.testing.expectEqual(&n1, t.remove(&n1, {}));
 }
