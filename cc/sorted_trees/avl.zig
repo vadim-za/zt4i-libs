@@ -10,7 +10,7 @@ pub fn Tree(
     ownership_tracking: lib.OwnershipTracking,
 ) type {
     return struct {
-        root: Slot = null,
+        root_: Slot = null,
         ownership_token_storage: OwnershipTraits.ContainerTokenStorage = .{},
 
         const Self = @This();
@@ -50,7 +50,7 @@ pub fn Tree(
             self: *const @This(),
             comparable_value_ptr: anytype,
         ) ?*Node {
-            var node = self.root;
+            var node = self.root_;
 
             return while (node) |n| {
                 const hook = self.hookFromOwnedNode(n);
@@ -90,7 +90,7 @@ pub fn Tree(
             inserter: anytype,
             retracer: anytype,
         ) InsertionResult {
-            return self.insertUnder(&self.root, inserter, retracer);
+            return self.insertUnder(&self.root_, inserter, retracer);
         }
 
         /// This function may be used only if 'compare_to' is capable
@@ -273,7 +273,19 @@ pub fn Tree(
         }
 
         pub fn hasContent(self: *const @This()) bool {
-            return self.root != null;
+            return self.root_ != null;
+        }
+
+        pub fn root(self: *const @This()) ?*Node {
+            return self.root_;
+        }
+
+        pub fn children(
+            self: *const @This(),
+            node: *const Node,
+        ) *const [2]?*Node {
+            const hook = self.hookFromOwnedConstNode(node);
+            return &hook.children;
         }
     };
 }

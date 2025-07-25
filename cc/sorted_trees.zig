@@ -93,6 +93,7 @@ test "Simple tree demo" {
         try std.testing.expectEqual(&n0, t.find(&0));
         try std.testing.expectEqual(null, t.find(&1));
         try std.testing.expectEqual(null, t.find(&-1));
+        try std.testing.expectEqual(&n0, t.root());
     }
     var n1: T.Node = .{ .data = 10 };
     {
@@ -105,5 +106,7 @@ test "Simple tree demo" {
         try std.testing.expectEqual(null, t.find(&20));
         try std.testing.expectEqual(null, t.find(&-1));
         try std.testing.expectEqual(null, t.find(&5));
+        try std.testing.expectEqual(null, t.children(&n0)[0]);
+        try std.testing.expectEqual(&n1, t.children(&n0)[1]);
     }
 }
