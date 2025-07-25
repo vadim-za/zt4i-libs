@@ -2,7 +2,6 @@ const std = @import("std");
 const lib = @import("lib.zig");
 const impl = @import("sorted_trees/impl.zig");
 const CompareTo = @import("sorted_trees/compare_to.zig").CompareTo;
-const UpdateNode = @import("sorted_trees/update_node.zig").UpdateNode;
 
 pub const Implementation = impl.Implementation;
 
@@ -10,7 +9,6 @@ pub const Config = struct {
     implementation: Implementation,
     hook_field: []const u8,
     compare_to: CompareTo,
-    update_node: UpdateNode = .do_nothing,
     ownership_tracking: lib.OwnershipTracking,
 };
 
@@ -19,7 +17,6 @@ pub fn Tree(Node: type, cfg: Config) type {
         Node,
         cfg.hook_field,
         cfg.compare_to,
-        cfg.update_node,
         cfg.ownership_tracking,
     );
 }
@@ -90,7 +87,7 @@ test "Simple tree demo" {
     };
     var n0: T.Node = .{ .data = 0 };
     {
-        const result = t.insert(Inserter{ .node = &n0 });
+        const result = t.insert(Inserter{ .node = &n0 }, {});
         try std.testing.expect(result.success);
         try std.testing.expectEqual(&n0, result.node);
         try std.testing.expectEqual(&n0, t.find(&0));
@@ -100,7 +97,7 @@ test "Simple tree demo" {
     var n1: T.Node = .{ .data = 10 };
     {
         //const result = t.insert(Inserter{ .node = &n1 });
-        const result = t.insertNode(&n1);
+        const result = t.insertNode(&n1, {});
         try std.testing.expect(result.success);
         try std.testing.expectEqual(&n1, result.node);
         try std.testing.expectEqual(&n0, t.find(&0));
