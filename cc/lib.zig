@@ -9,6 +9,7 @@ pub const SimpleList = lists.SimpleList;
 
 pub const SortedTree = sorted_trees.Tree;
 pub const SimpleSortedTree = sorted_trees.SimpleTree;
+pub const SimpleSortedTreeMap = sorted_trees.SimpleTreeMap;
 
 // --------------------------------------------------------------
 
