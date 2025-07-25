@@ -20,7 +20,9 @@ pub fn Tree(
 
         const OwnershipTraits = ownership_tracking.TraitsFor(@This());
 
+        // Ascribe explicit semantics to ?*Node, so *?*Node becomes *Slot
         const Slot = ?*Node;
+
         pub const Node = Node_;
         pub const Hook = struct {
             children: [2]Slot = undefined,
@@ -40,53 +42,46 @@ pub fn Tree(
             return compare_to.call(node, comparable_value_ptr);
         }
 
-        fn traverseBranch(
-            self: *const @This(),
-            traverser_ptr: anytype,
-            branch_root: @TypeOf(traverser_ptr.*).SlotPtr,
-        ) @typeInfo(@TypeOf(
-            @TypeOf(traverser_ptr.*).arriveAt,
-        )).@"fn".return_type.? {
-            if (branch_root.*) |node| {
-                const hook = self.hookFromOwnedNode(node);
-
-                const subbranch_root: @TypeOf(branch_root) =
-                    switch (compareNodeTo(node, traverser_ptr.target())) {
-                        .eq => return traverser_ptr.arriveAt(branch_root),
-                        .lt => &hook.children[1],
-                        .gt => &hook.children[0],
-                    };
-
-                const result =
-                    self.traverseBranch(traverser_ptr, subbranch_root);
-
-                traverser_ptr.retrace(subbranch_root);
-                return result;
-            } else {
-                return traverser_ptr.arriveAt(branch_root);
-            }
-        }
-
         pub fn find(
             self: *const @This(),
             comparable_value_ptr: anytype,
         ) ?*Node {
-            const ComparableValuePtr = @TypeOf(comparable_value_ptr);
+            var node = self.root;
 
-            const traverser: struct {
-                comparable_value_ptr: ComparableValuePtr,
-                const SlotPtr = *const Slot;
+            return while (node) |n| {
+                const hook = self.hookFromOwnedNode(n);
 
-                fn target(traverser_self: @This()) ComparableValuePtr {
-                    return traverser_self.comparable_value_ptr;
-                }
-                fn arriveAt(_: @This(), slot: SlotPtr) ?*Node {
-                    return slot.*;
-                }
-                fn retrace(_: @This(), _: SlotPtr) void {}
-            } = .{ .comparable_value_ptr = comparable_value_ptr };
+                node = switch (compareNodeTo(n, comparable_value_ptr)) {
+                    .eq => break n,
+                    .lt => hook.children[1],
+                    .gt => hook.children[0],
+                };
+            } else null;
+        }
 
-            return self.traverseBranch(&traverser, &self.root);
+        pub const InsertionResult = struct {
+            /// false if an equal node has been found, otherwise true
+            success: bool,
+            /// if(success) inserted_node else found_node
+            node: *Node,
+        };
+
+        /// 'inserter' can be a small struct or a pointer to one and must
+        /// provide the following methods:
+        ///     fn inserter.key() ComparableValuePtr;
+        ///     fn inserter.produceNode() *Node;
+        /// The rationale behind the idea of the 'inserter' is that we do not
+        /// have to construct the tree node object until we know that we are
+        /// really inserting it, since there can already be an equal node in
+        /// the tree, in which case we won't insert the new node. During that
+        /// time the respective information (including the node's "key") might
+        /// be available in some other form. The node should be constructed
+        /// latest in the produceNode() call.
+        /// ComparableValuePtr is any type compatible to the second argument
+        /// of the 'compare_to' functor.
+        pub fn insert(self: *@This(), inserter: anytype) InsertionResult {
+            _ = self; // autofix
+            _ = inserter; // autofix
         }
     };
 }
