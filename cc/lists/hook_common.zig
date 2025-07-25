@@ -31,13 +31,15 @@ pub fn For(Container: type, hook_field_name: []const u8) type {
             return hook;
         }
 
-        const debug_nodes = builtin.mode == .Debug;
+        pub const debug_nodes = builtin.mode == .Debug;
         pub const NodeDebugPtr = if (debug_nodes) ?*Node else void;
-        pub const init_node_debug_ptr: NodeDebugPtr = if (debug_nodes) null;
+        pub inline fn nodeDebugPtr(node: ?*Node) NodeDebugPtr {
+            return if (debug_nodes) node;
+        }
 
         // If the container uses this method, it should have a 'node'
         // field in the hook declared as:
-        //      node: HookCommon.NodeDebugPtr = HookCommon.init_node_debug_ptr,
+        //      node: HookCommon.NodeDebugPtr = initial value,
         pub fn nodeFromOwnedHook(
             self: *const Container,
             hook: *Hook,
@@ -51,6 +53,8 @@ pub fn For(Container: type, hook_field_name: []const u8) type {
 
             if (comptime debug_nodes)
                 std.debug.assert(node == hook.node);
+
+            return node;
         }
     };
 }

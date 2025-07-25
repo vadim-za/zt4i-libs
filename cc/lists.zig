@@ -54,7 +54,7 @@ test "Simple list demo" {
     // A list with an i32 payload
     const L = SimpleList(
         i32,
-        .{ .double_linked = .single_ptr },
+        .{ .double_linked = .sentinel_terminated },
         .{
             // Track node ownership in debug builds using pointers to the list object.
             // Ownership tracking prevents inadvertent incorrect pairing of a node

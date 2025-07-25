@@ -1,8 +1,8 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const lib = @import("../../lib.zig");
-const CommonMethods = @import("../common.zig").Methods;
-const DblCommonMethods = @import("common.zig").Methods;
+const hook_common = @import("../hook_common.zig");
+const dbl_common = @import("common.zig");
 const insertion = @import("insertion.zig");
 
 /// This double-linked list stores the pointers to the first and last elements.
@@ -12,8 +12,8 @@ const insertion = @import("insertion.zig");
 /// to Zig Issue #20254. If the issue persists, the intention is to add an
 /// alternative list inspection API, which circumvents the problem.
 pub fn List(
-    Payload: type,
-    layout: lib.Layout,
+    Node_: type,
+    hook_field_name: []const u8,
     ownership_tracking: lib.OwnershipTracking,
 ) type {
     return struct {
@@ -21,26 +21,17 @@ pub fn List(
         sentinel: Hook,
         ownership_token_storage: OwnershipTraits.ContainerTokenStorage,
 
-        /// This field may be accessed publicly to set the internal
-        /// state of a non-empty layout. The layout type still must
-        /// be default-initializable with .{} even if it's non-empty.
-        layout: Layout = .{},
-
         const Self = @This();
 
-        pub const Layout = layout.make(@This(), Payload);
         const OwnershipTraits = ownership_tracking.TraitsFor(@This());
 
-        pub const Node = Layout.Node;
+        pub const Node = Node_;
         pub const Hook = struct {
             next: *Hook = undefined,
             prev: *Hook = undefined,
             ownership_token_storage: OwnershipTraits.ItemTokenStorage = .{},
-            node: if (debug_nodes) ?*Node else void =
-                if (debug_nodes) null,
+            node: HookCommon.NodeDebugPtr = HookCommon.nodeDebugPtr(null),
         };
-
-        const debug_nodes = builtin.mode == .Debug;
 
         pub fn init(self: *@This()) void {
             // Initialize one by one to make it easier on the compiler
@@ -51,9 +42,8 @@ pub fn List(
                 .next = &self.sentinel,
                 .prev = &self.sentinel,
                 .ownership_token_storage = .initialFrom(self),
-                .node = if (debug_nodes) null,
+                .node = HookCommon.nodeDebugPtr(null),
             };
-            // self.layout is either empty or must be initialized by the user
         }
 
         pub fn setOwnershipToken(
@@ -69,23 +59,11 @@ pub fn List(
                 std.debug.assert(!self.hasContent());
         }
 
-        const Methods = CommonMethods(@This());
-        pub const hookFromFreeNode = Methods.hookFromFreeNode;
-        pub const hookFromOwnedNode = Methods.hookFromOwnedNode;
-        pub const hookFromOwnedConstNode = Methods.hookFromOwnedConstNode;
-
-        pub fn nodeFromOwnedHook(
-            self: *const @This(),
-            hook: *Hook,
-        ) *Node {
-            hook.ownership_token_storage.checkOwnership(self);
-
-            const node = self.layout.nodeFromHook(hook);
-            if (comptime debug_nodes)
-                std.debug.assert(node == hook.node);
-
-            return @constCast(node);
-        }
+        const HookCommon = hook_common.For(@This(), hook_field_name);
+        pub const hookFromFreeNode = HookCommon.hookFromFreeNode;
+        pub const hookFromOwnedNode = HookCommon.hookFromOwnedNode;
+        pub const hookFromOwnedConstNode = HookCommon.hookFromOwnedConstNode;
+        pub const nodeFromOwnedHook = HookCommon.nodeFromOwnedHook;
 
         // -------------------- insertion/removal
 
@@ -142,7 +120,7 @@ pub fn List(
                 .prev = prev_hook,
                 .next = next_hook,
                 .ownership_token_storage = .from(self),
-                .node = if (comptime debug_nodes) node,
+                .node = HookCommon.nodeDebugPtr(node),
             };
 
             prev_hook.next = hook;
@@ -196,9 +174,9 @@ pub fn List(
             return self.sentinel.next != &self.sentinel;
         }
 
-        const DblMethods = DblCommonMethods(@This());
-        pub const popFirst = DblMethods.popFirst;
-        pub const popLast = DblMethods.popLast;
-        pub const removeAll = DblMethods.removeAll;
+        const DblCommon = dbl_common.For(@This());
+        pub const popFirst = DblCommon.popFirst;
+        pub const popLast = DblCommon.popLast;
+        pub const removeAll = DblCommon.removeAll;
     };
 }
