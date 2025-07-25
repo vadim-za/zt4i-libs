@@ -328,7 +328,7 @@ test "remove" {
     }
 }
 
-test "Embedded hook" {
+test "Primary API" {
     inline for (tested_configs) |simple_config| {
         const config = lib.lists.Config{
             .implementation = simple_config.implementation,
