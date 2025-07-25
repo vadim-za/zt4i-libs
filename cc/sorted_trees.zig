@@ -115,5 +115,7 @@ test "Simple tree demo" {
     }
 
     try std.testing.expectEqual(&n0, t.remove(&n0, {}));
+    verifyTree(&t);
     try std.testing.expectEqual(&n1, t.remove(&n1, {}));
+    verifyTree(&t);
 }
