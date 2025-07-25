@@ -70,10 +70,12 @@ test "Simple tree demo" {
             .free_items = .on,
         },
     });
+    const verifyTree = @import("sorted_trees/avl.zig").verifyTree;
 
     var t: T = .{};
     //defer t.deinit();
 
+    verifyTree(&t);
     try std.testing.expectEqual(null, t.find(&0));
 
     const Inserter = struct {
@@ -88,6 +90,7 @@ test "Simple tree demo" {
     var n0: T.Node = .{ .data = 0 };
     {
         const result = t.insert(Inserter{ .node = &n0 }, {});
+        verifyTree(&t);
         try std.testing.expect(result.success);
         try std.testing.expectEqual(&n0, result.node);
         try std.testing.expectEqual(&n0, t.find(&0));
@@ -99,6 +102,7 @@ test "Simple tree demo" {
     {
         //const result = t.insert(Inserter{ .node = &n1 });
         const result = t.insertNode(&n1, {});
+        verifyTree(&t);
         try std.testing.expect(result.success);
         try std.testing.expectEqual(&n1, result.node);
         try std.testing.expectEqual(&n0, t.find(&0));

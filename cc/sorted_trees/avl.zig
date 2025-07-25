@@ -289,3 +289,29 @@ pub fn Tree(
         }
     };
 }
+
+pub fn verifyTree(tree_ptr: anytype) void {
+    _ = verifySubtree(tree_ptr, tree_ptr.root());
+}
+
+fn verifySubtree(tree_ptr: anytype, node_ptr: anytype) i32 {
+    const node = node_ptr orelse
+        return 0;
+
+    const hook = tree_ptr.hookFromOwnedConstNode(node);
+
+    // verify may be only called on trees which support comparison to nodes
+    const Tree_ = @TypeOf(tree_ptr.*);
+    if (hook.children[0]) |child|
+        std.debug.assert(Tree_.compareNodeTo(node, child) == .gt);
+    if (hook.children[1]) |child|
+        std.debug.assert(Tree_.compareNodeTo(node, child) == .lt);
+
+    const depth = @max(
+        verifySubtree(tree_ptr, hook.children[0]),
+        verifySubtree(tree_ptr, hook.children[1]),
+    ) + 1;
+    std.debug.assert(depth == hook.subtree_depth);
+
+    return depth;
+}
