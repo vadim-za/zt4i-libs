@@ -1,12 +1,12 @@
 const std = @import("std");
 const lib = @import("../../lib.zig");
-const CommonMethods = @import("../common.zig").Methods;
+const hook_common = @import("../hook_common.zig");
 
 /// This single-linked list stores the pointer to the first element.
 /// The termination is indicated by the next pointer set to null.
 pub fn List(
-    Payload: type,
-    layout: lib.Layout,
+    Node_: type,
+    hook_field_name: []const u8,
     ownership_tracking: lib.OwnershipTracking,
 ) type {
     return struct {
@@ -14,17 +14,11 @@ pub fn List(
         first_: ?*Node = null,
         ownership_token_storage: OwnershipTraits.ContainerTokenStorage = .{},
 
-        /// This field may be accessed publicly to set the internal
-        /// state of a non-empty layout. The layout type still must
-        /// be default-initializable with .{} even if it's non-empty.
-        layout: Layout = .{},
-
         const Self = @This();
 
-        pub const Layout = layout.make(@This(), Payload);
         const OwnershipTraits = ownership_tracking.TraitsFor(@This());
 
-        pub const Node = Layout.Node;
+        pub const Node = Node_;
         pub const Hook = struct {
             next: ?*Node = undefined,
             ownership_token_storage: OwnershipTraits.ItemTokenStorage = .{},
@@ -41,10 +35,10 @@ pub fn List(
 
         pub const setOwnershipToken = OwnershipTraits.setContainerToken;
 
-        const Methods = CommonMethods(@This());
-        pub const hookFromFreeNode = Methods.hookFromFreeNode;
-        pub const hookFromOwnedNode = Methods.hookFromOwnedNode;
-        pub const hookFromOwnedConstNode = Methods.hookFromOwnedConstNode;
+        const HookCommon = hook_common.For(@This(), hook_field_name);
+        pub const hookFromFreeNode = HookCommon.hookFromFreeNode;
+        pub const hookFromOwnedNode = HookCommon.hookFromOwnedNode;
+        pub const hookFromOwnedConstNode = HookCommon.hookFromOwnedConstNode;
 
         // -------------------- insertion/removal
 

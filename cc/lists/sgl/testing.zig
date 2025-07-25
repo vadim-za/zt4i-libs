@@ -4,7 +4,7 @@ const lib = @import("../../lib.zig");
 const Payload = i32;
 
 const tested_configs = configs: {
-    var configs: []const lib.lists.Config = &.{};
+    var configs: []const lib.lists.SimpleListConfig = &.{};
 
     for ([_]std.meta.Tag(lib.lists.Implementation.SingleLinked){
         .single_ptr,
@@ -19,9 +19,8 @@ const tested_configs = configs: {
                 .off,
                 .on,
             }) |free_items| {
-                configs = configs ++ [1]lib.lists.Config{.{
+                configs = configs ++ [1]lib.lists.SimpleListConfig{.{
                     .implementation = .{ .single_linked = impl },
-                    .layout = .simple_payload,
                     .ownership_tracking = .{
                         .owned_items = owned_items,
                         .free_items = free_items,
@@ -36,7 +35,7 @@ const tested_configs = configs: {
 
 test "insertFirst" {
     inline for (tested_configs) |config| {
-        const List = lib.lists.List(Payload, config);
+        const List = lib.SimpleList(Payload, config);
         var list: List = .{};
         if (comptime config.ownership_tracking.owned_items == .custom)
             list.setOwnershipToken(1);
@@ -73,7 +72,7 @@ test "insertFirst" {
 
 test "insertLast" {
     inline for (tested_configs) |config| {
-        const List = lib.lists.List(Payload, config);
+        const List = lib.SimpleList(Payload, config);
         const impl = comptime config.implementation.single_linked;
         if (impl == .single_ptr) continue;
 
@@ -115,7 +114,7 @@ test "insertLast" {
 
 test "insertAfter" {
     inline for (tested_configs) |config| {
-        const List = lib.lists.List(Payload, config);
+        const List = lib.SimpleList(Payload, config);
         var list: List = undefined;
         list.init();
         if (comptime config.ownership_tracking.owned_items == .custom)
@@ -154,7 +153,7 @@ test "insertAfter" {
 
 test "removeFirst" {
     inline for (tested_configs) |config| {
-        const List = lib.lists.List(Payload, config);
+        const List = lib.SimpleList(Payload, config);
         var list: List = .{};
         if (comptime config.ownership_tracking.owned_items == .custom)
             list.setOwnershipToken(1);
@@ -183,9 +182,12 @@ test "removeFirst" {
 }
 
 test "Embedded hook" {
-    inline for (tested_configs) |base_config| {
-        comptime var config = base_config;
-        config.layout = comptime .{ .embedded_hook = "hook" };
+    inline for (tested_configs) |simple_config| {
+        const config = lib.lists.Config{
+            .implementation = simple_config.implementation,
+            .hook_field = "hook",
+            .ownership_tracking = simple_config.ownership_tracking,
+        };
 
         const types = struct {
             const List = lib.lists.List(Node, config);
@@ -203,72 +205,6 @@ test "Embedded hook" {
 
         list.insertFirst(&node);
         list.removeFirst();
-
-        // There were no expect() calls, but the test checks that the code
-        // doesn't raise any assertions.
-    }
-}
-
-test "Non-empty layout" {
-    // Layout can be configured at runtime to one of two different hooks
-    // specified using the 'index' field
-    const Layout = struct {
-        pub fn With(Node_: type, Hook: type) type {
-            return struct {
-                pub const Node = Node_;
-
-                index: usize = undefined,
-
-                /// This function is required by all implementations
-                pub fn hookFromNode(
-                    self: @This(),
-                    node: *const Node,
-                ) *const Hook {
-                    return &node.hooks[self.index];
-                }
-
-                /// This function is required by some but not all implementations
-                pub fn nodeFromHook(
-                    self: @This(),
-                    hook: *const Hook,
-                ) *const Node {
-                    const hook0 = hook[0..1].ptr - self.index;
-                    const hooks: *const [2]Hook = @ptrCast(hook0);
-                    return @alignCast(@fieldParentPtr("hooks", hooks));
-                }
-            };
-        }
-    };
-
-    inline for (tested_configs) |base_config| {
-        comptime var config = base_config;
-        config.layout = comptime .{ .custom = Layout };
-
-        const types = struct {
-            const List = lib.lists.List(Node, config);
-            const Node = struct {
-                data: Payload = undefined,
-                hooks: [2]List.Hook =
-                    if (config.ownership_tracking.free_items != .off)
-                        .{ .{}, .{} }
-                    else
-                        undefined,
-            };
-        };
-
-        for (0..2) |index| {
-            var list: types.List = undefined;
-            list.init();
-            list.layout = .{ .index = index };
-            if (comptime config.ownership_tracking.owned_items == .custom)
-                list.setOwnershipToken(1);
-            defer list.deinit();
-
-            var node: types.Node = .{};
-
-            list.insertFirst(&node);
-            list.removeFirst();
-        }
 
         // There were no expect() calls, but the test checks that the code
         // doesn't raise any assertions.
