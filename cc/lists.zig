@@ -54,9 +54,9 @@ test "Simple list demo" {
     // A list with an i32 payload
     const L = SimpleList(
         i32,
-        .{ .double_linked = .null_terminated },
+        .{ .double_linked = .single_ptr },
         .{
-            // Track node ownership in debug builds using pointer to the list object.
+            // Track node ownership in debug builds using pointers to the list object.
             // Ownership tracking prevents inadvertent incorrect pairing of a node
             // with a list which doesn't own it (e.g. it list iteration or node removal).
             .owned_items = .container_ptr,
