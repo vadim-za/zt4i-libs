@@ -1,7 +1,7 @@
 const std = @import("std");
 
 pub const lists = @import("lists.zig");
-pub const trees = @import("sorted_trees.zig");
+pub const trees = @import("trees.zig");
 pub const OwnershipTracking = @import("OwnershipTracking.zig");
 
 pub const List = lists.List;

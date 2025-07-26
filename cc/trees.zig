@@ -1,7 +1,7 @@
 const std = @import("std");
 const lib = @import("lib.zig");
-const impl = @import("sorted_trees/impl.zig");
-const CompareTo = @import("sorted_trees/compare_to.zig").CompareTo;
+const impl = @import("trees/impl.zig");
+const CompareTo = @import("trees/compare_to.zig").CompareTo;
 
 pub const Implementation = impl.Implementation;
 
@@ -70,7 +70,7 @@ comptime {
 // -----------------------------------------------------------------------
 
 // This test serves more like a minimal sorted tree demo.
-// More in-depth testing is done in sorted_trees/testing.zig
+// More in-depth testing is done in trees/testing.zig
 test "Simple tree demo" {
     // A map with an i32 key and void payload
     const T = SimpleTreeMap(i32, void, .{
@@ -86,7 +86,7 @@ test "Simple tree demo" {
             .free_items = .on,
         },
     });
-    const verifyTree = @import("sorted_trees/avl.zig").verifyTree;
+    const verifyTree = @import("trees/avl.zig").verifyTree;
 
     var t: T = .{};
     defer t.deinit();
