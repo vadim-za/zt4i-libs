@@ -34,7 +34,7 @@ fn verifyTree(tree_ptr: anytype) void {
     }
 }
 
-test "Tree basic insertion" {
+test "Tree basic" {
     inline for (tested_configs) |config| {
         const Tree = lib.SimpleTree(Key, config);
 
@@ -81,6 +81,85 @@ test "Tree basic insertion" {
         }
 
         var node2: Tree.Node = .{ .data = 5 };
+        {
+            const result = tree.insertNode(&node2, .{});
+            verifyTree(&tree);
+            try std.testing.expect(result.success);
+            try std.testing.expectEqual(&node2, result.node);
+            try std.testing.expectEqual(&node0, tree.find(&0));
+            try std.testing.expectEqual(&node1, tree.find(&10));
+            try std.testing.expectEqual(&node2, tree.find(&5));
+            try std.testing.expectEqual(null, tree.find(&20));
+            try std.testing.expectEqual(null, tree.find(&-1));
+            try std.testing.expectEqual(null, tree.find(&3));
+            try std.testing.expectEqual(null, tree.find(&9));
+            if (config.implementation == .avl) {
+                try std.testing.expectEqual(&node2, tree.root());
+                try std.testing.expectEqual(&node0, tree.children(&node2)[0]);
+                try std.testing.expectEqual(&node1, tree.children(&node2)[1]);
+                try std.testing.expectEqual(null, tree.children(&node0)[0]);
+                try std.testing.expectEqual(null, tree.children(&node0)[1]);
+                try std.testing.expectEqual(null, tree.children(&node1)[0]);
+                try std.testing.expectEqual(null, tree.children(&node1)[1]);
+            }
+        }
+
+        try std.testing.expectEqual(&node2, tree.remove(&node2, .{}));
+        verifyTree(&tree);
+        // The root now may be node0 or node1, it is unspecified
+
+        tree.removeAll();
+        verifyTree(&tree);
+    }
+}
+
+test "Tree map basic" {
+    inline for (tested_configs) |config| {
+        const Tree = lib.SimpleTreeMap(Key, void, config);
+
+        var tree: Tree = .{};
+        if (comptime config.ownership_tracking.owned_items == .custom)
+            tree.setOwnershipToken(1);
+        defer tree.deinit();
+
+        verifyTree(&tree);
+        try std.testing.expect(!tree.hasContent());
+        try std.testing.expectEqual(null, tree.root());
+        try std.testing.expectEqual(null, tree.find(&0));
+
+        var node0: Tree.Node = .{ .key = 0, .data = {} };
+        {
+            const result = tree.insertNode(&node0, .{});
+            verifyTree(&tree);
+            try std.testing.expect(result.success);
+            try std.testing.expectEqual(&node0, result.node);
+            try std.testing.expectEqual(&node0, tree.find(&0));
+            try std.testing.expectEqual(null, tree.find(&1));
+            try std.testing.expectEqual(null, tree.find(&-1));
+            try std.testing.expectEqual(&node0, tree.root());
+            try std.testing.expectEqual(null, tree.children(&node0)[0]);
+            try std.testing.expectEqual(null, tree.children(&node0)[1]);
+        }
+
+        var node1: Tree.Node = .{ .key = 10, .data = {} };
+        {
+            const result = tree.insertNode(&node1, .{});
+            verifyTree(&tree);
+            try std.testing.expect(result.success);
+            try std.testing.expectEqual(&node1, result.node);
+            try std.testing.expectEqual(&node0, tree.find(&0));
+            try std.testing.expectEqual(&node1, tree.find(&10));
+            try std.testing.expectEqual(null, tree.find(&20));
+            try std.testing.expectEqual(null, tree.find(&-1));
+            try std.testing.expectEqual(null, tree.find(&5));
+            if (config.implementation == .avl) {
+                try std.testing.expectEqual(&node0, tree.root());
+                try std.testing.expectEqual(null, tree.children(&node0)[0]);
+                try std.testing.expectEqual(&node1, tree.children(&node0)[1]);
+            }
+        }
+
+        var node2: Tree.Node = .{ .key = 5, .data = {} };
         {
             const result = tree.insertNode(&node2, .{});
             verifyTree(&tree);
