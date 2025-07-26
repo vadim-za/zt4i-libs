@@ -91,7 +91,7 @@ test "Simple tree demo" {
     var t: T = .{};
     defer t.deinit();
 
-    verifyTree(&t);
+    try verifyTree(&t);
     try std.testing.expectEqual(null, t.find(&0));
 
     const Inserter = struct {
@@ -106,7 +106,7 @@ test "Simple tree demo" {
     var n0: T.Node = .{ .key = 0, .data = {} };
     {
         const result = t.insert(Inserter{ .node = &n0 }, .{});
-        verifyTree(&t);
+        try verifyTree(&t);
         try std.testing.expect(result.success);
         try std.testing.expectEqual(&n0, result.node);
         try std.testing.expectEqual(&n0, t.find(&0));
@@ -118,7 +118,7 @@ test "Simple tree demo" {
     {
         //const result = t.insert(Inserter{ .node = &n1 });
         const result = t.insertNode(&n1, .{});
-        verifyTree(&t);
+        try verifyTree(&t);
         try std.testing.expect(result.success);
         try std.testing.expectEqual(&n1, result.node);
         try std.testing.expectEqual(&n0, t.find(&0));
@@ -131,7 +131,7 @@ test "Simple tree demo" {
     }
 
     try std.testing.expectEqual(&n0, t.remove(&n0, .{}));
-    verifyTree(&t);
+    try verifyTree(&t);
     try std.testing.expectEqual(&n1, t.remove(&n1, .{}));
-    verifyTree(&t);
+    try verifyTree(&t);
 }

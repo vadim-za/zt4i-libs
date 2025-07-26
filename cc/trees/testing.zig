@@ -28,10 +28,10 @@ const tested_configs = configs: {
     break :configs configs;
 };
 
-fn verifyTree(tree_ptr: anytype) void {
-    switch (@TypeOf(tree_ptr.*).config.implementation) {
+fn verifyTree(tree_ptr: anytype) !void {
+    return switch (@TypeOf(tree_ptr.*).config.implementation) {
         .avl => @import("avl.zig").verifyTree(tree_ptr),
-    }
+    };
 }
 
 test "Tree basic" {
@@ -43,7 +43,7 @@ test "Tree basic" {
             tree.setOwnershipToken(1);
         defer tree.deinit();
 
-        verifyTree(&tree);
+        try verifyTree(&tree);
         try std.testing.expect(!tree.hasContent());
         try std.testing.expectEqual(null, tree.root());
         try std.testing.expectEqual(null, tree.find(&0));
@@ -51,7 +51,7 @@ test "Tree basic" {
         var node0: Tree.Node = .{ .data = 0 };
         {
             const result = tree.insertNode(&node0, .{});
-            verifyTree(&tree);
+            try verifyTree(&tree);
             try std.testing.expect(result.success);
             try std.testing.expectEqual(&node0, result.node);
             try std.testing.expectEqual(&node0, tree.find(&0));
@@ -65,7 +65,7 @@ test "Tree basic" {
         var node1: Tree.Node = .{ .data = 10 };
         {
             const result = tree.insertNode(&node1, .{});
-            verifyTree(&tree);
+            try verifyTree(&tree);
             try std.testing.expect(result.success);
             try std.testing.expectEqual(&node1, result.node);
             try std.testing.expectEqual(&node0, tree.find(&0));
@@ -83,7 +83,7 @@ test "Tree basic" {
         var node2: Tree.Node = .{ .data = 5 };
         {
             const result = tree.insertNode(&node2, .{});
-            verifyTree(&tree);
+            try verifyTree(&tree);
             try std.testing.expect(result.success);
             try std.testing.expectEqual(&node2, result.node);
             try std.testing.expectEqual(&node0, tree.find(&0));
@@ -105,11 +105,11 @@ test "Tree basic" {
         }
 
         try std.testing.expectEqual(&node2, tree.remove(&node2, .{}));
-        verifyTree(&tree);
+        try verifyTree(&tree);
         // The root now may be node0 or node1, it is unspecified
 
         tree.removeAll();
-        verifyTree(&tree);
+        try verifyTree(&tree);
     }
 }
 
@@ -122,7 +122,7 @@ test "Tree map basic" {
             tree.setOwnershipToken(1);
         defer tree.deinit();
 
-        verifyTree(&tree);
+        try verifyTree(&tree);
         try std.testing.expect(!tree.hasContent());
         try std.testing.expectEqual(null, tree.root());
         try std.testing.expectEqual(null, tree.find(&0));
@@ -130,7 +130,7 @@ test "Tree map basic" {
         var node0: Tree.Node = .{ .key = 0, .data = {} };
         {
             const result = tree.insertNode(&node0, .{});
-            verifyTree(&tree);
+            try verifyTree(&tree);
             try std.testing.expect(result.success);
             try std.testing.expectEqual(&node0, result.node);
             try std.testing.expectEqual(&node0, tree.find(&0));
@@ -144,7 +144,7 @@ test "Tree map basic" {
         var node1: Tree.Node = .{ .key = 10, .data = {} };
         {
             const result = tree.insertNode(&node1, .{});
-            verifyTree(&tree);
+            try verifyTree(&tree);
             try std.testing.expect(result.success);
             try std.testing.expectEqual(&node1, result.node);
             try std.testing.expectEqual(&node0, tree.find(&0));
@@ -162,7 +162,7 @@ test "Tree map basic" {
         var node2: Tree.Node = .{ .key = 5, .data = {} };
         {
             const result = tree.insertNode(&node2, .{});
-            verifyTree(&tree);
+            try verifyTree(&tree);
             try std.testing.expect(result.success);
             try std.testing.expectEqual(&node2, result.node);
             try std.testing.expectEqual(&node0, tree.find(&0));
@@ -184,11 +184,11 @@ test "Tree map basic" {
         }
 
         try std.testing.expectEqual(&node2, tree.remove(&node2, .{}));
-        verifyTree(&tree);
+        try verifyTree(&tree);
         // The root now may be node0 or node1, it is unspecified
 
         tree.removeAll();
-        verifyTree(&tree);
+        try verifyTree(&tree);
     }
 }
 
@@ -247,7 +247,7 @@ test "Tree random" {
             tree.setOwnershipToken(1);
         defer tree.deinit();
 
-        verifyTree(&tree);
+        try verifyTree(&tree);
 
         var nodes: [1000]Tree.Node = undefined;
         var rng = std.Random.DefaultPrng.init(0);
@@ -273,7 +273,7 @@ test "Tree random" {
                 try std.testing.expect(node != result.node);
                 try std.testing.expectEqual(node.key, result.node.key);
             }
-            verifyTree(&tree);
+            try verifyTree(&tree);
             try Retracer.verifyUnder(&tree, tree.root());
         }
         std.debug.assert(inserted_count > 100); // otherwise smth wrong with rng
@@ -312,7 +312,7 @@ test "Tree random" {
                 inserted_count -= 1;
             }
 
-            verifyTree(&tree);
+            try verifyTree(&tree);
             try Retracer.verifyUnder(&tree, tree.root());
 
             // Leave a few nodes for removeAll()
