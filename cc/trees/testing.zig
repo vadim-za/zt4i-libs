@@ -211,9 +211,8 @@ test "Tree random" {
         const Tree = Decls.Tree;
         const config = Decls.config;
 
-        const retracer = struct {
-            pub fn retrace(
-                _: *const @This(),
+        const Retracer = struct {
+            pub fn freeRetrace(
                 node: *Tree.Node,
                 children: *const [2]?*Tree.Node,
             ) void {
@@ -221,7 +220,17 @@ test "Tree random" {
                     (if (children[0]) |ch| ch.data.? else 0) +
                     (if (children[1]) |ch| ch.data.? else 0);
             }
-        }{};
+
+            pub fn retrace(
+                _: *const @This(),
+                node: *Tree.Node,
+                children: *const [2]?*Tree.Node,
+            ) void {
+                freeRetrace(node, children);
+            }
+        };
+        const retracer = Retracer{};
+        const retracer_tuple = .{ Retracer.freeRetrace, .{} };
 
         var tree: Tree = .{};
         if (comptime config.ownership_tracking.owned_items == .custom)
@@ -243,7 +252,10 @@ test "Tree random" {
                 .key = rng.random().intRangeAtMost(i32, 0, (nodes.len * 9) / 10),
                 .data = null,
             };
-            const result = tree.insertNode(node, .{ .retracer = retracer });
+            const result = if (inserted_count & 1 == 0)
+                tree.insertNode(node, .{ .retracer = retracer })
+            else
+                tree.insertNode(node, .{ .retracer = retracer_tuple });
             if (result.success) {
                 try std.testing.expectEqual(node, result.node);
                 inserted_count += 1;
@@ -278,7 +290,10 @@ test "Tree random" {
 
         for (&permuted_keys) |key| {
             const find_result = tree.find(&key);
-            const remove_result = tree.remove(&key, .{});
+            const remove_result = if (inserted_count & 1 == 0)
+                tree.remove(&key, .{ .retracer = &retracer_tuple })
+            else
+                tree.remove(&key, .{ .retracer = &retracer });
 
             try std.testing.expectEqual(find_result, remove_result);
             if (remove_result) |node| {
