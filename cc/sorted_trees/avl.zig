@@ -211,6 +211,7 @@ pub fn Tree(
                 slot.* = null;
             }
 
+            hook.* = .{};
             return node;
         }
 
@@ -236,6 +237,21 @@ pub fn Tree(
                 slot.* = other_child;
                 return node;
             }
+        }
+
+        pub fn removeAll(self: *@This()) void {
+            if (comptime !OwnershipTraits.can_discard_content)
+                self.releaseAllUnder(self.root_);
+            self.root_ = null;
+        }
+
+        fn releaseAllUnder(self: *@This(), node: ?*Node) void {
+            const hook = self.hookFromOwnedNode(
+                node orelse return,
+            );
+            self.releaseAllUnder(hook.children[0]);
+            self.releaseAllUnder(hook.children[1]);
+            hook.* = .{};
         }
 
         fn rebalanceSlot(self: *@This(), slot: *Slot, retracer: anytype) void {

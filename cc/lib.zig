@@ -7,9 +7,9 @@ pub const OwnershipTracking = @import("OwnershipTracking.zig");
 pub const List = lists.List;
 pub const SimpleList = lists.SimpleList;
 
-pub const SortedTree = sorted_trees.Tree;
-pub const SimpleSortedTree = sorted_trees.SimpleTree;
-pub const SimpleSortedTreeMap = sorted_trees.SimpleTreeMap;
+pub const Tree = sorted_trees.Tree;
+pub const SimpleTree = sorted_trees.SimpleTree;
+pub const SimpleTreeMap = sorted_trees.SimpleTreeMap;
 
 // --------------------------------------------------------------
 
