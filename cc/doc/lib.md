@@ -27,7 +27,8 @@ Key features:
 - [Container construction/destruction](#container-constructiondestruction)
 - [Node construction/destruction](#node-constructiondestruction)
 
-[Non-intrusive wrappers](#non-intrusive-wrappers)
+[Container-specific APIs](#container-specific-apis)
+- [Lists](lists.md)
 
 ## Intrusive hooks
 
@@ -379,24 +380,8 @@ As mentioned, dynamic allocation/deallocation of the nodes needs to be done "man
         alloc.destroy(popped_node);
 ```
 
-## Non-intrusive wrappers
+## Container-specific APIs
 
-While the primary focus of the library is intrusive container support, it provides a few wrappers for non-intrusive use cases, similar to `std.DoublyLinkedList`, `std.SinglyLinkedList` etc.
+The container-specific APIs are discussed separately:
 
-The `Simplelist` wrapper produces list nodes similar to the ones used by `std.DoublyLinkedList` and `std.SinglyLinkedList`:
-```
-    const MyList = zt4i.cc.SimpleList(i32, .{
-        .implementation = .......,
-        .ownership_tracking = ......,
-    });
-    var list: MyList = .{};
-    // The SimpleList node has the `data` field of the type
-    // supplied to SimpleList() and the `hook` field. The latter
-    // has a default initializer, therefore it can be omitted
-    // below:
-    var node: MyList.Node = .{ .data = 0 };
-    list.insertFirst(&node);
-    .....
-```
-
-There are also similar wrappers for the trees, but, as the tree configuration is more elaborate than the one of lists, those are discussed separately in the tree-specific discussion.
+- [Lists](lists.md)
