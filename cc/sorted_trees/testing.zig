@@ -130,9 +130,13 @@ test "Tree random" {
 
         // Randomly populate the tree
         for (&nodes) |*node| {
-            // make sure there are less keys than nodes
-            node.key = rng.random().intRangeAtMost(i32, 0, (nodes.len * 9) / 10);
-            node.data = null;
+            // Initialize the node in its entirety,
+            // or at least default-initialize the hook!
+            node.* = .{
+                // make sure there are less keys than nodes
+                .key = rng.random().intRangeAtMost(i32, 0, (nodes.len * 9) / 10),
+                .data = null,
+            };
             const result = tree.insertNode(node, {});
             if (result.success) {
                 try std.testing.expectEqual(node, result.node);
@@ -180,8 +184,8 @@ test "Tree random" {
             verifyTree(&tree);
 
             // Leave a few nodes for removeAll()
-            //if (inserted_count <= 10)
-            //    break;
+            if (inserted_count <= 10)
+                break;
         }
 
         tree.removeAll();
