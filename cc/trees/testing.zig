@@ -211,6 +211,18 @@ test "Tree random" {
         const Tree = Decls.Tree;
         const config = Decls.config;
 
+        const retracer = struct {
+            pub fn retrace(
+                _: *const @This(),
+                node: *Tree.Node,
+                children: *const [2]?*Tree.Node,
+            ) void {
+                node.data = 1 +
+                    (if (children[0]) |ch| ch.data.? else 0) +
+                    (if (children[1]) |ch| ch.data.? else 0);
+            }
+        }{};
+
         var tree: Tree = .{};
         if (comptime config.ownership_tracking.owned_items == .custom)
             tree.setOwnershipToken(1);
@@ -231,10 +243,9 @@ test "Tree random" {
                 .key = rng.random().intRangeAtMost(i32, 0, (nodes.len * 9) / 10),
                 .data = null,
             };
-            const result = tree.insertNode(node, .{});
+            const result = tree.insertNode(node, .{ .retracer = retracer });
             if (result.success) {
                 try std.testing.expectEqual(node, result.node);
-                node.data = 0;
                 inserted_count += 1;
             } else {
                 try std.testing.expect(node != result.node);

@@ -18,7 +18,7 @@ fn ParsedSpec(Spec: type, comptime field: []const u8) type {
 
     return switch (@typeInfo(Field)) {
         .pointer => Field,
-        else => *Field,
+        else => *const Field,
     };
 }
 
@@ -33,7 +33,7 @@ pub fn parseSpec(
     const Field = @FieldType(@TypeOf(spec_ptr.*), field);
     return switch (@typeInfo(Field)) {
         .pointer => @field(spec_ptr, field),
-        else => &field(spec_ptr, field),
+        else => &@field(spec_ptr, field), // Fails due to Zig Issue #19483
     };
 }
 
@@ -58,8 +58,9 @@ pub fn call(
                     args,
             );
         },
+        else => {},
     }
 
     // object is a container
-    return @call(.auto, @field(Object, method), args);
+    return @call(.auto, @field(Object, method), .{object_ptr} ++ args);
 }
