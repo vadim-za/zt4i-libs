@@ -23,6 +23,8 @@ Key features:
 - [Owned item tracking](#owned-item-tracking)
 - [Free item tracking](#free-item-tracking)
 
+[Construction/destruction](#constructiondestruction)
+
 ## Intrusive hooks
 
 The primary CC container implementations rely on intrusive hooks embedded into the user's data structures. While `boost::intrusive` primarily places the intrusive hooks into base classes of C++ container nodes (which seems to be a more appropriate choice in C++), the CC library expects hooks to be fields of the container nodes. Here is an example:
@@ -112,9 +114,14 @@ A double-linked list using an explicit sentinel object (embedded into the list o
 
 Since there are pointers into the list object from the first/last nodes of the list, the list object is not copyable. Furthermore, differently from "copyable" lists, it cannot be "value-initialized" as `var list: MyList = .{};`, but must be initialized in-place:
 ```
-var list: MyList = undefined;
-// Sentinel-terminated lists must be initialized in-place
-list.init();
+fn someFunc(......) ..... {
+    var list: MyList = undefined;
+    // Sentinel-terminated lists must be initialized in-place
+    list.init();
+    // Normally you shoud deinit all lists
+    defer list.deinit(); 
+    ....
+}
 ```
 Notice that for API compatibility reasons, the in-place initialization `list.init()` is supported by all list implementations, while "value initialization" is not available for the sentinel-terminated lists.
 
@@ -284,3 +291,26 @@ const MyList = zt4i.cc.List(MyNode, .{
 });
 ```
 The owned/free state is tracked per item. You must explicitly remove all items from the container before you discard/destroy the container.
+
+## Construction/destruction
+
+Most of the containers can be default-value-initialized. E.g:
+```
+fn someFunc(.....) ..... {
+    var list: MyList = .{};
+    defer list.deinit();
+    ......
+}
+```
+Containers with an embedded sentinel can be initialized only in-place:
+```
+fn someFunc(.....) ..... {
+    var list: MyList = undefined;
+    list.init();
+    defer list.deinit();
+    ......
+}
+```
+Other containers _can_ be initialized in-place if desired (e.g. for implementation exchangeability).
+
+The `deinit()` normally must be called for all containers, at least because it performs a run-time check for the container being emptied (in cases where it is a must) in debug builds.
