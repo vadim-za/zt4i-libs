@@ -34,7 +34,7 @@ pub fn Tree(
 
         pub const setOwnershipToken = OwnershipTraits.setContainerToken;
 
-        const HookCommon = hook_common.For(@This(), config.hook_field);
+        const HookCommon = hook_common.With(@This(), config.hook_field);
         pub const hookFromFreeNode = HookCommon.hookFromFreeNode;
         pub const hookFromOwnedNode = HookCommon.hookFromOwnedNode;
         pub const hookFromOwnedConstNode = HookCommon.hookFromOwnedConstNode;

@@ -6,8 +6,7 @@ const hook_common = @import("../../hook_common.zig");
 /// The termination is indicated by the next pointer set to null.
 pub fn List(
     Node_: type,
-    hook_field_name: []const u8,
-    ownership_tracking: lib.OwnershipTracking,
+    config_: lib.lists.Config,
 ) type {
     return struct {
         // These fields are private
@@ -16,7 +15,8 @@ pub fn List(
 
         const Self = @This();
 
-        const OwnershipTraits = ownership_tracking.TraitsFor(@This());
+        pub const config = config_;
+        const OwnershipTraits = config.ownership_tracking.TraitsFor(@This());
 
         pub const Node = Node_;
         pub const Hook = struct {
@@ -35,7 +35,7 @@ pub fn List(
 
         pub const setOwnershipToken = OwnershipTraits.setContainerToken;
 
-        const HookCommon = hook_common.For(@This(), hook_field_name);
+        const HookCommon = hook_common.With(@This(), config.hook_field);
         pub const hookFromFreeNode = HookCommon.hookFromFreeNode;
         pub const hookFromOwnedNode = HookCommon.hookFromOwnedNode;
         pub const hookFromOwnedConstNode = HookCommon.hookFromOwnedConstNode;

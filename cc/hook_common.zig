@@ -1,7 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 
-pub fn For(Container: type, hook_field_name: []const u8) type {
+pub fn With(Container: type, hook_field_name: []const u8) type {
     return struct {
         const Node = Container.Node;
         const Hook = Container.Hook;

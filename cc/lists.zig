@@ -11,11 +11,7 @@ pub const Config = struct {
 };
 
 pub fn List(Node: type, cfg: Config) type {
-    return cfg.implementation.namespace().List(
-        Node,
-        cfg.hook_field,
-        cfg.ownership_tracking,
-    );
+    return cfg.implementation.namespace().List(Node, cfg);
 }
 
 pub const SimpleListConfig = struct {
