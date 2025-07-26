@@ -2,6 +2,7 @@ const std = @import("std");
 const lib = @import("../lib.zig");
 const CompareTo = @import("compare_to.zig").CompareTo;
 const hook_common = @import("../hook_common.zig");
+const callbacks = @import("callbacks.zig");
 
 pub fn Tree(
     Node_: type,
@@ -87,9 +88,13 @@ pub fn Tree(
         pub fn insert(
             self: *@This(),
             inserter: anytype,
-            retracer: anytype,
+            retracer_callback: anytype,
         ) InsertionResult {
-            return self.insertUnder(&self.root_, inserter, retracer);
+            return self.insertUnder(
+                &self.root_,
+                inserter,
+                callbacks.parseSpec(&retracer_callback, "retracer"),
+            );
         }
 
         /// This function may be used only if 'compare_to' is capable
@@ -97,7 +102,7 @@ pub fn Tree(
         pub fn insertNode(
             self: *@This(),
             node: *Node,
-            retracer: anytype,
+            retracer_callback: anytype,
         ) InsertionResult {
             return self.insert(
                 struct {
@@ -110,7 +115,7 @@ pub fn Tree(
                         return ins.node;
                     }
                 }{ .node = node },
-                retracer,
+                retracer_callback,
             );
         }
 
@@ -118,7 +123,7 @@ pub fn Tree(
             self: *@This(),
             slot: *Slot,
             inserter: anytype,
-            retracer: anytype,
+            parsed_retracer: anytype,
         ) InsertionResult {
             if (slot.*) |node| {
                 const hook = self.hookFromOwnedNode(node);
@@ -129,9 +134,14 @@ pub fn Tree(
                     .gt => &hook.children[0],
                 };
 
-                const result = self.insertUnder(subslot, inserter, retracer);
+                const result = self.insertUnder(
+                    subslot,
+                    inserter,
+                    parsed_retracer,
+                );
+
                 if (result.success)
-                    self.rebalanceSlot(slot, retracer);
+                    self.rebalanceSlot(slot, parsed_retracer);
                 return result;
             } else {
                 const node = inserter.produceNode();
@@ -141,7 +151,7 @@ pub fn Tree(
                     .subtree_depth = undefined,
                     .ownership_token_storage = .from(self),
                 };
-                self.updateNodeCachedData(node, retracer);
+                self.updateNodeCachedData(node, parsed_retracer);
                 slot.* = node;
                 return .{ .success = true, .node = node };
             }
@@ -151,12 +161,12 @@ pub fn Tree(
         pub fn remove(
             self: *@This(),
             comparable_value_ptr: anytype,
-            retracer: anytype,
+            retracer_callback: anytype,
         ) ?*Node {
             return self.removeUnder(
                 &self.root_,
                 comparable_value_ptr,
-                retracer,
+                callbacks.parseSpec(&retracer_callback, "retracer"),
             );
         }
 
@@ -164,14 +174,14 @@ pub fn Tree(
             self: *@This(),
             slot: *Slot,
             comparable_value_ptr: anytype,
-            retracer: anytype,
+            parsed_retracer: anytype,
         ) ?*Node {
             const node = slot.* orelse return null;
             const hook = self.hookFromOwnedNode(node);
 
             const subslot =
                 switch (compareNodeTo(node, comparable_value_ptr)) {
-                    .eq => return self.removeAt(slot, retracer),
+                    .eq => return self.removeAt(slot, parsed_retracer),
                     .lt => &hook.children[1],
                     .gt => &hook.children[0],
                 };
@@ -179,15 +189,19 @@ pub fn Tree(
             const result = self.removeUnder(
                 subslot,
                 comparable_value_ptr,
-                retracer,
+                parsed_retracer,
             );
 
             if (result != null)
-                self.rebalanceSlot(slot, retracer);
+                self.rebalanceSlot(slot, parsed_retracer);
             return result;
         }
 
-        fn removeAt(self: *@This(), slot: *Slot, retracer: anytype) ?*Node {
+        fn removeAt(
+            self: *@This(),
+            slot: *Slot,
+            parsed_retracer: anytype,
+        ) ?*Node {
             const node = slot.*.?;
             const hook = self.hookFromOwnedNode(node);
 
@@ -198,7 +212,7 @@ pub fn Tree(
                 const replacement_node = self.retrieveReplacementNode(
                     &hook.children[replacement_branch],
                     ~replacement_branch,
-                    retracer,
+                    parsed_retracer,
                 );
 
                 slot.* = replacement_node;
@@ -206,7 +220,7 @@ pub fn Tree(
                     self.hookFromOwnedNode(replacement_node);
                 replacement_hook.children = hook.children;
 
-                self.rebalanceSlot(slot, retracer);
+                self.rebalanceSlot(slot, parsed_retracer);
             } else {
                 slot.* = null;
             }
@@ -219,17 +233,20 @@ pub fn Tree(
             self: *@This(),
             slot: *Slot,
             branch: u1,
-            retracer: anytype,
+            parsed_retracer: anytype,
         ) *Node {
             const node = slot.*.?;
             const hook = self.hookFromOwnedNode(node);
             const child_slot = &hook.children[branch];
 
             if (child_slot.* != null) {
-                const replacement_node =
-                    self.retrieveReplacementNode(child_slot, branch, retracer);
+                const replacement_node = self.retrieveReplacementNode(
+                    child_slot,
+                    branch,
+                    parsed_retracer,
+                );
 
-                self.rebalanceSlot(slot, retracer);
+                self.rebalanceSlot(slot, parsed_retracer);
                 return replacement_node;
             } else {
                 const other_child = hook.children[~branch];
@@ -254,7 +271,11 @@ pub fn Tree(
             hook.* = .{};
         }
 
-        fn rebalanceSlot(self: *@This(), slot: *Slot, retracer: anytype) void {
+        fn rebalanceSlot(
+            self: *@This(),
+            slot: *Slot,
+            parsed_retracer: anytype,
+        ) void {
             const node = slot.*.?;
             const hook = self.hookFromOwnedNode(node);
             const balance = self.balanceOf(hook);
@@ -264,11 +285,11 @@ pub fn Tree(
                 self.rebalanceSlotFrom(
                     if (balance < 0) 0 else 1,
                     slot,
-                    retracer,
+                    parsed_retracer,
                 );
                 std.debug.assert(@abs(self.balanceOf(hook)) <= 1);
             } else {
-                self.updateNodeCachedData(node, retracer);
+                self.updateNodeCachedData(node, parsed_retracer);
             }
         }
 
@@ -276,7 +297,7 @@ pub fn Tree(
             self: *@This(),
             from: u1,
             slot: *Slot,
-            retracer: anytype,
+            parsed_retracer: anytype,
         ) void {
             const hook = self.hookFromOwnedNode(slot.*.?);
             const from_slot = &hook.children[from];
@@ -302,15 +323,15 @@ pub fn Tree(
             //    (E) (D)                    (D)    (B)
 
             if (from_balance > 0)
-                self.rotateSlot(from_slot, ~from, retracer);
-            self.rotateSlot(slot, from, retracer);
+                self.rotateSlot(from_slot, ~from, parsed_retracer);
+            self.rotateSlot(slot, from, parsed_retracer);
         }
 
         fn rotateSlot(
             self: *@This(),
             slot: *Slot,
             from: u1,
-            retracer: anytype,
+            parsed_retracer: anytype,
         ) void {
             const node = slot.*.?;
             const hook = self.hookFromOwnedNode(node);
@@ -329,14 +350,14 @@ pub fn Tree(
             from_hook.children[~from] = node;
             hook.children[from] = from_to_node;
 
-            self.updateNodeCachedData(node, retracer);
-            self.updateNodeCachedData(from_node, retracer);
+            self.updateNodeCachedData(node, parsed_retracer);
+            self.updateNodeCachedData(from_node, parsed_retracer);
         }
 
         fn updateNodeCachedData(
             self: *@This(),
             node: *Node,
-            retracer: anytype,
+            parsed_retracer: anytype,
         ) void {
             const hook = self.hookFromOwnedNode(node);
 
@@ -345,7 +366,13 @@ pub fn Tree(
                 self.cachedSubtreeDepthOf(hook.children[1]),
             ) + 1;
 
-            self.retraceNode(node, retracer);
+            if (@TypeOf(parsed_retracer) != void)
+                callbacks.call(
+                    parsed_retracer,
+                    "retrace",
+                    .{ node, self.children(node) },
+                    void,
+                );
         }
 
         fn cachedSubtreeDepthOf(self: *const @This(), slot: Slot) i32 {
@@ -368,43 +395,6 @@ pub fn Tree(
 
         fn balanceOf(self: *const @This(), hook: *Hook) i32 {
             return self.balanceFrom(0, hook);
-        }
-
-        fn parseSpec(
-            spec: anytype,
-            comptime field: []const u8,
-        ) if (@hasField(
-            @TypeOf(spec),
-            field,
-        )) @TypeOf(spec.field) else void {
-            const info = @typeInfo(@TypeOf(spec)).@"struct";
-
-            // spec cannot contain any decls
-            comptime std.debug.assert(info.decls.len == 0);
-
-            if (info.fields.len == 0)
-                return;
-
-            // spec can contain only one field at most
-            comptime std.debug.assert(spec.fields.len == 1);
-
-            // if spec contains a field it must have the expected name
-            return @field(spec, field);
-        }
-
-        fn retraceNode(
-            self: *const @This(),
-            node: *Node,
-            retracer_spec: anytype,
-        ) void {
-            const retracer = parseSpec(retracer_spec, "retracer");
-            if (@TypeOf(retracer) == void) return;
-
-            const info = @typeInfo(@TypeOf(retracer)).@"struct";
-            _ = info;
-            _ = self;
-            _ = node;
-            @compileError("Retracing not supported yet");
         }
 
         pub fn hasContent(self: *const @This()) bool {
