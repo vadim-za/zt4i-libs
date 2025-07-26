@@ -7,6 +7,7 @@ const Self = @This();
 core: zt4i.gui.Window = .{},
 dr: struct {
     red_brush: zt4i.gui.SolidBrush = .init(.initRgb(1, 0, 0)),
+    green_brush: zt4i.gui.SolidBrush = .init(.initRgb(0, 1, 0)),
 } = .{},
 path: zt4i.gui.Path = .{},
 font: zt4i.gui.Font = .{},
@@ -42,6 +43,7 @@ pub fn init(self: *@This()) !void {
     errdefer self.deinit();
 
     self.core.addDeviceResource(&self.dr.red_brush);
+    self.core.addDeviceResource(&self.dr.green_brush);
 
     {
         var sink = try zt4i.gui.Path.begin(.closed, &.{ .x = 300, .y = 200 });
@@ -162,6 +164,7 @@ pub fn onPaint(self: *@This(), dc: *zt4i.gui.DrawContext) void {
     dc.clear(&.initRgb(0, 0, 1));
 
     const red_brush = self.dr.red_brush.ref();
+    const green_brush = self.dr.green_brush.ref();
 
     dc.fillRectangle(
         &.{ .left = 100, .right = 200, .top = 100, .bottom = 150 },
@@ -175,7 +178,7 @@ pub fn onPaint(self: *@This(), dc: *zt4i.gui.DrawContext) void {
     );
     dc.drawRectangle(
         &.{ .left = 400, .top = 100, .right = 500, .bottom = 150 },
-        red_brush,
+        green_brush,
         2,
     );
     //dc.fillPath(&self.path, red_brush);
