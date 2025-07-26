@@ -23,7 +23,11 @@ Key features:
 - [Owned item tracking](#owned-item-tracking)
 - [Free item tracking](#free-item-tracking)
 
-[Construction/destruction](#constructiondestruction)
+[Construction/destruction](#constructiondestruction)  
+- [Container construction/destruction](#container-constructiondestruction)
+- [Node construction/destruction](#node-constructiondestruction)
+
+[Non-intrusive wrappers](#non-intrusive-wrappers)
 
 ## Intrusive hooks
 
@@ -190,7 +194,7 @@ NB. In the current state of the CC library the ownership tracking is considered 
 
 The owned item tracking features, when enabled, track the owning container for each item (node) inserted into a container. This allows to detect situations when items are supplied to wrong containers (e.g. for removal, for iterating to the next node, etc.).
 
-NB. This doesn't explicitly track the state of an item being inserted or not inserted into a container. The owner item tracking assumes that all items which are supposed to be inserted into a given container are at least inserted into _some_ container, it merely checks that the container is the right one. If you are also concerned about inadvertently misusing the items which are not inserted into any container, you need to enable the free item tracking (but this comes at some extra costs).
+NB. This doesn't explicitly track the state of an item being inserted or not inserted into a container. The owner item tracking assumes that all items which are supposed to be inserted into a given container are at least inserted into _some_ container, it merely checks that the container is the right one. If you are also concerned about inadvertently misusing the items which are not inserted into any container, you need to enable the free item tracking (but this comes at some extra costs). _Without enabled free item tracking, free items will cause undefined check results in places where owned items are expected._
 
 The following owned item tracking modes are supported (for double- and single-linked lists as well as for the trees).
 
@@ -294,9 +298,13 @@ The owned/free state is tracked per item. You must explicitly remove all items f
 
 ## Construction/destruction
 
+### Container construction/destruction
+
 Most of the containers can be default-value-initialized. E.g:
 ```
 fn someFunc(.....) ..... {
+    // This initialization pattern is supported
+    // by most containers
     var list: MyList = .{};
     defer list.deinit();
     ......
@@ -305,12 +313,90 @@ fn someFunc(.....) ..... {
 Containers with an embedded sentinel can be initialized only in-place:
 ```
 fn someFunc(.....) ..... {
+    // This initialization pattern is supported
+    // by all containers
     var list: MyList = undefined;
     list.init();
     defer list.deinit();
     ......
 }
 ```
-Other containers _can_ be initialized in-place if desired (e.g. for implementation exchangeability).
+Other containers _can_ be initialized in-place if desired (e.g. for implementation interchangeability).
 
 The `deinit()` normally must be called for all containers, at least because it performs a run-time check for the container being emptied (in cases where it is a must) in debug builds.
+
+### Node construction/destruction
+
+Differently from C++'s `std` containers (and similarly to Zig's `std.DoublyLinkedList` and `std.SinglyLinkedList`) it is on you to (manually) allocate/deallocate memory for the nodes. The nodes can even be located on the stack, even in the form of local variables (as long as the variables' lifetimes are sufficiently large).
+
+It is imperative that the hooks are initialized with `.{}` before the nodes are inserted into a container:
+```
+    // Option 1: all fields of the node have default initializers,
+    // including the hooks, which are initialized to `.{}`
+    var node1: Node = .{};
+
+    // Option 2: the same, but the Node type is not accessible
+    // here. No problem, we still have the same type accessible
+    // via MyList
+    var node2: MyList.Node = .{};
+
+    // Option 3: we explicitly initialize all node fields except
+    // the hooks, the latter have default initializers
+    var node3: Node = .{
+        .field1 = ......,
+        .field2 = ......,
+    };
+
+    // Option 4: we explicitly initialize all fields:
+    var node3: Node = .{
+        .field1 = ......,
+        .field2 = ......,
+        .hook = .{},
+    };
+
+    // Option 4: we initialize the entire node to undefined
+    // and then initialize the hook. Then we can insert the
+    // node into the container, and initialize the remaining
+    // fields later.
+    var node4: Node = undefined;
+    node4.hook = .{};
+
+    // Option 5: we initialize the hook right before insertion
+    var node5: Node = undefined;
+    .......
+    node5.hook = .{};
+    list.insertFirst(&node5);
+```
+There is no `deinit()` function for the hooks, those can be simply discarded. You still might want to have a `deinit()` method for your node, though.
+
+As mentioned, dynamic allocation/deallocation of the nodes needs to be done "manually":
+```
+    var node = alloc.create(Node);
+    node.* = .{ ..... }; // at least initialize the hook
+    list.insertFirst(node);
+    .........
+    if(list.popFirst()) |popped_node|;
+        alloc.destroy(popped_node);
+```
+
+## Non-intrusive wrappers
+
+While the primary focus of the library is intrusive container support, it provides a few wrappers for non-intrusive use cases, similar to `std.DoublyLinkedList`, `std.SinglyLinkedList` etc.
+
+The `Simplelist` wrapper produces list nodes similar to the ones used by `std.DoublyLinkedList` and `std.SinglyLinkedList`:
+```
+    const MyList = zt4i.cc.SimpleList(i32, .{
+        .implementation = .......,
+        .ownership_tracking = ......,
+    });
+    var list: MyList = .{};
+    // The SimpleList node has the `data` field of the type
+    // supplied to SimpleList() and the `hook` field. The latter
+    // has a default initializer, therefore it can be omitted
+    // below:
+    var node: MyList.Node = .{ .data = 0 };
+    list.insertFirst(&node);
+    .....
+```
+
+There are also similar wrappers for the trees, but, as the tree configuration is more elaborate than the one of lists, those are discussed separately in the tree-specific discussion.
