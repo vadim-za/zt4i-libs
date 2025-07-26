@@ -108,7 +108,7 @@ test "Tree basic" {
         try verifyTree(&tree);
         // The root now may be node0 or node1, it is unspecified
 
-        tree.removeAll();
+        tree.removeAll(.{});
         try verifyTree(&tree);
     }
 }
@@ -187,7 +187,7 @@ test "Tree map basic" {
         try verifyTree(&tree);
         // The root now may be node0 or node1, it is unspecified
 
-        tree.removeAll();
+        tree.removeAll(.{});
         try verifyTree(&tree);
     }
 }
@@ -320,7 +320,19 @@ test "Tree random" {
                 break;
         }
 
-        tree.removeAll();
+        // Remove the remaining nodes using removeAll()
+        const Discarder = struct {
+            fn freeDiscard(inserted_count_ptr: *usize, _: *Tree.Node) void {
+                inserted_count_ptr.* -= 1;
+            }
+        };
+
+        tree.removeAll(.{ .discarder = &.{
+            Discarder.freeDiscard,
+            .{&inserted_count},
+        } });
         try std.testing.expectEqual(null, tree.root());
+        // Check that discarder worked
+        try std.testing.expectEqual(0, inserted_count);
     }
 }

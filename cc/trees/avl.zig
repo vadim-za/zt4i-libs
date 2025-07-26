@@ -256,19 +256,37 @@ pub fn Tree(
             }
         }
 
-        pub fn removeAll(self: *@This()) void {
-            if (comptime !OwnershipTraits.can_discard_content)
-                self.releaseAllUnder(self.root_);
+        pub fn removeAll(self: *@This(), discarder: anytype) void {
+            const parsed_discarder =
+                callbacks.parseSpec(&discarder, "discarder");
+
+            const can_discard_content = @TypeOf(parsed_discarder) == void and
+                OwnershipTraits.can_discard_content;
+
+            if (comptime !can_discard_content)
+                self.releaseAllUnder(self.root_, &parsed_discarder);
+
             self.root_ = null;
         }
 
-        fn releaseAllUnder(self: *@This(), node: ?*Node) void {
-            const hook = self.hookFromOwnedNode(
-                node orelse return,
-            );
-            self.releaseAllUnder(hook.children[0]);
-            self.releaseAllUnder(hook.children[1]);
+        fn releaseAllUnder(
+            self: *@This(),
+            node: ?*Node,
+            parsed_discarder_ptr: anytype,
+        ) void {
+            const n = node orelse return;
+            const hook = self.hookFromOwnedNode(n);
+            self.releaseAllUnder(hook.children[0], parsed_discarder_ptr);
+            self.releaseAllUnder(hook.children[1], parsed_discarder_ptr);
             hook.* = .{};
+
+            if (@TypeOf(parsed_discarder_ptr.*) != void)
+                callbacks.call(
+                    parsed_discarder_ptr,
+                    "discard",
+                    .{n},
+                    void,
+                );
         }
 
         fn rebalanceSlot(
