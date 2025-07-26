@@ -152,8 +152,8 @@ test "Tree random" {
         for (&nodes) |*node| {
             const result = tree.find(&node.key);
             try std.testing.expectEqual(
-                if (node.data != null) node else null,
-                result,
+                node.data != null,
+                result == node,
             );
         }
 
@@ -180,11 +180,11 @@ test "Tree random" {
             verifyTree(&tree);
 
             // Leave a few nodes for removeAll()
-            if (inserted_count <= 10)
-                break;
+            //if (inserted_count <= 10)
+            //    break;
         }
-        try std.testing.expectEqual(null, tree.root());
 
         tree.removeAll();
+        try std.testing.expectEqual(null, tree.root());
     }
 }
