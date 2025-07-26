@@ -5,9 +5,7 @@ const hook_common = @import("../hook_common.zig");
 
 pub fn Tree(
     Node_: type,
-    hook_field_name: []const u8,
-    compare_to: CompareTo,
-    ownership_tracking: lib.OwnershipTracking,
+    config_: lib.sorted_trees.Config,
 ) type {
     return struct {
         root_: Slot = null,
@@ -15,7 +13,8 @@ pub fn Tree(
 
         const Self = @This();
 
-        const OwnershipTraits = ownership_tracking.TraitsFor(@This());
+        pub const config = config_;
+        const OwnershipTraits = config.ownership_tracking.TraitsFor(@This());
 
         // Ascribe explicit semantics to ?*Node, so *?*Node becomes *Slot
         const Slot = ?*Node;
@@ -34,7 +33,7 @@ pub fn Tree(
 
         pub const setOwnershipToken = OwnershipTraits.setContainerToken;
 
-        const HookCommon = hook_common.For(@This(), hook_field_name);
+        const HookCommon = hook_common.For(@This(), config.hook_field);
         pub const hookFromFreeNode = HookCommon.hookFromFreeNode;
         pub const hookFromOwnedNode = HookCommon.hookFromOwnedNode;
         pub const hookFromOwnedConstNode = HookCommon.hookFromOwnedConstNode;
@@ -43,7 +42,7 @@ pub fn Tree(
             node: *Node,
             comparable_value_ptr: anytype,
         ) std.math.Order {
-            return compare_to.call(node, comparable_value_ptr);
+            return config.compare_to.call(node, comparable_value_ptr);
         }
 
         pub fn find(

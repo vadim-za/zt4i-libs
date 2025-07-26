@@ -13,12 +13,7 @@ pub const Config = struct {
 };
 
 pub fn Tree(Node: type, cfg: Config) type {
-    return cfg.implementation.namespace().Tree(
-        Node,
-        cfg.hook_field,
-        cfg.compare_to,
-        cfg.ownership_tracking,
-    );
+    return cfg.implementation.namespace().Tree(Node, cfg);
 }
 
 pub const SimpleTreeConfig = struct {
