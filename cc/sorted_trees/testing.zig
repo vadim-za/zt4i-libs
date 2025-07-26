@@ -1,7 +1,7 @@
 const std = @import("std");
 const lib = @import("../lib.zig");
 
-const Payload = i32;
+const Key = i32;
 
 const tested_configs = configs: {
     var configs: []const lib.sorted_trees.SimpleTreeConfig = &.{};
@@ -36,7 +36,7 @@ fn verifyTree(tree_ptr: anytype) void {
 
 test "Tree basic insertion" {
     inline for (tested_configs) |config| {
-        const Tree = lib.SimpleTree(Payload, config);
+        const Tree = lib.SimpleTree(Key, config);
 
         var tree: Tree = .{};
         if (comptime config.ownership_tracking.owned_items == .custom)
@@ -110,5 +110,81 @@ test "Tree basic insertion" {
 
         tree.removeAll();
         verifyTree(&tree);
+    }
+}
+
+test "Tree random" {
+    inline for (tested_configs) |config| {
+        const Tree = lib.SimpleTreeMap(Key, ?usize, config);
+
+        var tree: Tree = .{};
+        if (comptime config.ownership_tracking.owned_items == .custom)
+            tree.setOwnershipToken(1);
+        defer tree.deinit();
+
+        verifyTree(&tree);
+
+        var nodes: [1000]Tree.Node = undefined;
+        var rng = std.Random.DefaultPrng.init(0);
+        var inserted_count: usize = 0;
+
+        // Randomly populate the tree
+        for (&nodes) |*node| {
+            // make sure there are less keys than nodes
+            node.key = rng.random().intRangeAtMost(i32, 0, (nodes.len * 9) / 10);
+            node.data = null;
+            const result = tree.insertNode(node, {});
+            if (result.success) {
+                try std.testing.expectEqual(node, result.node);
+                node.data = 0;
+                inserted_count += 1;
+            } else {
+                try std.testing.expect(node != result.node);
+                try std.testing.expectEqual(node.key, result.node.key);
+            }
+            verifyTree(&tree);
+        }
+        std.debug.assert(inserted_count > 100); // otherwise smth wrong with rng
+        std.debug.assert(inserted_count < nodes.len);
+
+        // Check that the tree contains those and only those nodes
+        // that have been reported to be successfully inserted.
+        for (&nodes) |*node| {
+            const result = tree.find(&node.key);
+            try std.testing.expectEqual(
+                if (node.data != null) node else null,
+                result,
+            );
+        }
+
+        // Remove nodes in random order
+        var permuted_keys: [nodes.len]i32 = undefined;
+        for (&nodes, &permuted_keys) |*node, *key|
+            key.* = node.key;
+        for (0..nodes.len) |_| {
+            const idx1 = rng.random().intRangeLessThan(usize, 0, nodes.len);
+            const idx2 = rng.random().intRangeLessThan(usize, 0, nodes.len);
+            std.mem.swap(i32, &permuted_keys[idx1], &permuted_keys[idx2]);
+        }
+
+        for (&permuted_keys) |key| {
+            const find_result = tree.find(&key);
+            const remove_result = tree.remove(&key, {});
+
+            try std.testing.expectEqual(find_result, remove_result);
+            if (remove_result) |node| {
+                try std.testing.expectEqual(key, node.key);
+                inserted_count -= 1;
+            }
+
+            verifyTree(&tree);
+
+            // Leave a few nodes for removeAll()
+            if (inserted_count <= 10)
+                break;
+        }
+        try std.testing.expectEqual(null, tree.root());
+
+        tree.removeAll();
     }
 }
