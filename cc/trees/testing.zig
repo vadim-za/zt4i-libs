@@ -212,7 +212,15 @@ test "Tree random" {
         const config = Decls.config;
 
         const Retracer = struct {
-            pub fn freeRetrace(
+            pub fn retrace(
+                _: *const @This(),
+                node: *Tree.Node,
+                children: *const [2]?*Tree.Node,
+            ) void {
+                freeRetrace(node, children);
+            }
+
+            fn freeRetrace(
                 node: *Tree.Node,
                 children: *const [2]?*Tree.Node,
             ) void {
@@ -221,12 +229,14 @@ test "Tree random" {
                     (if (children[1]) |ch| ch.data.? else 0);
             }
 
-            pub fn retrace(
-                _: *const @This(),
-                node: *Tree.Node,
-                children: *const [2]?*Tree.Node,
-            ) void {
-                freeRetrace(node, children);
+            fn verifyUnder(tree_: *Tree, node: ?*Tree.Node) !void {
+                const n = node orelse return;
+                const children = tree_.children(n);
+                try verifyUnder(tree_, children[0]);
+                try verifyUnder(tree_, children[1]);
+                try std.testing.expectEqual(1 +
+                    (if (children[0]) |ch| ch.data.? else 0) +
+                    (if (children[1]) |ch| ch.data.? else 0), n.data);
             }
         };
         const retracer = Retracer{};
@@ -264,6 +274,7 @@ test "Tree random" {
                 try std.testing.expectEqual(node.key, result.node.key);
             }
             verifyTree(&tree);
+            try Retracer.verifyUnder(&tree, tree.root());
         }
         std.debug.assert(inserted_count > 100); // otherwise smth wrong with rng
         std.debug.assert(inserted_count < nodes.len);
@@ -302,6 +313,7 @@ test "Tree random" {
             }
 
             verifyTree(&tree);
+            try Retracer.verifyUnder(&tree, tree.root());
 
             // Leave a few nodes for removeAll()
             if (inserted_count <= 10)
