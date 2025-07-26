@@ -14,15 +14,13 @@ fn ParsedSpec(Spec: type, comptime field: []const u8) type {
     comptime std.debug.assert(info.fields.len == 1);
 
     // if spec contains a field it must have the expected name
-    const Field = @FieldType(Spec, field);
-
-    return switch (@typeInfo(Field)) {
-        .pointer => Field,
-        else => *const Field,
-    };
+    return @FieldType(Spec, field);
 }
 
-// Returns a pointer to the field contents or void
+// Returns a copy of the field contents or void
+// Actually we'd like to return a pointer to the field contents
+// to avoid an unnecessary copying of the field, but this
+// causes problems due to Zig Issue #19483.
 pub fn parseSpec(
     spec_ptr: anytype,
     comptime field: []const u8,
@@ -30,19 +28,20 @@ pub fn parseSpec(
     const Parsed = ParsedSpec(@TypeOf(spec_ptr.*), field);
     if (Parsed == void) return;
 
-    const Field = @FieldType(@TypeOf(spec_ptr.*), field);
-    return switch (@typeInfo(Field)) {
-        .pointer => @field(spec_ptr, field),
-        else => &@field(spec_ptr, field), // Fails due to Zig Issue #19483
-    };
+    return @field(spec_ptr, field);
 }
 
 pub fn call(
-    object_ptr: anytype,
+    parsed_callback_ptr: anytype,
     comptime method: []const u8,
     args: anytype,
     Result: type,
 ) Result {
+    const ParsedCallback = @TypeOf(parsed_callback_ptr.*);
+    const object_ptr = switch (@typeInfo(ParsedCallback)) {
+        .pointer => parsed_callback_ptr.*,
+        else => parsed_callback_ptr,
+    };
     const Object = @TypeOf(object_ptr.*);
 
     // object is a tuple

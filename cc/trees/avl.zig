@@ -93,7 +93,7 @@ pub fn Tree(
             return self.insertUnder(
                 &self.root_,
                 inserter,
-                callbacks.parseSpec(&retracer_callback, "retracer"),
+                &callbacks.parseSpec(&retracer_callback, "retracer"),
             );
         }
 
@@ -123,7 +123,7 @@ pub fn Tree(
             self: *@This(),
             slot: *Slot,
             inserter: anytype,
-            parsed_retracer: anytype,
+            parsed_retracer_ptr: anytype,
         ) InsertionResult {
             if (slot.*) |node| {
                 const hook = self.hookFromOwnedNode(node);
@@ -137,11 +137,11 @@ pub fn Tree(
                 const result = self.insertUnder(
                     subslot,
                     inserter,
-                    parsed_retracer,
+                    parsed_retracer_ptr,
                 );
 
                 if (result.success)
-                    self.rebalanceSlot(slot, parsed_retracer);
+                    self.rebalanceSlot(slot, parsed_retracer_ptr);
                 return result;
             } else {
                 const node = inserter.produceNode();
@@ -151,7 +151,7 @@ pub fn Tree(
                     .subtree_depth = undefined,
                     .ownership_token_storage = .from(self),
                 };
-                self.updateNodeCachedData(node, parsed_retracer);
+                self.updateNodeCachedData(node, parsed_retracer_ptr);
                 slot.* = node;
                 return .{ .success = true, .node = node };
             }
@@ -166,7 +166,7 @@ pub fn Tree(
             return self.removeUnder(
                 &self.root_,
                 comparable_value_ptr,
-                callbacks.parseSpec(&retracer_callback, "retracer"),
+                &callbacks.parseSpec(&retracer_callback, "retracer"),
             );
         }
 
@@ -174,14 +174,14 @@ pub fn Tree(
             self: *@This(),
             slot: *Slot,
             comparable_value_ptr: anytype,
-            parsed_retracer: anytype,
+            parsed_retracer_ptr: anytype,
         ) ?*Node {
             const node = slot.* orelse return null;
             const hook = self.hookFromOwnedNode(node);
 
             const subslot =
                 switch (compareNodeTo(node, comparable_value_ptr)) {
-                    .eq => return self.removeAt(slot, parsed_retracer),
+                    .eq => return self.removeAt(slot, parsed_retracer_ptr),
                     .lt => &hook.children[1],
                     .gt => &hook.children[0],
                 };
@@ -189,18 +189,18 @@ pub fn Tree(
             const result = self.removeUnder(
                 subslot,
                 comparable_value_ptr,
-                parsed_retracer,
+                parsed_retracer_ptr,
             );
 
             if (result != null)
-                self.rebalanceSlot(slot, parsed_retracer);
+                self.rebalanceSlot(slot, parsed_retracer_ptr);
             return result;
         }
 
         fn removeAt(
             self: *@This(),
             slot: *Slot,
-            parsed_retracer: anytype,
+            parsed_retracer_ptr: anytype,
         ) ?*Node {
             const node = slot.*.?;
             const hook = self.hookFromOwnedNode(node);
@@ -212,7 +212,7 @@ pub fn Tree(
                 const replacement_node = self.retrieveReplacementNode(
                     &hook.children[replacement_branch],
                     ~replacement_branch,
-                    parsed_retracer,
+                    parsed_retracer_ptr,
                 );
 
                 slot.* = replacement_node;
@@ -220,7 +220,7 @@ pub fn Tree(
                     self.hookFromOwnedNode(replacement_node);
                 replacement_hook.children = hook.children;
 
-                self.rebalanceSlot(slot, parsed_retracer);
+                self.rebalanceSlot(slot, parsed_retracer_ptr);
             } else {
                 slot.* = null;
             }
@@ -233,7 +233,7 @@ pub fn Tree(
             self: *@This(),
             slot: *Slot,
             branch: u1,
-            parsed_retracer: anytype,
+            parsed_retracer_ptr: anytype,
         ) *Node {
             const node = slot.*.?;
             const hook = self.hookFromOwnedNode(node);
@@ -243,10 +243,10 @@ pub fn Tree(
                 const replacement_node = self.retrieveReplacementNode(
                     child_slot,
                     branch,
-                    parsed_retracer,
+                    parsed_retracer_ptr,
                 );
 
-                self.rebalanceSlot(slot, parsed_retracer);
+                self.rebalanceSlot(slot, parsed_retracer_ptr);
                 return replacement_node;
             } else {
                 const other_child = hook.children[~branch];
@@ -274,7 +274,7 @@ pub fn Tree(
         fn rebalanceSlot(
             self: *@This(),
             slot: *Slot,
-            parsed_retracer: anytype,
+            parsed_retracer_ptr: anytype,
         ) void {
             const node = slot.*.?;
             const hook = self.hookFromOwnedNode(node);
@@ -285,11 +285,11 @@ pub fn Tree(
                 self.rebalanceSlotFrom(
                     if (balance < 0) 0 else 1,
                     slot,
-                    parsed_retracer,
+                    parsed_retracer_ptr,
                 );
                 std.debug.assert(@abs(self.balanceOf(hook)) <= 1);
             } else {
-                self.updateNodeCachedData(node, parsed_retracer);
+                self.updateNodeCachedData(node, parsed_retracer_ptr);
             }
         }
 
@@ -297,7 +297,7 @@ pub fn Tree(
             self: *@This(),
             from: u1,
             slot: *Slot,
-            parsed_retracer: anytype,
+            parsed_retracer_ptr: anytype,
         ) void {
             const hook = self.hookFromOwnedNode(slot.*.?);
             const from_slot = &hook.children[from];
@@ -323,15 +323,15 @@ pub fn Tree(
             //    (E) (D)                    (D)    (B)
 
             if (from_balance > 0)
-                self.rotateSlot(from_slot, ~from, parsed_retracer);
-            self.rotateSlot(slot, from, parsed_retracer);
+                self.rotateSlot(from_slot, ~from, parsed_retracer_ptr);
+            self.rotateSlot(slot, from, parsed_retracer_ptr);
         }
 
         fn rotateSlot(
             self: *@This(),
             slot: *Slot,
             from: u1,
-            parsed_retracer: anytype,
+            parsed_retracer_ptr: anytype,
         ) void {
             const node = slot.*.?;
             const hook = self.hookFromOwnedNode(node);
@@ -350,14 +350,14 @@ pub fn Tree(
             from_hook.children[~from] = node;
             hook.children[from] = from_to_node;
 
-            self.updateNodeCachedData(node, parsed_retracer);
-            self.updateNodeCachedData(from_node, parsed_retracer);
+            self.updateNodeCachedData(node, parsed_retracer_ptr);
+            self.updateNodeCachedData(from_node, parsed_retracer_ptr);
         }
 
         fn updateNodeCachedData(
             self: *@This(),
             node: *Node,
-            parsed_retracer: anytype,
+            parsed_retracer_ptr: anytype,
         ) void {
             const hook = self.hookFromOwnedNode(node);
 
@@ -366,9 +366,9 @@ pub fn Tree(
                 self.cachedSubtreeDepthOf(hook.children[1]),
             ) + 1;
 
-            if (@TypeOf(parsed_retracer) != void)
+            if (@TypeOf(parsed_retracer_ptr.*) != void)
                 callbacks.call(
-                    parsed_retracer,
+                    parsed_retracer_ptr,
                     "retrace",
                     .{ node, self.children(node) },
                     void,
