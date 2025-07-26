@@ -4,7 +4,7 @@ const lib = @import("../lib.zig");
 const Key = i32;
 
 const tested_configs = configs: {
-    var configs: []const lib.sorted_trees.SimpleTreeConfig = &.{};
+    var configs: []const lib.trees.SimpleTreeConfig = &.{};
 
     for ([_]lib.OwnershipTracking.TrackOwnedItems{
         .container_ptr,
@@ -15,7 +15,7 @@ const tested_configs = configs: {
             .off,
             .on,
         }) |free_items| {
-            configs = configs ++ [1]lib.sorted_trees.SimpleTreeConfig{.{
+            configs = configs ++ [1]lib.trees.SimpleTreeConfig{.{
                 .implementation = .avl,
                 .ownership_tracking = .{
                     .owned_items = owned_items,
@@ -193,8 +193,23 @@ test "Tree map basic" {
 }
 
 test "Tree random" {
-    inline for (tested_configs) |config| {
-        const Tree = lib.SimpleTreeMap(Key, ?usize, config);
+    inline for (tested_configs) |simple_config| {
+        const Decls = struct {
+            const Node = struct {
+                hook: Tree.Hook = .{},
+                key: Key,
+                data: ?usize,
+            };
+            const config = lib.trees.Config{
+                .implementation = simple_config.implementation,
+                .hook_field = "hook",
+                .compare_to = .useField("key", simple_config.compare_to),
+                .ownership_tracking = simple_config.ownership_tracking,
+            };
+            const Tree = lib.Tree(Node, config);
+        };
+        const Tree = Decls.Tree;
+        const config = Decls.config;
 
         var tree: Tree = .{};
         if (comptime config.ownership_tracking.owned_items == .custom)

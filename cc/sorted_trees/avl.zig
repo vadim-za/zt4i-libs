@@ -6,7 +6,7 @@ const callbacks = @import("callbacks.zig");
 
 pub fn Tree(
     Node_: type,
-    config_: lib.sorted_trees.Config,
+    config_: lib.trees.Config,
 ) type {
     return struct {
         root_: Slot = null,
