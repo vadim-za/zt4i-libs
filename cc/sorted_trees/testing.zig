@@ -50,7 +50,7 @@ test "Tree basic insertion" {
 
         var node0: Tree.Node = .{ .data = 0 };
         {
-            const result = tree.insertNode(&node0, {});
+            const result = tree.insertNode(&node0, .{});
             verifyTree(&tree);
             try std.testing.expect(result.success);
             try std.testing.expectEqual(&node0, result.node);
@@ -64,7 +64,7 @@ test "Tree basic insertion" {
 
         var node1: Tree.Node = .{ .data = 10 };
         {
-            const result = tree.insertNode(&node1, {});
+            const result = tree.insertNode(&node1, .{});
             verifyTree(&tree);
             try std.testing.expect(result.success);
             try std.testing.expectEqual(&node1, result.node);
@@ -82,7 +82,7 @@ test "Tree basic insertion" {
 
         var node2: Tree.Node = .{ .data = 5 };
         {
-            const result = tree.insertNode(&node2, {});
+            const result = tree.insertNode(&node2, .{});
             verifyTree(&tree);
             try std.testing.expect(result.success);
             try std.testing.expectEqual(&node2, result.node);
@@ -104,7 +104,7 @@ test "Tree basic insertion" {
             }
         }
 
-        try std.testing.expectEqual(&node2, tree.remove(&node2, {}));
+        try std.testing.expectEqual(&node2, tree.remove(&node2, .{}));
         verifyTree(&tree);
         // The root now may be node0 or node1, it is unspecified
 
@@ -137,7 +137,7 @@ test "Tree random" {
                 .key = rng.random().intRangeAtMost(i32, 0, (nodes.len * 9) / 10),
                 .data = null,
             };
-            const result = tree.insertNode(node, {});
+            const result = tree.insertNode(node, .{});
             if (result.success) {
                 try std.testing.expectEqual(node, result.node);
                 node.data = 0;
@@ -173,7 +173,7 @@ test "Tree random" {
 
         for (&permuted_keys) |key| {
             const find_result = tree.find(&key);
-            const remove_result = tree.remove(&key, {});
+            const remove_result = tree.remove(&key, .{});
 
             try std.testing.expectEqual(find_result, remove_result);
             if (remove_result) |node| {

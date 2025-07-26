@@ -105,7 +105,7 @@ test "Simple tree demo" {
     };
     var n0: T.Node = .{ .key = 0, .data = {} };
     {
-        const result = t.insert(Inserter{ .node = &n0 }, {});
+        const result = t.insert(Inserter{ .node = &n0 }, .{});
         verifyTree(&t);
         try std.testing.expect(result.success);
         try std.testing.expectEqual(&n0, result.node);
@@ -117,7 +117,7 @@ test "Simple tree demo" {
     var n1: T.Node = .{ .key = 10, .data = {} };
     {
         //const result = t.insert(Inserter{ .node = &n1 });
-        const result = t.insertNode(&n1, {});
+        const result = t.insertNode(&n1, .{});
         verifyTree(&t);
         try std.testing.expect(result.success);
         try std.testing.expectEqual(&n1, result.node);
@@ -130,8 +130,8 @@ test "Simple tree demo" {
         try std.testing.expectEqual(&n1, t.children(&n0)[1]);
     }
 
-    try std.testing.expectEqual(&n0, t.remove(&n0, {}));
+    try std.testing.expectEqual(&n0, t.remove(&n0, .{}));
     verifyTree(&t);
-    try std.testing.expectEqual(&n1, t.remove(&n1, {}));
+    try std.testing.expectEqual(&n1, t.remove(&n1, .{}));
     verifyTree(&t);
 }

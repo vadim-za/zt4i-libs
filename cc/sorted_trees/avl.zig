@@ -345,7 +345,7 @@ pub fn Tree(
                 self.cachedSubtreeDepthOf(hook.children[1]),
             ) + 1;
 
-            self.retrace(node, retracer);
+            self.retraceNode(node, retracer);
         }
 
         fn cachedSubtreeDepthOf(self: *const @This(), slot: Slot) i32 {
@@ -370,9 +370,38 @@ pub fn Tree(
             return self.balanceFrom(0, hook);
         }
 
-        fn retrace(self: *const @This(), node: *Node, retracer: anytype) void {
-            if (@TypeOf(retracer) == void)
+        fn parseSpec(
+            spec: anytype,
+            comptime field: []const u8,
+        ) if (@hasField(
+            @TypeOf(spec),
+            field,
+        )) @TypeOf(spec.field) else void {
+            const info = @typeInfo(@TypeOf(spec)).@"struct";
+
+            // spec cannot contain any decls
+            comptime std.debug.assert(info.decls.len == 0);
+
+            if (info.fields.len == 0)
                 return;
+
+            // spec can contain only one field at most
+            comptime std.debug.assert(spec.fields.len == 1);
+
+            // if spec contains a field it must have the expected name
+            return @field(spec, field);
+        }
+
+        fn retraceNode(
+            self: *const @This(),
+            node: *Node,
+            retracer_spec: anytype,
+        ) void {
+            const retracer = parseSpec(retracer_spec, "retracer");
+            if (@TypeOf(retracer) == void) return;
+
+            const info = @typeInfo(@TypeOf(retracer)).@"struct";
+            _ = info;
             _ = self;
             _ = node;
             @compileError("Retracing not supported yet");
