@@ -106,12 +106,15 @@ In simple cases the nodes can be inserted using `insertNode()`. As with lists, f
         .field1 = value1,
         .field2 = value2,
     };
-    const insertion_result = tree.insertNode(node);
-    if(!insertion_result.success) {
+    const insertion_result = tree.insertNode(node, .{});
+    if(insertion_result.success) {
+        // insertion_result.node contains the inserted node
+    } else {
+        // insertion_result.node contains the conflicting node
         alloc.destroy(node);
     }
 ```
-The insertion will fail if a node with an equal key is already contained in the tree. It is possible to avoid the node construction prior to the moment where it is established that the key is not present in the tree yet. One could either manually run a search for the key through the tree (but that will cause unnecessary overhead of performing the same search twice: once to check for the key's presence and once again to the insert the node), or one could use the `insert()` (rather than the `insertNode()`) method. The `insert()` method instead of accepting a node accepts an inserter functor:
+The insertion will fail if a node with an equal key is already contained in the tree, in which case the code above will destroy the node that we just created, which seems a bit inefficient. It is possible to delay the node construction until to the moment where it is established that the key is not present in the tree yet. Of course one could manually run a search for the key through the tree, but that will create another overhead of performing the same search twice (once to check for the key's presence and once again to the insert the node). Another option is to the `insert()` (rather than the `insertNode()`) method. The `insert()` method instead of accepting a node accepts an inserter functor:
 ```
     const Inserter = struct {
         alloc: std.mem.Allocator,
@@ -132,15 +135,63 @@ The insertion will fail if a node with an equal key is already contained in the 
             return node;
         }
     };
+    // The insert() function will forward the error returned
+    // by produceNode() (if any) to the caller
     const insertion_result = try tree.insert(&Inserter{
         .alloc = alloc,
         .key_value = key_value,
         .field1 = value1,
         .field2 = value2,
-    });
+    }, .{});
     if(!insertion_result.success) {
         // We can somehow react to a failed insertion here
         // but do not need to destroy the node, since it
         // hasn't been created.
     }
+```
+N.B. The second argument of `insertNode()` and `insert()` is a retracer. Retracers are rarely needed and will be discussed separately. Typically, one leaves this argument empty.
+
+## Tree node removal
+
+The current CC's implementation of AVL trees doesn't store the pointer to the parent node in the tree nodes. Therefore it's not possible to simply remove a given node, one needs to search for the node starting from the root, one way or the other. For that reason the tree `remove()` function accepts a key value to search for, rather than a pointer to the node:
+```
+    // For the sake of demonstration's conciseness,
+    // construct the node on stack
+    var node: Tree.Node = .{
+        .key = key_value,
+        .field1 = value1,
+        .field2 = value2,
+    };
+    tree.insertNode(&node, .{});
+    .......
+    // remove() returns the removed node or null
+    // if the key is not found
+    const remove_result = tree.remove(node.key, .{});
+    std.debug.assert( remove_result == node );
+```
+N.B. Differently from `removeAll()`, the second argument of `remove()` is not a discarder but a retracer. Retracers are rarely needed and will be discussed separately. Typically one leaves this argument empty.
+
+## Tree inspection
+
+The following code illustrates the tree inspection features of CC trees.
+```
+fn walkFrom(from_node: ?*MyTree.Node, tree: *MyTree) void {
+    const node = from_node orelse return;
+
+    // Returns *const [2]?*MyTree.Node
+    const chilren = tree.children(node);
+
+    walkFrom(chilren[0], tree); // left node
+    std.debug.print("{}\n", .{node.key});
+    walkFrom(chilren[1], tree); // right node
+}
+
+fn walk(tree: *MyTree) void {
+    // The following check is redundant, it's here
+    // solely for the sake of demonstration
+    if(!tree.hasContent())
+        return;
+
+    walkFrom(tree.root(), tree)
+}
 ```
