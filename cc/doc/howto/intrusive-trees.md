@@ -1,6 +1,12 @@
 # Intrusive trees quick howto
 
-This document gives a quick howto-style introduction into intrusive trees support by the CC library. It is recommended to read the [Intrusive trees quick howto](intrusive-lists.md) first.
+This document gives a quick howto-style introduction into intrusive trees support by the CC library. It is recommended to read the [Intrusive lists quick howto](intrusive-lists.md) first.
+
+[Declaration](#tree-declaration)  
+[Construction/destruction](#tree-constructiondestruction)  
+[Node insertion](#tree-node-insertion)  
+[Node removal](#tree-node-removal)  
+[Inspection](#tree-inspection)
 
 ## Tree declaration
 
@@ -157,7 +163,7 @@ The current CC's implementation of AVL trees doesn't store the pointer to the pa
 ```
     // For the sake of demonstration's conciseness,
     // construct the node on stack
-    var node: Tree.Node = .{
+    var node: Node = .{
         .key = key_value,
         .field1 = value1,
         .field2 = value2,
@@ -175,10 +181,10 @@ N.B. Differently from `removeAll()`, the second argument of `remove()` is not a 
 
 The following code illustrates the tree inspection features of CC trees.
 ```
-fn walkFrom(from_node: ?*MyTree.Node, tree: *MyTree) void {
+fn walkFrom(from_node: ?*Node, tree: *MyTree) void {
     const node = from_node orelse return;
 
-    // Returns *const [2]?*MyTree.Node
+    // Returns *const [2]?*Node
     const chilren = tree.children(node);
 
     walkFrom(chilren[0], tree); // left node
@@ -195,3 +201,23 @@ fn walk(tree: *MyTree) void {
     walkFrom(tree.root(), tree)
 }
 ```
+
+## Trees pub consts
+
+Similarly to the lists, the types constructed by `zt4i.cc.Tree()` publish a number of pub consts. Consider the following definition of `MyTree`:
+```
+const MyTree = zt4i.cc.Tree(MyNode, .{
+    .implementation = .avl,
+    .hook_field = "hook",
+    .compare_to = .useField("key", .default),
+    .ownership_tracking = .{
+        .owned_items = .container_ptr,
+        .free_items = .on,
+    },
+});
+```
+The `MyTree` type defined as above has the following pub consts which can be used by the users of the CC library:
+- `MyTree.Hook` - we are already familiar with this one
+- `MyTree.Node` - equal to `MyNode`
+- `MyTree.config` - equal to the second argument passed to `zt4i.cc.Tree()`
+- `MyTree.InsertionResult` - the return type of tree's `insertNode()`. The return type of tree's `insert()` is `!MyTree.InsertionResult`.

@@ -8,7 +8,8 @@ This document gives a quick howto-style introduction into intrusive list support
 - [Insertion/removal](#double-linked-list-node-insertionremoval)
 - [Inspection](#double-linked-list-inspection)
 
-[Single-linked lists](#single-linked-lists)
+[Single-linked lists](#single-linked-lists)  
+[Lists pub consts](#lists-pub-consts)
 
 ## Double-linked lists
 
@@ -158,3 +159,20 @@ const MyList = zt4i.cc.List(MyNode, .{
 });
 ```
 
+## Lists pub consts
+
+The types constructed by `zt4i.cc.List()` publish a number of pub consts. Consider the following definition of `MyList`:
+```
+const MyList = zt4i.cc.List(MyNode, .{
+    .implementation = .{ .double_linked = .null_terminated },
+    .hook_field = "hook",
+    .ownership_tracking = .{
+        .owned_items = .container_ptr,
+        .free_items = .on,
+    },
+});
+```
+The `MyList` type defined as above has the following pub consts which can be used by the users of the CC library:
+- `MyList.Hook` - we are already familiar with this one
+- `MyList.Node` - equal to `MyNode`
+- `MyList.config` - equal to the second argument passed to `zt4i.cc.List()`

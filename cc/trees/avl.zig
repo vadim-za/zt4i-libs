@@ -105,7 +105,7 @@ pub fn Tree(
             self: *@This(),
             inserter: anytype,
             retracer_callback: anytype,
-        ) InsertionCallResult(@TypeOf(inserter)) {
+        ) !InsertionResult {
             return self.insertUnder(
                 &self.root_,
                 inserter,
