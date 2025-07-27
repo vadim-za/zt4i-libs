@@ -81,24 +81,14 @@ pub fn Tree(
                 @typeInfo(ProduceNode).@"fn".return_type.?;
 
             var info = @typeInfo(ProduceNodeResult);
-            switch (info) {
-                .error_union => |*u| {
-                    comptime std.debug.assert(u.payload == *Node);
-                    u.payload = InsertionResult;
-                    return @Type(info);
-                },
-                else => {
-                    comptime std.debug.assert(ProduceNodeResult == *Node);
-                    return InsertionResult;
-                },
-            }
+            const u = &info.error_union;
+            u.payload = InsertionResult;
+            return @Type(info);
         }
 
         /// 'inserter' can be a small struct or a pointer to one and must
         /// provide the following methods:
         ///     fn inserter.key() ComparableValuePtr;
-        ///     fn inserter.produceNode() *Node;
-        /// The produceNode() can also return an error union:
         ///     fn inserter.produceNode() !*Node;
         /// The rationale behind the idea of the 'inserter' is that we do not
         /// have to construct the tree node object until we know that we are
@@ -137,12 +127,15 @@ pub fn Tree(
                     fn key(ins: *const @This()) *const Node {
                         return ins.node;
                     }
-                    fn produceNode(ins: *const @This()) *Node {
+                    fn produceNode(ins: *const @This()) !*Node {
                         return ins.node;
                     }
                 }{ .node = node },
                 retracer_callback,
-            );
+            ) catch |err|
+                switch (err) {};
+            // an empty switch checks at compile time that the error set
+            // is empty
         }
 
         fn insertUnder(

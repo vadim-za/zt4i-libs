@@ -99,13 +99,13 @@ test "Simple tree demo" {
         pub fn key(self: *const @This()) *i32 {
             return &self.node.key;
         }
-        pub fn produceNode(self: *const @This()) *T.Node {
+        pub fn produceNode(self: *const @This()) !*T.Node {
             return self.node;
         }
     };
     var n0: T.Node = .{ .key = 0, .data = {} };
     {
-        const result = t.insert(Inserter{ .node = &n0 }, .{});
+        const result = try t.insert(Inserter{ .node = &n0 }, .{});
         try verifyTree(&t);
         try std.testing.expect(result.success);
         try std.testing.expectEqual(&n0, result.node);
