@@ -4,7 +4,12 @@ This document gives a quick howto-style introduction into non-intrusive containe
 - [Intrusive lists quick howto](intrusive-lists.md)
 - [Intrusive trees quick howto](intrusive-trees.md)
 
-It should be pointed out that there is no fundamental difference between CC's intrusive and non-intrusive container structure. The difference is just in how the container types are specified. While intrusive containers expect hooks to be embedded into the user's data type, non-intrusive containers combine the user data type(s) and the intrusive hook into a larger data structure, that's pretty much all (save a few details).
+It should be pointed out that there is no fundamental difference between CC's intrusive and non-intrusive container structure. The difference is just in how the container types are specified. While intrusive containers expect hooks to be embedded into the user's data type, non-intrusive containers combine the user data type(s) and the intrusive hook into a larger data structure, that's pretty much all (save a few details). CC's non-intrusive containers still do not do memory management on their own, the node allocation/deallocation needs to be done by the user.
+
+[Non-intrusive lists](#non-intrusive-lists)  
+[Non-intrusive trees](#non-intrusive-trees)
+- [Set trees](#set-trees)
+- [Map trees](#map-trees)
 
 ## Non-intrusive lists
 
@@ -25,7 +30,7 @@ const MyList = zt4i.cc.SimpleList(Payload, .{
     },
 });
 ```
-The `MyList.Node` type will automatically get the following structure:
+The `MyList.Node` type will thereby automatically get the following structure:
 ```
 struct {
     hook: MyTree.Hook,
@@ -62,11 +67,41 @@ const MyTree = zt4i.cc.SimpleTree(i32, .{
     },
 });
 ```
-The `MyTree.Node` type will automatically get the following structure:
+The `MyTree.Node` type will thereby automatically get the following structure:
 ```
 struct {
     hook: MyTree.Hook,
     data: i32,
 }
 ```
-As mentioned, the `data` field will automatically serve as the key.
+As mentioned, the `data` field will automatically serve as the key. We can thereby use `i32`-compatible values for node search and removal.
+
+### Map trees
+
+The second helper is usable in the cases where it is convenient to separate the key from the rest of the payload. This basically means the tree functions as a map:
+```
+const Payload = struct {
+    field1: Type1,
+    field2: Type2,
+};
+
+// We are using i32 type as the key, like in the previuos
+// example. Like in the previous example, we do not need
+// to supply the '.compare_to' value.
+const MyTree = zt4i.cc.SimpleTreeMap(i32, Payload, .{
+    .implementation = .avl,
+    .ownership_tracking = .{
+        .owned_items = .container_ptr,
+        .free_items = .on,
+    },
+});
+```
+The `MyTree.Node` type will thereby automatically get the following structure:
+```
+struct {
+    hook: MyTree.Hook,
+    key: i32,
+    data: Payload,
+}
+```
+The `key` field will automatically serve as the key.
