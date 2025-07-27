@@ -29,8 +29,8 @@ const MyNode = struct {
     // this initializes all internal fields of the hook to
     // 'undefined' and thus should normally produce no code.
     // In safe and/or debug builds hooks may contain
-    // additional fields which are initialized to "defined"
-    // values.
+    // additional fields which are initialized to certain
+    // "defined" values.
     hook: MyList.Hook = .{},
 };
 

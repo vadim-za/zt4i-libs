@@ -33,7 +33,8 @@ const MyList = zt4i.cc.SimpleList(Payload, .{
 The `MyList.Node` type will thereby automatically get the following structure:
 ```
 struct {
-    hook: MyTree.Hook,
+    // The hook has a default initializer
+    hook: MyTree.Hook = .{},
     data: Payload,
 }
 ```
@@ -70,7 +71,8 @@ const MyTree = zt4i.cc.SimpleTree(i32, .{
 The `MyTree.Node` type will thereby automatically get the following structure:
 ```
 struct {
-    hook: MyTree.Hook,
+    // The hook has a default initializer
+    hook: MyTree.Hook = .{},
     data: i32,
 }
 ```
@@ -99,7 +101,8 @@ const MyTree = zt4i.cc.SimpleTreeMap(i32, Payload, .{
 The `MyTree.Node` type will thereby automatically get the following structure:
 ```
 struct {
-    hook: MyTree.Hook,
+    // The hook has a default initializer
+    hook: MyTree.Hook = .{},
     key: i32,
     data: Payload,
 }
