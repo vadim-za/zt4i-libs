@@ -5,10 +5,11 @@ pub const CompareTo = union(enum) {
     method_: []const u8,
     Function: type,
 
-    /// Use builtin ==, < and >.
+    /// Use std.math.order() for comparison. For single-item pointers
+    /// use std.math.order() on the implied addresses.
     /// Cannot be applied to entire nodes (since structs cannot be compared
-    /// with ==, < and < ).
-    /// Can be applied to single-item pointers (compares the implied addresses).
+    /// with std.math.order()), which means it is more useful as the second
+    /// argument to useField().
     pub const default = function(defaultCompareTo);
 
     pub fn method(name: []const u8) @This() {

@@ -8,7 +8,7 @@ It should be pointed out that there is no fundamental difference between CC's in
 
 ## Non-intrusive lists
 
-While intrusive lists are constructed using `zt4i.cc.List()`, non-intrusive lists are constructed using `zt4i.cc.SimpleList()`:
+While intrusive lists are constructed using `zt4i.cc.List()`, non-intrusive lists are constructed using `zt4i.cc.SimpleList()`. The following example demonstrates:
 ```
 const Payload = struct {
     field1: Type1,
@@ -16,7 +16,7 @@ const Payload = struct {
 };
 
 // Notice that we supply Payload instead of MyNode.
-// Also we do not
+// Also we do not supply the hook field name.
 const MyList = zt4i.cc.SimpleList(Payload, .{
     .implementation = .{ .double_linked = .null_terminated },
     .ownership_tracking = .{
@@ -25,3 +25,48 @@ const MyList = zt4i.cc.SimpleList(Payload, .{
     },
 });
 ```
+The `MyList.Node` type will automatically get the following structure:
+```
+struct {
+    hook: MyTree.Hook,
+    data: Payload,
+}
+```
+Other than that, `MyList` will be the same as if constructed by `zt4i.cc.List()`.
+
+N.B. `Payload` doesn't have to be a struct. E.g. one can construct a list of 32-bit integers as
+```
+const MyList = zt4i.cc.SimpleList(i32, .{
+    .........
+});
+```
+
+## Non-intrusive trees
+
+Trees do not simply carry the payload, but their nodes must be ordered (usually based on the key value). CC library provides two helpers for construction of non-intrusive tree types
+
+### Set trees
+
+In case the payload _is_ the key value, the tree basically functions like a set. The following example illustrates:
+```
+// In simple cases, where the payload is a type supported
+// by std.math.order(), or is a single-item pointer type,
+// we do not need to supply the '.compare_to' value.
+// By default, the SimpleTree will use such payload as the
+// key.
+const MyTree = zt4i.cc.SimpleTree(i32, .{
+    .implementation = .avl,
+    .ownership_tracking = .{
+        .owned_items = .container_ptr,
+        .free_items = .on,
+    },
+});
+```
+The `MyTree.Node` type will automatically get the following structure:
+```
+struct {
+    hook: MyTree.Hook,
+    data: i32,
+}
+```
+As mentioned, the `data` field will automatically serve as the key.

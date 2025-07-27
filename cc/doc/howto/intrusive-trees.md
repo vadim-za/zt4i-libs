@@ -6,7 +6,9 @@ This document gives a quick howto-style introduction into intrusive trees suppor
 [Construction/destruction](#tree-constructiondestruction)  
 [Node insertion](#tree-node-insertion)  
 [Node removal](#tree-node-removal)  
-[Inspection](#tree-inspection)
+[Inspection](#tree-inspection)  
+[Search](#tree-node-search)  
+[Pub consts](#tree-pub-consts)
 
 ## Tree declaration
 
@@ -202,7 +204,20 @@ fn walk(tree: *MyTree) void {
 }
 ```
 
-## Trees pub consts
+## Tree node search
+
+The following code demonstrates searching for a tree node, given a key value:
+```
+    // Assuming the tree has been declared as earlier
+    // in this text (with a key of type 'i32'), we need
+    // an i32-compatible value as the key.
+    const key_value = 0;
+
+    // Returns the found node or null
+    const node = tree.find(&key_value);
+```
+
+## Tree pub consts
 
 Similarly to the lists, the types constructed by `zt4i.cc.Tree()` publish a number of pub consts. Consider the following definition of `MyTree`:
 ```

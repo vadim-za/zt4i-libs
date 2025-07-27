@@ -9,7 +9,7 @@ This document gives a quick howto-style introduction into intrusive list support
 - [Inspection](#double-linked-list-inspection)
 
 [Single-linked lists](#single-linked-lists)  
-[Lists pub consts](#lists-pub-consts)
+[List pub consts](#list-pub-consts)
 
 ## Double-linked lists
 
@@ -159,7 +159,7 @@ const MyList = zt4i.cc.List(MyNode, .{
 });
 ```
 
-## Lists pub consts
+## List pub consts
 
 The types constructed by `zt4i.cc.List()` publish a number of pub consts. Consider the following definition of `MyList`:
 ```
