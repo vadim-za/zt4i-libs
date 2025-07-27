@@ -81,7 +81,8 @@ N.B. For the sake of simplicity of demonstration in the following examples we dy
     // to .{} prior to inserting the node into the list. In
     // the Node declaration example above we already have
     // specified .{}' as the hook's default value, so we don't
-    // have to explicitly initialize the hook here.
+    // have to explicitly initialize the hook here. The other
+    // fields of the node don't really have to be initialized here.
     node.* = .{ .field1 = value1, .field2 = value2 };
     list.insertFirst(node);
     ..........

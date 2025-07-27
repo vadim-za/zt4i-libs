@@ -70,10 +70,36 @@ pub fn Tree(
             node: *Node,
         };
 
+        fn InsertionCallResult(Inserter: type) type {
+            const ActualInserter = switch (@typeInfo(Inserter)) {
+                .pointer => |p| p.child,
+                else => Inserter,
+            };
+
+            const ProduceNode = @TypeOf(ActualInserter.produceNode);
+            const ProduceNodeResult =
+                @typeInfo(ProduceNode).@"fn".return_type.?;
+
+            var info = @typeInfo(ProduceNodeResult);
+            switch (info) {
+                .error_union => |*u| {
+                    comptime std.debug.assert(u.payload == *Node);
+                    u.payload = InsertionResult;
+                    return @Type(info);
+                },
+                else => {
+                    comptime std.debug.assert(ProduceNodeResult == *Node);
+                    return InsertionResult;
+                },
+            }
+        }
+
         /// 'inserter' can be a small struct or a pointer to one and must
         /// provide the following methods:
         ///     fn inserter.key() ComparableValuePtr;
         ///     fn inserter.produceNode() *Node;
+        /// The produceNode() can also return an error union:
+        ///     fn inserter.produceNode() !*Node;
         /// The rationale behind the idea of the 'inserter' is that we do not
         /// have to construct the tree node object until we know that we are
         /// really inserting it, since there can already be an equal node in
@@ -89,7 +115,7 @@ pub fn Tree(
             self: *@This(),
             inserter: anytype,
             retracer_callback: anytype,
-        ) InsertionResult {
+        ) InsertionCallResult(@TypeOf(inserter)) {
             return self.insertUnder(
                 &self.root_,
                 inserter,
@@ -108,7 +134,7 @@ pub fn Tree(
                 struct {
                     node: *Node,
 
-                    fn key(ins: *const @This()) *Node {
+                    fn key(ins: *const @This()) *const Node {
                         return ins.node;
                     }
                     fn produceNode(ins: *const @This()) *Node {
@@ -124,7 +150,10 @@ pub fn Tree(
             slot: *Slot,
             inserter: anytype,
             parsed_retracer_ptr: anytype,
-        ) InsertionResult {
+        ) InsertionCallResult(@TypeOf(inserter)) {
+            const Result = InsertionCallResult(@TypeOf(inserter));
+            const err_result = @typeInfo(Result) == .error_union;
+
             if (slot.*) |node| {
                 const hook = self.hookFromOwnedNode(node);
 
@@ -134,17 +163,25 @@ pub fn Tree(
                     .gt => &hook.children[0],
                 };
 
-                const result = self.insertUnder(
+                const call_result = self.insertUnder(
                     subslot,
                     inserter,
                     parsed_retracer_ptr,
                 );
+                const result = if (err_result)
+                    try call_result
+                else
+                    call_result;
 
                 if (result.success)
                     self.rebalanceSlot(slot, parsed_retracer_ptr);
                 return result;
             } else {
-                const node = inserter.produceNode();
+                const node = if (err_result)
+                    try inserter.produceNode()
+                else
+                    inserter.produceNode();
+
                 const hook = self.hookFromFreeNode(node);
                 hook.* = .{
                     .children = .{ null, null },
@@ -153,6 +190,7 @@ pub fn Tree(
                 };
                 self.updateNodeCachedData(node, parsed_retracer_ptr);
                 slot.* = node;
+
                 return .{ .success = true, .node = node };
             }
         }

@@ -336,3 +336,68 @@ test "Tree random" {
         try std.testing.expectEqual(0, inserted_count);
     }
 }
+
+test "Failing inserter" {
+    const Tree = lib.SimpleTree(i32, .{
+        .implementation = .avl,
+        .ownership_tracking = .{
+            .owned_items = .container_ptr,
+            .free_items = .on,
+        },
+    });
+
+    var tree: Tree = .{};
+    defer {
+        tree.removeAll(.{});
+        tree.deinit();
+    }
+
+    const Inserter = struct {
+        key_value: i32,
+        node: ?*Tree.Node,
+
+        fn init(node: *Tree.Node, success: bool) @This() {
+            return .{
+                .key_value = node.data,
+                .node = if (success) node else null,
+            };
+        }
+
+        pub fn key(self: *const @This()) *const i32 {
+            return &self.key_value;
+        }
+
+        pub fn produceNode(self: *const @This()) !*Tree.Node {
+            return self.node orelse error.OutOfMemory;
+        }
+    };
+
+    var node = Tree.Node{ .data = 0 };
+
+    // Pass inserter by value
+    try std.testing.expectError(
+        error.OutOfMemory,
+        tree.insert(Inserter.init(&node, false), .{}),
+    );
+
+    // Pass inserter by reference
+    try std.testing.expectError(
+        error.OutOfMemory,
+        tree.insert(&Inserter.init(&node, false), .{}),
+    );
+
+    // Alright, let's really insert
+    {
+        const result = try tree.insert(&Inserter.init(&node, true), .{});
+        try std.testing.expect(result.success);
+        try std.testing.expectEqual(&node, result.node);
+    }
+
+    // Try to insert a duplicate
+    var node1 = Tree.Node{ .data = 0 };
+    {
+        const result = try tree.insert(&Inserter.init(&node1, true), .{});
+        try std.testing.expect(!result.success);
+        try std.testing.expectEqual(&node, result.node);
+    }
+}

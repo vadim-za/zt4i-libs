@@ -83,11 +83,64 @@ N.B. In theory there is a simpler way to define the discarder for the above case
         // This discarder relies on details of declaration
         // of std.mem.Allocator.destroy(). In particular,
         // on the 'self' argument being passed by value.
-        // This works but is not properly robust.
+        // This should work at the moment, but is not
+        // properly robust. One should generally use this
+        // option with own and not library-declared functions.
         tree.removeAll(.{ .discarder = &.{
             std.mem.Allocator.destroy,
-            .{alloc},
+            .{alloc}, // the first argument(s) tuple
         } });
         tree.deinit();
+    }
+```
+
+## Tree node insertion
+
+In simple cases the nodes can be inserted using `insertNode()`. As with lists, for the sake of simplicity of demonstration, in the following examples we create and destroy nodes one-by-one, but this is not a must: node creation/destruction can be rather independent from their insertion/removal (as long as node lifetimes are respected).
+```
+    const node = try alloc.create(Node);
+    // The hook field is assumed to be implicitly initialized
+    // in the assignment below.
+    node.* = .{
+        .key = key_value,
+        .field1 = value1,
+        .field2 = value2,
+    };
+    const insertion_result = tree.insertNode(node);
+    if(!insertion_result.success) {
+        alloc.destroy(node);
+    }
+```
+The insertion will fail if a node with an equal key is already contained in the tree. It is possible to avoid the node construction prior to the moment where it is established that the key is not present in the tree yet. One could either manually run a search for the key through the tree (but that will cause unnecessary overhead of performing the same search twice: once to check for the key's presence and once again to the insert the node), or one could use the `insert()` (rather than the `insertNode()`) method. The `insert()` method instead of accepting a node accepts an inserter functor:
+```
+    const Inserter = struct {
+        alloc: std.mem.Allocator,
+        key_value: i32,
+        field1: Type1,
+        field2: Type2,
+
+        pub fn key(self: *const @This()) *const i32 {
+            return &self.key_value;
+        }
+        fn produceNode(self: *const @This()) !*Node {
+            const node = try self.alloc.create(Node);
+            node.* = .{
+                .key = self.key,
+                .field1 = self.field1,
+                .field2 = self.field2,
+            };
+            return node;
+        }
+    };
+    const insertion_result = try tree.insert(&Inserter{
+        .alloc = alloc,
+        .key_value = key_value,
+        .field1 = value1,
+        .field2 = value2,
+    });
+    if(!insertion_result.success) {
+        // We can somehow react to a failed insertion here
+        // but do not need to destroy the node, since it
+        // hasn't been created.
     }
 ```
