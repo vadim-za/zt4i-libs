@@ -31,7 +31,7 @@ The `first()`, `last()`, `next()` and `prev()` methods are not restricted to ite
 
 ## Insertion
 
-For the sake of example simplicity, the nodes are allocated on stack in the form of local variables. Typically, the former would be rather dynamically allocated (by hand).
+For the sake of example simplicity, the nodes are allocated on stack in the form of local variables. In a more realistic example, the nodes would be rather dynamically allocated by hand. (In an even more realistic example, since we're focusing on intrusive containers, the nodes could be preallocated in advance).
 ```
     // Below we assume that Node is declared with default
     // initializers for all fields, including the hook!
@@ -52,7 +52,7 @@ For the sake of example simplicity, the nodes are allocated on stack in the form
     var node4: Node = .{};
     list.insertAfter(&node1, &node4);
 ```
-There is also a more elegant version of expressing the above using a single `insert` method:
+There is also a more elegant form of expressing the above using a single `insert` method. The potential drawback is that this form relies on the compiler optimizing the extra operations related to handling the first argument ("insertion position"). So one might want to avoid this form in highly performance-critical code.
 ```
     // The restrictions on specific insertion features
     // (depending on the list type) are the same as in
@@ -85,7 +85,7 @@ There is also a more elegant version of expressing the above using a single `ins
 
     // The previous example doesn't deallocate the node.
     // If the node was dynamically allocated, we could do
-    // the following instead:
+    // the following:
     list.remove(node2);
     alloc.destroy(node2);
 
