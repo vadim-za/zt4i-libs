@@ -186,7 +186,7 @@ pub fn Tree(
                 const node = if (@TypeOf(inserter_ptr.*) == *Node)
                     inserter_ptr.*
                 else
-                    try callbacks_support.call1(
+                    try callbacks_support.call(
                         inserter_ptr,
                         "produceNode",
                         .{},
@@ -347,7 +347,7 @@ pub fn Tree(
             hook.* = .{};
 
             if (@TypeOf(opt_discarder_ptr.*) != void)
-                callbacks_support.call1(
+                callbacks_support.call(
                     opt_discarder_ptr,
                     "discard",
                     .{n},
@@ -450,7 +450,7 @@ pub fn Tree(
             ) + 1;
 
             if (@TypeOf(opt_retracer_ptr.*) != void)
-                callbacks_support.call1(
+                callbacks_support.call(
                     opt_retracer_ptr,
                     "retrace",
                     .{ node, self.children(node) },
