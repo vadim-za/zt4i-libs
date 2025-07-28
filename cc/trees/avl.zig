@@ -116,21 +116,27 @@ pub fn Tree(
             // is empty
         }
 
-        /// 'inserter' can be a small struct or a pointer to one and must
-        /// provide the following methods:
-        ///     fn inserter.key() ComparableValuePtr;
-        ///     fn inserter.produceNode() !*Node;
-        /// The rationale behind the idea of the 'inserter' is that we do not
-        /// have to construct the tree node object until we know that we are
-        /// really inserting it, since there can already be an equal node in
-        /// the tree, in which case we won't insert the new node. During that
-        /// time the respective information (including the node's "key") might
-        /// be available in some other form.
-        /// The node should be constructed latest in the produceNode() call.
-        /// The "key" of the constructed node must be semantically identical
-        /// to the one returned by inserter.key().
-        /// ComparableValuePtr is any type compatible to the second argument
-        /// of the 'compare_to' functor.
+        /// 'comparable_value_ptr' must be a pointer to the inserted
+        /// node's key value or to a value which compares in a way fully
+        /// idenitical to how the node's key compares.
+        ///
+        /// The 'inserter' callback is required and should be one of the
+        /// following:
+        /// 1. A small struct object of a type similar to the following one:
+        ///     struct {
+        ///         some struct field declarations ...
+        ///         ......
+        ///         pub fn produceNode(self: *const @This()) !*Node {
+        ///             .....
+        ///         }
+        ///     }
+        /// 2. A tuple with the first argument being a callable (a function
+        /// or a pointer thereto), and the following arguments containing the
+        /// leading arguments of the callable. The callable should return an
+        /// error union with *Node, like the produceNode() method above.
+        /// 3. A '*Node' value.
+        ///
+        /// See library documentation for further details.
         pub fn insert(
             self: *@This(),
             comparable_value_ptr: anytype,

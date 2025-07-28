@@ -377,6 +377,30 @@ test "Failing inserter" {
         ),
     );
 
+    // Failing inserter as a tuple using a function
+    try std.testing.expectError(
+        error.OutOfMemory,
+        tree.insert(
+            &node,
+            .{ .inserter = .{
+                Inserter.produceNode,
+                .{&Inserter.init(&node, false)},
+            } },
+        ),
+    );
+
+    // Failing inserter as a tuple using a function pointer
+    try std.testing.expectError(
+        error.OutOfMemory,
+        tree.insert(
+            &node,
+            .{ .inserter = .{
+                &Inserter.produceNode,
+                .{&Inserter.init(&node, false)},
+            } },
+        ),
+    );
+
     // Alright, let's really insert
     {
         const result = try tree.insert(
