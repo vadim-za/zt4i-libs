@@ -80,10 +80,12 @@ Similarly to the lists, `removeAll()` doesn't destroy the removed nodes. Removin
                 self.alloc.destroy(node);
             }
         }{ .alloc = alloc };
-        tree.removeAll(.{ .discarder = &discarder });
+        tree.removeAll(.{ .discarder = discarder });
         tree.deinit();
     }
 ```
+The argument of `removeAll()` is actually a _callbacks literal_. Callbacks literals are anonymous struct literals used with a number of tree methods to supply optional arguments. The `removeAll()` function only accepts (optionally) a `discarder` callback.
+
 N.B. In theory there is a simpler way to define the discarder for the above case:
 ```
     var tree: MyTree = .{};
@@ -94,7 +96,7 @@ N.B. In theory there is a simpler way to define the discarder for the above case
         // This should work at the moment, but is not
         // properly robust. One should generally use this
         // option with own and not library-declared functions.
-        tree.removeAll(.{ .discarder = &.{
+        tree.removeAll(.{ .discarder = .{
             std.mem.Allocator.destroy,
             .{alloc}, // the first argument(s) tuple
         } });
@@ -122,21 +124,25 @@ In simple cases the nodes can be inserted using `insertNode()`. As with lists, f
         alloc.destroy(node);
     }
 ```
-The insertion will fail if a node with an equal key is already contained in the tree, in which case the code above will destroy the node that we just created, which seems a bit inefficient. It is possible to delay the node construction until to the moment where it is established that the key is not present in the tree yet. Of course one could manually run a search for the key through the tree, but that will create another overhead of performing the same search twice (once to check for the key's presence and once again to the insert the node). Another option is to the `insert()` (rather than the `insertNode()`) method. The `insert()` method instead of accepting a node accepts an inserter functor:
+N.B. The last argument of `insertNode()` is the callbacks literal. It can optionally accept a `retracer`. Retracers are rarely needed and will be discussed separately. Typically, one leaves the callbacks argument of `insertNode()` empty.
+
+The insertion will fail if a node with an equal key is already contained in the tree, in which case the code above will destroy the node that we just created, which seems a bit inefficient. It is possible to delay the node construction until to the moment where it is established that the key is not present in the tree yet. Of course one could manually run a search for the key through the tree, but that will create another overhead of performing the same search twice (once to check for the key's presence and once again to the insert the node). Another option is to the `insert()` (rather than the `insertNode()`) method. The `insert()` method instead of accepting a node accepts an inserter callback:
 ```
+    // The inserter object shouldn't be too large, as it
+    // might be copied a few times. This specific inserter
+    // contains copies of all fields for the node just for
+    // the sake of demonstration. In reality the object
+    // should rather hold one or two pointers to data or so.
     const Inserter = struct {
         alloc: std.mem.Allocator,
         key_value: i32,
         field1: Type1,
         field2: Type2,
 
-        pub fn key(self: *const @This()) *const i32 {
-            return &self.key_value;
-        }
         fn produceNode(self: *const @This()) !*Node {
             const node = try self.alloc.create(Node);
             node.* = .{
-                .key = self.key,
+                .key = self.key_value,
                 .field1 = self.field1,
                 .field2 = self.field2,
             };
@@ -145,19 +151,22 @@ The insertion will fail if a node with an equal key is already contained in the 
     };
     // The insert() function will forward the error returned
     // by produceNode() (if any) to the caller
-    const insertion_result = try tree.insert(&Inserter{
-        .alloc = alloc,
-        .key_value = key_value,
-        .field1 = value1,
-        .field2 = value2,
-    }, .{});
+    const insertion_result = try tree.insert(
+        &key_value,
+        .{ .inserter = &Inserter{
+            .alloc = alloc,
+            .key_value = key_value,
+            .field1 = value1,
+            .field2 = value2,
+        } },
+    );
     if(!insertion_result.success) {
         // We can somehow react to a failed insertion here
         // but do not need to destroy the node, since it
         // hasn't been created.
     }
 ```
-N.B. The second argument of `insertNode()` and `insert()` is a retracer. Retracers are rarely needed and will be discussed separately. Typically, one leaves this argument empty.
+N.B. Besides the mandatory `inserter` callback, `insert()` callbacks literal also accepts an optional `retracer` callback. Retracers are rarely needed and will be discussed separately. Typically, one doesn't supply a retracer to `insert()`.
 
 ## Tree node removal
 
@@ -174,10 +183,10 @@ The current CC's implementation of AVL trees doesn't store the pointer to the pa
     .......
     // remove() returns the removed node or null
     // if the key is not found
-    const remove_result = tree.remove(node.key, .{});
+    const remove_result = tree.remove(&node.key, .{});
     std.debug.assert( remove_result == node );
 ```
-N.B. Differently from `removeAll()`, the second argument of `remove()` is not a discarder but a retracer. Retracers are rarely needed and will be discussed separately. Typically one leaves this argument empty.
+N.B. Differently from `removeAll()`, the callbacks literald argument of `remove()` doesn't accept a discarder but accepts a retracer. Retracers are rarely needed and will be discussed separately. Typically one leaves the callbacks literal argument of `removeAll()` empty.
 
 ## Tree inspection
 
