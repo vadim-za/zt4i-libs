@@ -302,9 +302,9 @@ test "Tree random" {
         for (&permuted_keys) |key| {
             const find_result = tree.find(&key);
             const remove_result = if (inserted_count & 1 == 0)
-                tree.remove(&key, .{ .retracer = &retracer_tuple })
+                tree.remove(&key, .{ .retracer = retracer_tuple })
             else
-                tree.remove(&key, .{ .retracer = &retracer });
+                tree.remove(&key, .{ .retracer = retracer });
 
             try std.testing.expectEqual(find_result, remove_result);
             if (remove_result) |node| {
@@ -353,18 +353,12 @@ test "Failing inserter" {
     }
 
     const Inserter = struct {
-        key_value: i32,
         node: ?*Tree.Node,
 
         fn init(node: *Tree.Node, success: bool) @This() {
             return .{
-                .key_value = node.data,
                 .node = if (success) node else null,
             };
-        }
-
-        pub fn key(self: *const @This()) *const i32 {
-            return &self.key_value;
         }
 
         pub fn produceNode(self: *const @This()) !*Tree.Node {
@@ -374,21 +368,21 @@ test "Failing inserter" {
 
     var node = Tree.Node{ .data = 0 };
 
-    // Pass inserter by value
+    // Failing inserter
     try std.testing.expectError(
         error.OutOfMemory,
-        tree.insert(Inserter.init(&node, false), .{}),
-    );
-
-    // Pass inserter by reference
-    try std.testing.expectError(
-        error.OutOfMemory,
-        tree.insert(&Inserter.init(&node, false), .{}),
+        tree.insert(
+            &node,
+            .{ .inserter = Inserter.init(&node, false) },
+        ),
     );
 
     // Alright, let's really insert
     {
-        const result = try tree.insert(&Inserter.init(&node, true), .{});
+        const result = try tree.insert(
+            &node,
+            .{ .inserter = Inserter.init(&node, true) },
+        );
         try std.testing.expect(result.success);
         try std.testing.expectEqual(&node, result.node);
     }
@@ -396,7 +390,10 @@ test "Failing inserter" {
     // Try to insert a duplicate
     var node1 = Tree.Node{ .data = 0 };
     {
-        const result = try tree.insert(&Inserter.init(&node1, true), .{});
+        const result = try tree.insert(
+            &node1,
+            .{ .inserter = Inserter.init(&node1, true) },
+        );
         try std.testing.expect(!result.success);
         try std.testing.expectEqual(&node, result.node);
     }
