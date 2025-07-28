@@ -313,15 +313,24 @@ pub fn Tree(
             }
         }
 
-        pub fn removeAll(self: *@This(), discarder: anytype) void {
-            const parsed_discarder =
-                callbacks_support.parseSpec(&discarder, "discarder");
+        pub fn removeAll(
+            self: *@This(),
+            callbacks: anytype, // [.discarder]
+        ) void {
+            comptime callbacks_support.accept(.{
+                .discarder = {},
+            }, @TypeOf(callbacks));
 
-            const can_discard_content = @TypeOf(parsed_discarder) == void and
+            // Work around #19483
+            const Callbacks = @TypeOf(callbacks);
+            const discarder = if (@hasField(Callbacks, "discarder"))
+                callbacks.discarder;
+
+            const can_discard_content = @TypeOf(discarder) == void and
                 OwnershipTraits.can_discard_content;
 
             if (comptime !can_discard_content)
-                self.releaseAllUnder(self.root_, &parsed_discarder);
+                self.releaseAllUnder(self.root_, &discarder);
 
             self.root_ = null;
         }
@@ -329,20 +338,19 @@ pub fn Tree(
         fn releaseAllUnder(
             self: *@This(),
             node: ?*Node,
-            parsed_discarder_ptr: anytype,
+            opt_discarder_ptr: anytype,
         ) void {
             const n = node orelse return;
             const hook = self.hookFromOwnedNode(n);
-            self.releaseAllUnder(hook.children[0], parsed_discarder_ptr);
-            self.releaseAllUnder(hook.children[1], parsed_discarder_ptr);
+            self.releaseAllUnder(hook.children[0], opt_discarder_ptr);
+            self.releaseAllUnder(hook.children[1], opt_discarder_ptr);
             hook.* = .{};
 
-            if (@TypeOf(parsed_discarder_ptr.*) != void)
-                callbacks_support.call(
-                    parsed_discarder_ptr,
+            if (@TypeOf(opt_discarder_ptr.*) != void)
+                callbacks_support.call1(
+                    opt_discarder_ptr,
                     "discard",
                     .{n},
-                    void,
                 );
         }
 

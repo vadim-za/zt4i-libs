@@ -327,7 +327,7 @@ test "Tree random" {
             }
         };
 
-        tree.removeAll(.{ .discarder = &.{
+        tree.removeAll(.{ .discarder = .{
             Discarder.freeDiscard,
             .{&inserted_count},
         } });
