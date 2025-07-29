@@ -2,6 +2,15 @@
 
 Here we are going to discuss the details specific to the tree containers.
 
+[Node ordering](#node-ordering)
+- [A node method](#a-node-method)
+- [A freestanding function](#a-freestanding-function)
+- [Using a field](#using-a-field)
+
+[Callback forms](#callback-forms)
+- [A closure-container-calback](#a-closure-container-callback)
+- [A tuple-callback](#a-tuple-callback)
+
 ## Node ordering
 
 Sorted trees need to order their nodes. On a purely intuitive level, we would like to simply be able to apply `std.math.order()` to the nodes. There are however a number of problems with that:
@@ -165,3 +174,124 @@ fn compareTo(
     );
 }
 ```
+
+## Callback forms
+
+In quite a number of methods one can or has to supply one or more callbacks. Generally trees support the two following forms of specifying callbacks.
+
+### A closure-container-callback
+
+The callback is a container (typically a struct, possibly a union, unlikely an enum) object with a method of a predefined name and expected function signature. The callback is invoked by calling this method on the said struct object:
+```
+    // The following code assumes that there is an
+    // 'alloc' local variable defined above, containing
+    // the allocator that will be used to allocate the
+    // nodes.
+    var tree: MyTree = .{};
+    defer {
+        const discarder = struct {
+            alloc: std.mem.Allocator,
+            pub fn discard(
+                self: *const @This(),
+                node: *Node,
+            ) void {
+                self.alloc.destroy(node);
+            }
+        }{ .alloc = alloc };
+        tree.removeAll(.{ .discarder = discarder });
+        tree.deinit();
+    }
+```
+In the above example the discarder callback is expected to have a `discard()` method, accepting a node pointer and returning void, so this is what the struct type provides.
+
+Notice that the callback is passed as a field of an anonymous struct literal. It is thereby passed
+as a const value. The callback object might be copied a couple of times inside the tree code, therefore it makes sense to keep the object relatively small. If you need lots of data in the callback or if you need the callback to be mutable, you can store a pointer to the additional (possibly mutable) data in the callback, thereby keeping the callback itself small.
+
+### A tuple-callback
+
+You might be able to avoid having to declare a callback struct by passing the callback as an anonymous tuple literal:
+```
+    var tree: MyTree = .{};
+    defer {
+        // This discarder relies on details of declaration
+        // of std.mem.Allocator.destroy(). In particular,
+        // on the 'self' argument being passed by value.
+        // This should work at the moment, but is not
+        // properly robust. One should generally use this
+        // option with own and not library-declared functions.
+        tree.removeAll(.{ .discarder = .{
+            std.mem.Allocator.destroy,
+            .{alloc}, // the leading argument(s) tuple
+        } });
+        tree.deinit();
+    }
+```
+In the above code the said anonymous tuple literal is assigned to the `discarder` field. Again, the entire tuple is thereby a const object, which might be copied a couple of times inside the tree code, so ideally the tuple should be kept rather small.
+
+The tuple is expected to have 1 or two elements. The first one is the function to be called. The second one, if present, is a tuple of values to be passed as the leading arguments of the function call. Additional arguments may/will be supplied at the time of the callback invocation in the tree code. These additional arguments will be appended at the end. If the arguments tuple is not present, it is the same as if it was empty.
+
+In the above example the callback invocation will result in the following call:
+```
+    std.mem.Allocator.destroy(alloc, node);
+```
+Similarly to the method-form callback, the `node` argument will be supplied by the tree code.
+
+## Callback types
+
+Different tree methods may expect different callbacks. So callbacks may be obligatory, some may be optional. In particular, the `insert()` method accepts an obligatory `inserter` callback and an optional `retracer` callback:
+```
+    const result = try tree.insert(&key, .{
+        .inserter = inserter_callback,
+        .retracer = retracer_callback,
+    });
+```
+The optional `retracer` callback may be omitted:
+```
+    const result = try tree.insert(&key, .{
+        .inserter = inserter_callback,
+    });
+```
+
+
+The `insertNode()` and `remove()` methods accept an optional `retracer` callback.
+
+### Discarder callback
+
+The `removeAll()` method, as demonstrated earlier, takes an optional `discarder` callback:
+```
+    // Use a discarder
+    tree.removeAll(.{ .discarder = discarder });
+    // No discarder
+    tree.removeAll(.{});
+```
+The discarder callback, if present, is called per removed node, so that e.g. one can destroy the node upon removal. It is not specified, in which order the nodes are removed.
+
+The callback's expected forms are a container closure of the form
+```
+struct { // or any container
+    .... fields ....
+    // The method should be called "discard"
+    pub fn discard(self: *const @This(), node: *Node) void {
+        .....
+    }
+}
+```
+or a freestanding function of the form
+```
+// The function name can be anything, since the function will be
+// explcitly passed in a tuple-form callback.
+pub fn discard(
+    leading arguments if any,
+    node: *Node,
+) void {
+    .....
+}
+```
+N.B. The 'node' argument (in both forms) actually can be anything which accepts a *Node value.
+
+### Inserter callback
+
+The inserted callback is used by tree's `insert()` method to potentially delay the construction of the node until is it known with certainty that the node needs to be inserted.
+
+
+## Return value handling

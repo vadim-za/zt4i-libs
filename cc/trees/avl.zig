@@ -118,7 +118,7 @@ pub fn Tree(
 
         /// 'comparable_value_ptr' must be a pointer to the inserted
         /// node's key value or to a value which compares in a way fully
-        /// idenitical to how the node's key compares.
+        /// identical to how the node's key compares.
         ///
         /// The 'inserter' callback is required and should be one of the
         /// following:

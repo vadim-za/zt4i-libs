@@ -98,7 +98,7 @@ N.B. In theory there is a simpler way to define the discarder for the above case
         // option with own and not library-declared functions.
         tree.removeAll(.{ .discarder = .{
             std.mem.Allocator.destroy,
-            .{alloc}, // the first argument(s) tuple
+            .{alloc}, // the leading argument(s) tuple
         } });
         tree.deinit();
     }

@@ -687,3 +687,41 @@ test "Compare pointers" {
         tree.find(&&key_space[0]), // produce .gt and .eq outcomes
     );
 }
+
+test "Union callback" {
+    const Decls = struct {
+        const Node = struct {
+            hook: Tree.Hook = .{},
+            key: i32,
+        };
+
+        const Tree = lib.Tree(Node, .{
+            .implementation = .avl,
+            .hook_field = "hook",
+            .compare_to = .useField("key", .default),
+            .ownership_tracking = .{
+                .owned_items = .container_ptr,
+                .free_items = .on,
+            },
+        });
+
+        const Discarder = union(enum) {
+            variant1: *?*Node,
+            variant2: *?*const Node,
+            pub fn discard(self: *const @This(), node: *Tree.Node) void {
+                switch (self.*) {
+                    inline else => |v| v.* = node,
+                }
+            }
+        };
+    };
+
+    var tree = Decls.Tree{};
+    var node = Decls.Node{ .key = 0 };
+    try std.testing.expect(tree.insertNode(&node, .{}).success);
+    var discarded: ?*const Decls.Node = null;
+    tree.removeAll(.{ .discarder = Decls.Discarder{
+        .variant2 = &discarded,
+    } });
+    try std.testing.expect(discarded == &node);
+}
