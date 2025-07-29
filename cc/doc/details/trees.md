@@ -11,6 +11,13 @@ Here we are going to discuss the details specific to the tree containers.
 - [A closure-container-calback](#a-closure-container-callback)
 - [A tuple-callback](#a-tuple-callback)
 
+[Callback types](#callback-types)
+- [Discarder callback](#discarder-callback)
+- [Inserter callback](#inserter-callback)
+- [Retracer callback](#retracer-callback)
+
+[Ignoring the return values](#ignoring-the-return-values)
+
 ## Node ordering
 
 Sorted trees need to order their nodes. On a purely intuitive level, we would like to simply be able to apply `std.math.order()` to the nodes. There are however a number of problems with that:
@@ -177,7 +184,7 @@ fn compareTo(
 
 ## Callback forms
 
-In quite a number of methods one can or has to supply one or more callbacks. Generally trees support the two following forms of specifying callbacks.
+In quite a number of methods one can or has to supply one or more callbacks. Generally trees support the two following common forms of specifying callbacks.
 
 ### A closure-container-callback
 
@@ -238,29 +245,14 @@ Similarly to the method-form callback, the `node` argument will be supplied by t
 
 ## Callback types
 
-Different tree methods may expect different callbacks. So callbacks may be obligatory, some may be optional. In particular, the `insert()` method accepts an obligatory `inserter` callback and an optional `retracer` callback:
-```
-    const result = try tree.insert(&key, .{
-        .inserter = inserter_callback,
-        .retracer = retracer_callback,
-    });
-```
-The optional `retracer` callback may be omitted:
-```
-    const result = try tree.insert(&key, .{
-        .inserter = inserter_callback,
-    });
-```
-
-
-The `insertNode()` and `remove()` methods accept an optional `retracer` callback.
+Different tree methods may expect different callbacks. Some callbacks may be obligatory, some may be optional. Each of these callbacks can take any of the common callback forms described above.
 
 ### Discarder callback
 
 The `removeAll()` method, as demonstrated earlier, takes an optional `discarder` callback:
 ```
     // Use a discarder
-    tree.removeAll(.{ .discarder = discarder });
+    tree.removeAll(.{ .discarder = discarder_callback });
     // No discarder
     tree.removeAll(.{});
 ```
@@ -291,7 +283,115 @@ N.B. The 'node' argument (in both forms) actually can be anything which accepts 
 
 ### Inserter callback
 
-The inserted callback is used by tree's `insert()` method to potentially delay the construction of the node until is it known with certainty that the node needs to be inserted.
+The inserted callback is used by tree's `insert()` method to potentially delay the construction of the node until is it known with certainty that the node needs to be inserted:
+```
+    const result = try tree.insert(&key, .{
+        .inserter = inserter_callback,
+    });
+```
+This callback is obligatory.
 
+The callback's expected forms are a container closure of the form
+```
+struct { // or any container
+    .... fields ....
+    // The method should be called "produceNode".
+    pub fn produceNode(self: *const @This()) !*Node {
+        .....
+    }
+}
+```
+or a freestanding function of the form
+```
+// The function name can be anything, since the function will be
+// explcitly passed in a tuple-form callback.
+pub fn produceNode(
+    leading arguments if any,
+) !*Node {
+    .....
+}
+```
+The inserter callback must return an error union, regardless of whether it can actually fail. If it doesn't fail, just return an error union with an empty error set.
 
-## Return value handling
+N.B. There is a third insertion callback form, which is simply a pointer to the node to be inserted:
+```
+    const node: *Node = .......;
+    const result = try tree.insert(&node.key, .{
+        .inserter = node,
+    });
+```
+Instead of using this form, prefer using the `insertNode()` method.
+
+### Retracer callback
+
+The retracer callback is rarely used. It is called for nodes which have been just inserted into the tree, or whose position inside a tree has been just changed. It is intended to allow the user of the tree to cache tree-structure-related information inside the nodes. E.g. one could cache the subtree height for each node of the tree:
+```
+    const Retracer = struct {
+        pub fn retrace(
+            _: *const @This(),
+            node: *Node,
+            children: *const [2]?*Node,
+        ) void {
+            node.height = 1 +
+                (if (children[0]) |ch| ch.height.? else 0) +
+                (if (children[1]) |ch| ch.height.? else 0);
+        }
+    };
+
+    const result = try tree.insertNode(&node.key, .{
+        .retracer = Retracer{},
+    });
+    tree.removeNode(&node.key, .{
+        .retracer = Retracer{},
+    });
+```
+The function form of the retracer callback is
+```
+fn retrace(
+    leading arguments if any,
+    node: *Node,
+    children: *const [2]?*Node,
+) void {
+    node.data = 1 +
+        (if (children[0]) |ch| ch.data.? else 0) +
+        (if (children[1]) |ch| ch.data.? else 0);
+}
+```
+The retracer callback is optional and is available for `.insert()`, `.insertNode()` and `.remove()`. Notice that the first of the methods has an obligatory inserter callback, so the call looks like
+```
+    const result = try tree.insert(&key, .{
+        .inserter = inserter_callback,
+        .retracer = retracer_callback,
+    });
+```
+or like
+```
+    const result = try tree.insert(&key, .{
+        .inserter = inserter_callback,
+    });
+```
+depending on the retracer callback presence.
+
+N.B. The tree modification code doesn't try to optimize the number of retracer callback calls. If a number of position changes of one and the same node are occurring in a row, multiple retracer calls will be issued. So, generally a retracer shouldn't contain too performance-expensive code.
+
+## Ignoring the return values
+
+The tree insertion and removal functions do return result values, indicating the degree of success of performing the requested actions. Sometimes you are sure that a particular action will be successful. Here are a few patterns suggested for the cases when you do have such expectations.
+
+```
+    // An insertion that can fail to insert due to a key
+    // collision, but cannot fail to produce a node
+    const result = tree.insert(....) catch unreachable;
+
+    // An insertion that cannot fail at all
+    std.debug.assert((tree.insert(....) catch unreachable).success);
+
+    // Same, but using insertNode()
+    std.debug.assert(tree.insertNode(....).success);
+
+    // A removal which is supposed to succeed
+    std.debug.assert(tree.remove(&node.key) == node);
+
+    // The same if you only know the key, but not the node
+    std.debug.assert(tree.remove(&node.key) != null);
+```
