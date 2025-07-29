@@ -12,7 +12,7 @@ Key features:
 - API focuses on intrusive container use cases and scenarios.
 - Uniform API (with minor differences) for all double-linked lists and for all single-linked lists makes the respective list implementations fully or almost fully interchangeable.
 - Configurable ownership-tracking features to aid catching of ownership-related usage errors.
-- Configurable key values handling and node construction for trees.
+- Configurable handling of key values and node construction for trees.
 - Non-intrusive wrappers for simpler use cases.
 
 It is recommended to read the howto-s in the given below order, and to read the howto-s before reading the details part of the documentation.

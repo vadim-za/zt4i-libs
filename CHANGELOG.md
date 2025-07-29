@@ -1,8 +1,13 @@
 # zt4i-libs Changelog
 
-This file lists changes in the reverse chronological order
+This file lists the changes in the reverse chronological order
 
 ### Untagged
+
+- Refinements to the CC library
+- Documentation for the CC library
+
+### Tag 0.0.3
 
 - Extended the CC library with single-linked lists and AVL trees.
 
