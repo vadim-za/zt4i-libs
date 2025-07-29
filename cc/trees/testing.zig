@@ -560,3 +560,130 @@ test "Compare to" {
         );
     }
 }
+
+test "Compare to field" {
+    const Decls = struct {
+        const Node = struct {
+            hook: Tree.Hook = .{},
+            key: []const u8,
+        };
+
+        const Tree = lib.Tree(Node, .{
+            .implementation = .avl,
+            .hook_field = "hook",
+            .compare_to = .useField(
+                "key",
+                .function(compareTo),
+            ),
+            .ownership_tracking = .{
+                .owned_items = .container_ptr,
+                .free_items = .on,
+            },
+        });
+
+        fn compareTo(
+            reference_value_ptr: anytype,
+            comparable_value_ptr: anytype,
+        ) std.math.Order {
+            return std.mem.order(
+                u8,
+                reference_value_ptr.*,
+                comparable_value_ptr.*,
+            );
+        }
+    };
+
+    var tree = Decls.Tree{};
+    defer {
+        tree.removeAll(.{});
+        tree.deinit();
+    }
+
+    var node0 = Decls.Node{ .key = "b" };
+    var node1 = Decls.Node{ .key = "c" };
+    var node2 = Decls.Node{ .key = "a" };
+
+    // Test comparison to a node
+    try std.testing.expect(
+        tree.insertNode(&node0, .{}).success,
+    );
+    // The previous insertion actually didn't compare anything
+    // so insert one more node. Comparison should yield '.lt'.
+    try std.testing.expect(
+        tree.insertNode(&node1, .{}).success,
+    );
+    // Test for a '.gt' outcome
+    try std.testing.expect(
+        tree.insertNode(&node2, .{}).success,
+    );
+    // Test for an '.eq' outcome.
+    try std.testing.expect(
+        !tree.insertNode(&node0, .{}).success,
+    );
+
+    try std.testing.expectEqual(
+        &node1,
+        tree.find(&"c"), // produce .lt and .eq outcomes
+    );
+    try std.testing.expectEqual(
+        &node2,
+        tree.find(&"a"), // produce .gt and .eq outcomes
+    );
+}
+
+test "Compare pointers" {
+    const Decls = struct {
+        const Node = struct {
+            hook: Tree.Hook = .{},
+            key: *const u8,
+        };
+
+        const Tree = lib.Tree(Node, .{
+            .implementation = .avl,
+            .hook_field = "hook",
+            .compare_to = .useField("key", .default),
+            .ownership_tracking = .{
+                .owned_items = .container_ptr,
+                .free_items = .on,
+            },
+        });
+    };
+
+    var tree = Decls.Tree{};
+    defer {
+        tree.removeAll(.{});
+        tree.deinit();
+    }
+
+    var key_space = "abc";
+    var node0 = Decls.Node{ .key = &key_space[1] };
+    var node1 = Decls.Node{ .key = &key_space[2] };
+    var node2 = Decls.Node{ .key = &key_space[0] };
+
+    // Test comparison to a node
+    try std.testing.expect(
+        tree.insertNode(&node0, .{}).success,
+    );
+    // The previous insertion actually didn't compare anything
+    // so insert one more node. Comparison should yield '.lt'.
+    try std.testing.expect(
+        tree.insertNode(&node1, .{}).success,
+    );
+    // Test for a '.gt' outcome
+    try std.testing.expect(
+        tree.insertNode(&node2, .{}).success,
+    );
+    // Test for an '.eq' outcome.
+    try std.testing.expect(
+        !tree.insertNode(&node0, .{}).success,
+    );
+
+    try std.testing.expectEqual(
+        &node1,
+        tree.find(&&key_space[2]), // produce .lt and .eq outcomes
+    );
+    try std.testing.expectEqual(
+        &node2,
+        tree.find(&&key_space[0]), // produce .gt and .eq outcomes
+    );
+}
