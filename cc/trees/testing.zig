@@ -422,3 +422,141 @@ test "Failing inserter" {
         try std.testing.expectEqual(&node, result.node);
     }
 }
+
+test "Compare to" {
+    const ownership_tracking = lib.OwnershipTracking{
+        .owned_items = .container_ptr,
+        .free_items = .on,
+    };
+
+    const Method = struct {
+        const Node = struct {
+            hook: Tree.Hook = .{},
+            key: Key,
+
+            pub fn compareTo(
+                self: *const @This(),
+                comparable_value_ptr: anytype,
+            ) std.math.Order {
+                return switch (@TypeOf(comparable_value_ptr.*)) {
+                    Node => return self.compareTo(
+                        &comparable_value_ptr.key,
+                    ),
+                    else => return std.math.order(
+                        self.key,
+                        comparable_value_ptr.*,
+                    ),
+                };
+            }
+        };
+        const Tree = lib.Tree(Node, .{
+            .implementation = .avl,
+            .hook_field = "hook",
+            .compare_to = .method("compareTo"),
+            .ownership_tracking = ownership_tracking,
+        });
+    };
+
+    const NodeFunction = struct {
+        const Node = struct {
+            hook: Tree.Hook = .{},
+            key: Key,
+        };
+
+        // Fails to compile (probably) due to Zig Issue #16932
+        pub fn compareTo(
+            node: *Node,
+            comparable_value_ptr: anytype,
+        ) std.math.Order {
+            return switch (@TypeOf(comparable_value_ptr.*)) {
+                Node => return compareTo(
+                    &comparable_value_ptr.key,
+                ),
+                else => return std.math.order(
+                    node.key,
+                    comparable_value_ptr.*,
+                ),
+            };
+        }
+
+        const Tree = lib.Tree(Node, .{
+            .implementation = .avl,
+            .hook_field = "hook",
+            .compare_to = .function(compareTo),
+            .ownership_tracking = ownership_tracking,
+        });
+    };
+
+    const AnytypeFunction = struct {
+        const Node = struct {
+            hook: Tree.Hook = .{},
+            key: Key,
+        };
+
+        pub fn compareTo(
+            node_ptr: anytype,
+            comparable_value_ptr: anytype,
+        ) std.math.Order {
+            return switch (@TypeOf(comparable_value_ptr.*)) {
+                @TypeOf(node_ptr.*) => return compareTo(
+                    node_ptr,
+                    &comparable_value_ptr.key,
+                ),
+                else => return std.math.order(
+                    node_ptr.key,
+                    comparable_value_ptr.*,
+                ),
+            };
+        }
+
+        const Tree = lib.Tree(Node, .{
+            .implementation = .avl,
+            .hook_field = "hook",
+            .compare_to = .function(compareTo),
+            .ownership_tracking = ownership_tracking,
+        });
+    };
+
+    // Once Zig Issue #16932 is addressed, include NodeFunction in tests
+    _ = NodeFunction;
+    // In principle we also should test useField(), but it is already
+    // tested to an extent by other tests.
+    inline for (.{ Method, AnytypeFunction }) |Decls| {
+        var tree = Decls.Tree{};
+        defer {
+            tree.removeAll(.{});
+            tree.deinit();
+        }
+
+        var node0 = Decls.Node{ .key = 0 };
+        var node1 = Decls.Node{ .key = 1 };
+        var node2 = Decls.Node{ .key = -1 };
+
+        // Test comparison to a node
+        try std.testing.expect(
+            tree.insertNode(&node0, .{}).success,
+        );
+        // The previous insertion actually didn't compare anything
+        // so insert one more node. Comparison should yield '.lt'.
+        try std.testing.expect(
+            tree.insertNode(&node1, .{}).success,
+        );
+        // Test for a '.gt' outcome
+        try std.testing.expect(
+            tree.insertNode(&node2, .{}).success,
+        );
+        // Test for an '.eq' outcome.
+        try std.testing.expect(
+            !tree.insertNode(&node0, .{}).success,
+        );
+
+        try std.testing.expectEqual(
+            &node1,
+            tree.find(&1), // produce .lt and .eq outcomes
+        );
+        try std.testing.expectEqual(
+            &node2,
+            tree.find(&-1), // produce .gt and .eq outcomes
+        );
+    }
+}
