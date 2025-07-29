@@ -2,6 +2,8 @@
 
 Here we are going to discuss the details specific to the tree containers.
 
+[Implementations](#implementations)
+
 [Node ordering](#node-ordering)
 - [A node method](#a-node-method)
 - [A freestanding function](#a-freestanding-function)
@@ -17,6 +19,16 @@ Here we are going to discuss the details specific to the tree containers.
 - [Retracer callback](#retracer-callback)
 
 [Ignoring the return values](#ignoring-the-return-values)
+
+## Implementations
+
+At the moment the CC library supports only AVL trees:
+```
+const MyTree = zt4i.cc.Tree(MyNode, .{
+    .implementation = .avl,
+    .....
+};
+```
 
 ## Node ordering
 
