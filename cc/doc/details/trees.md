@@ -194,6 +194,58 @@ fn compareTo(
 }
 ```
 
+### Simple trees
+
+With `SimpleTree` and `SimpleTreeMap` the `compare_to` configuration field is automatically put under a `.useField()` specifier with the key field ("data" or "key" respectively) of the node. Thus one needs to specify the comparison method/function for the key field rather than for the node.
+```
+    const Payload = struct {
+        value: i32,
+
+        pub fn compareTo(
+            self: *@This(),
+            comparable_value_ptr: anytype
+        ) std.math.Order {
+            return switch (@TypeOf(comparable_value_ptr.*)) {
+                // The method directly compares the Payload (which
+                // simultaneously serves as a key for SimpleTree)
+                // rather than a tree node. Therefore we don't need
+                // special handling with comparable_value_ptr pointing
+                // to a node, but we need one for the case it points
+                // to the data field of a node.
+                Data => self.compareTo(
+                    &comparable_value_ptr.value,
+                ),
+                // This handles the case of various integer types.
+                else => std.math.order(
+                    self.value,
+                    comparable_value_ptr.*,
+                ),
+            };
+        }
+    };
+
+    const MyTree = SimpleTree(Payload, .{
+        .implementation = .avl,
+        .compare_to = .method("compareTo"),
+        .ownership_tracking = .....,
+    });
+    ......
+    const result = tree.insertNode(&node.data.value, &node);
+    const found = tree.find(&0);
+```
+
+With `SimpleTree` and `SimpleTreeMap` the `.compare_to` configuration field also defaults to `.default` if omitted. As it's also automatically wrapped into `.useField()` we essentially get automatic comparison implementation in cases the node's key has a builtin numeric type or a pointer type:
+```
+    // No need to specify 'compare_to' here.
+    const MyTree = SimpleTreeMap(i32, SomeData, .{
+        .implementation = .avl,
+        .ownership_tracking = .....,
+    });
+    ......
+    const result = tree.insertNode(&node.key, &node);
+    const found = tree.find(&0);
+```
+
 ## Callback forms
 
 In quite a number of methods one can or has to supply one or more callbacks. Generally trees support the two following common forms of specifying callbacks.
