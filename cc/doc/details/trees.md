@@ -252,7 +252,7 @@ In quite a number of methods one can or has to supply one or more callbacks. Gen
 
 ### A closure-container-callback
 
-The callback is a container (typically a struct, possibly a union, unlikely an enum) object with a method of a predefined name and expected function signature. The callback is invoked by calling this method on the said struct object:
+The callback is a container (typically a struct, possibly a union, unlikely an enum) object with a method of a predefined name and expected function signature. The callback is invoked by calling this method on the said container object:
 ```
     // The following code assumes that there is an
     // 'alloc' local variable defined above, containing
@@ -336,7 +336,7 @@ or a freestanding function of the form
 ```
 // The function name can be anything, since the function will be
 // explcitly passed in a tuple-form callback.
-pub fn discard(
+fn discard(
     leading arguments if any,
     node: *Node,
 ) void {
@@ -369,7 +369,7 @@ or a freestanding function of the form
 ```
 // The function name can be anything, since the function will be
 // explcitly passed in a tuple-form callback.
-pub fn produceNode(
+fn produceNode(
     leading arguments if any,
 ) !*Node {
     .....
