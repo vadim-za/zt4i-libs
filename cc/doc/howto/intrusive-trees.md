@@ -75,7 +75,7 @@ Similarly to the lists, `removeAll()` doesn't destroy the removed nodes. Removin
             alloc: std.mem.Allocator,
             pub fn discard(
                 self: *const @This(),
-                node: *Node,
+                node: *MyNode,
             ) void {
                 self.alloc.destroy(node);
             }
@@ -108,7 +108,7 @@ N.B. In theory there is a simpler way to define the discarder for the above case
 
 In simple cases the nodes can be inserted using `insertNode()`. As with lists, for the sake of simplicity of demonstration, in the following examples we create and destroy nodes one-by-one, but this is not a must: node creation/destruction can be rather independent from their insertion/removal (as long as node lifetimes are respected).
 ```
-    const node = try alloc.create(Node);
+    const node = try alloc.create(MyNode);
     // The hook field is assumed to be implicitly initialized
     // in the assignment below.
     node.* = .{
@@ -139,8 +139,8 @@ The insertion will fail if a node with an equal key is already contained in the 
         field1: Type1,
         field2: Type2,
 
-        fn produceNode(self: *const @This()) !*Node {
-            const node = try self.alloc.create(Node);
+        fn produceNode(self: *const @This()) !*MyNode {
+            const node = try self.alloc.create(MyNode);
             node.* = .{
                 .key = self.key_value,
                 .field1 = self.field1,
@@ -174,7 +174,7 @@ The current CC's implementation of AVL trees doesn't store the pointer to the pa
 ```
     // For the sake of demonstration's conciseness,
     // construct the node on stack
-    var node: Node = .{
+    var node: MyNode = .{
         .key = key_value,
         .field1 = value1,
         .field2 = value2,
@@ -192,10 +192,10 @@ N.B. Differently from `removeAll()`, the callbacks literald argument of `remove(
 
 The following code illustrates the tree inspection features of CC trees.
 ```
-fn walkFrom(from_node: ?*Node, tree: *MyTree) void {
+fn walkFrom(from_node: ?*MyNode, tree: *MyTree) void {
     const node = from_node orelse return;
 
-    // Returns *const [2]?*Node
+    // Returns *const [2]?*MyNode
     const chilren = tree.children(node);
 
     walkFrom(chilren[0], tree); // left node

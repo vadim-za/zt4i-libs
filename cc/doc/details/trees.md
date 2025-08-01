@@ -99,8 +99,8 @@ const MyNode = struct {
 // therefore it doesn't need to be pub, as long as tree
 // configuration is defined in the same file.
 //
-// In principle we'd like 'node_ptr' to have '*const Node' or
-// '*Node' type, but it seems that that is prevented by Zig
+// In principle we'd like 'node_ptr' to have '*const MyNode' or
+// '*MyNode' type, but it seems that that is prevented by Zig
 // Issue #16932. The upside is that with 'node_ptr' being
 // 'anytype' this function can be reused for a number of
 // different node types.
@@ -264,7 +264,7 @@ The callback is a container (typically a struct, possibly a union, unlikely an e
             alloc: std.mem.Allocator,
             pub fn discard(
                 self: *const @This(),
-                node: *Node,
+                node: *MyNode,
             ) void {
                 self.alloc.destroy(node);
             }

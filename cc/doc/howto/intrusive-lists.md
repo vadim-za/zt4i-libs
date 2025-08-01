@@ -77,10 +77,10 @@ If you don't want to remove the nodes one by one, you can empty the entire list 
 
 N.B. For the sake of simplicity of demonstration in the following examples we dynamically create and destroy the nodes one-by-one. In intrusive scenarios it is however more likely that the nodes are preallocated in some way. In theory, they can even be created as local variables on the stack, provided their lifetimes do not exceed their insertion durations.
 ```
-    const node = try alloc.create(Node);
+    const node = try alloc.create(MyNode);
     // At the very least, the hook field must be initialized
     // to .{} prior to inserting the node into the list. In
-    // the Node declaration example above we already have
+    // the MyNode declaration example above we already have
     // specified .{}' as the hook's default value, so we don't
     // have to explicitly initialize the hook here. The other
     // fields of the node don't really have to be initialized here.
@@ -92,7 +92,7 @@ N.B. For the sake of simplicity of demonstration in the following examples we dy
 ```
 The following insertion methods are available for double-linked lists:
 ```
-    // node1...node4 are of the *Node type
+    // node1...node4 are of the *MyNode type
     list.insertFirst(node1);
     list.insertLast(node2);
     list.insertBefore(node1, node3);
@@ -100,7 +100,7 @@ The following insertion methods are available for double-linked lists:
 ```
 There is also a more versatile helper `insert()` method, which wraps the primary insertion methods demonstrated above:
 ```
-    // node1...node6 are of the *Node type
+    // node1...node6 are of the *MyNode type
     list.insert(.first, node1);
     list.insert(.last, node2);
     list.insert(.before(node1), node3);
@@ -117,16 +117,16 @@ The `removeAll()`, `popFirst()` and `popLast()` methods have been demonstrated e
 ```
     // Forward-iteration of (any) double-linked
     // or (any) single-linked list
-    var node = list.first(); // node's type is '?*Node'
+    var node = list.first(); // node's type is '?*MyNode'
     while(node) |n| : (node = list.next(n)) {
-        // n's type is '*Node'
+        // n's type is '*MyNode'
         doSomething(n);
     }
 
     // Backward-iteration of (any) double-linked list
-    var node = list.last(); // node's type is '?*Node'
+    var node = list.last(); // node's type is '?*MyNode'
     while(node) |n| : (node = list.prev(n)) {
-        // n's type is '*Node'
+        // n's type is '*MyNode'
         doSomething(n);
     }
 
